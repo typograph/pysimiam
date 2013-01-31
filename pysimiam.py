@@ -17,6 +17,8 @@ class PySimianFrame(wx.Frame):
 
         #Objects
         #self.simulator = Simulator(self)
+
+        #Interface buttons
         #self.playButton = wx.ImageButton(self)
 
         # Create layouts to arrange objects
