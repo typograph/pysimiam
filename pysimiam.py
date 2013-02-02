@@ -1,5 +1,11 @@
+"""PySimiam
+Author: Jonathan Whitten
+ChangeDate: 2 FEB 2013; 1134EST
+Description: This is the top-level application for PySimiam.
+"""
 import wx
 import os
+import simulator as sim
 
 class PySimiamApp(wx.App):
 	def OnInit(self):
@@ -11,7 +17,13 @@ class PySimiamApp(wx.App):
 
 #end PySimiamApp class
 
+# Create any event IDs that may be needed
+ID_PLAY = wx.NewId()
+ID_PAUSE = wx.NewId()
+ID_RESET = wx.NewId()
+
 class PySimiamFrame(wx.Frame):
+    
     def __init__(self, *args, **kwds):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
@@ -22,27 +34,29 @@ class PySimiamFrame(wx.Frame):
         # Reset
         path = os.path.abspath("./res/image/arrow-left-double.png")
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_PNG)
-        self.resetButton = wx.BitmapButton(self, id=wx.ID_ANY, \
+        self.resetButton = wx.BitmapButton(self, id=ID_RESET, \
                 bitmap=bmp, size=(32,32))
 
         # Play
         path = os.path.abspath("./res/image/arrow-right.png")
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_PNG)
-        self.playButton = wx.BitmapButton(self, id=wx.ID_ANY, \
+        self.playButton = wx.BitmapButton(self, id=ID_PLAY, \
                 bitmap=bmp, size=(32, 32))
 
         # Pause
         path = os.path.abspath("./res/image/media-playback-pause-7.png")
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_PNG)
-        self.pauseButton = wx.BitmapButton(self, id=wx.ID_ANY, \
+        self.pauseButton = wx.BitmapButton(self, id=ID_PAUSE, \
                 bitmap=bmp, size=(32, 32))
 
 
         # Simulation Panel (now just a text placeholder)
-        self.simulator = wx.Panel(self)
-        self.simulator.SetBackgroundColour('grey')
+        self.viewer = SimulatorViewer(self)
 
-        wx.StaticText(self.simulator, label="hello")
+        # Create the simulator thread
+        self.simulatorThread = sim.Simulator(self, wx.ID_ANY)
+        self.simulatorThread.start()
+
 
         # Create layouts to arrange objects
         self.__do_layout()
@@ -61,8 +75,6 @@ class PySimiamFrame(wx.Frame):
         # Create main vertical sizer 'mainsizer'
         mainSizer = wx.BoxSizer(wx.VERTICAL)
 
-
-
         # Layout buttons
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonSizer.Add(self.resetButton, 0, wx.ALL, 2)
@@ -70,8 +82,8 @@ class PySimiamFrame(wx.Frame):
         buttonSizer.Add(self.pauseButton, 0, wx.ALL, 2)
         mainSizer.Add(buttonSizer, 0, wx.EXPAND)
 
-        #Layout Simulator
-        mainSizer.Add(self.simulator, 1, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
+        # Layout Simulator
+        mainSizer.Add(self.viewer, 1, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
 
         # Set 'mainsizer' as the sizer for the frame
         self.SetSizer(mainSizer)
@@ -91,18 +103,50 @@ class PySimiamFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
 
     def __set_properties(self):
-        pass
- 
+        self.Bind(wx.EVT_BUTTON, self.OnButton, id=wx.ID_ANY) 
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     # Event Handlers
+
+    def OnButton(self, event):
+        eventId = event.GetId()
+
+        if eventId == ID_PLAY:
+            print 'ButtonPress: play'
+        elif eventId == ID_PAUSE:
+            print 'ButtonPress: pause'
+        elif eventId == ID_RESET:
+            print 'ButtonPress: reset'
+        else:
+            print 'ButtonPress: unknown'
+
+        event.Skip()
+        #End OnButton
 
     def OnOpen(self, event):
         event.Skip()
 
+        #End OnOpen
+
     def OnClose(self, event):
+        # Stop simulator thread
+        self.simulatorThread.Stop()
         self.Destroy()
 
+        #End OnClose
+
 #end PySimiamFrame class
+
+class SimulatorViewer(wx.ScrolledWindow):
+    def __init__(self, parent):
+	super(SimulatorViewer, self).__init__(parent)
+        
+        self.__set_properties()
+
+    def __set_properties(self):
+        self.SetScrollbars(1,1,1,1)        
+
+
 
 if __name__ == "__main__":
     #provider = wx.SimpleHelpProvider()
