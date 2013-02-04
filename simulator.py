@@ -9,7 +9,7 @@ RUN = 1
 
 class Simulator(threading.Thread):
 
-    def __init__(self, targetwin, id):
+    def __init__(self, targetwin, imagelist, id):
         super(Simulator, self).__init__()
         
         #Attributes
@@ -17,6 +17,7 @@ class Simulator(threading.Thread):
         self.targetwin = targetwin
         self.stop = False
         self.state = PAUSE
+        self.imagelist = imagelist
 
     def run(self):
         print 'starting simulator thread'

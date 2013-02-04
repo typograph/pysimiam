@@ -6,6 +6,26 @@ Description: This is the top-level application for PySimiam.
 import wx
 import os
 import simulator as sim
+import wx.lib.newevent
+
+mEVT_VIEWER_EVENT = wx.NewEventType()
+EVT_VIEWER_EVENT = wx.PyEventBinder(mEVT_VIEWER_EVENT, 1)
+# Custom Event class for simulator notifications
+class ViewerEvent(wx.PyCommandEvent):
+    def __init__(self, id=0, index):
+    """Constructor
+    @param index - int describing index of image
+    in buffer to draw to screen
+    """
+        evttype = myEVT_VIEWER_EVENT
+        super(ViewerEvent, self).__init__(evttype, id)
+        wx.PyCommandEvent.__init__(self, myEVT_VIEWER_EVENT, id)
+        self.index = index
+
+    def getIndex(self):
+        return self.index
+        
+# end class ViewerEvent
 
 class PySimiamApp(wx.App):
 	def OnInit(self):
@@ -106,6 +126,10 @@ class PySimiamFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onButton, id=wx.ID_ANY) 
         self.Bind(wx.EVT_CLOSE, self.onClose)
 
+    # Methods
+    def updateViewer(self):
+        self.viewer.paintNow()
+
     # Event Handlers
 
     def onButton(self, event):
@@ -145,6 +169,10 @@ class SimulatorViewer(wx.ScrolledWindow):
 
     def __set_properties(self):
         self.SetScrollbars(1,1,1,1)        
+
+    # Methods
+    def paintNow(self):
+        pass
 
 
 
