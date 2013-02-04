@@ -10,9 +10,10 @@ import numpy as np
 class Pose(object):
     def __init__(self, x=0.0, y=0.0, theta=0.0):
         #Units in mm
-        self.x = x 
-        self.y = y  
-        self.theta = theta 
+        #convert to float just in case someone types an integer
+        self.x = float(x)
+        self.y = float(y)
+        self.theta = float(theta)
 
     def setPose(self, *args):
         """pose setter using another pose
@@ -27,10 +28,10 @@ class Pose(object):
             self.x = args[0].x
             self.y = args[0].y
             self.theta = args[0].theta
-        elif isinstance(args[0], float):
-            self.x = args[0]
-            self.y = args[1]
-            self.theta = args[2]
+        elif len(args) == 3
+            self.x = float(args[0])
+            self.y = float(args[1])
+            self.theta = float(args[2])
 
     def getPoseList(self):
         return [self.x, self.y, self.theta]
@@ -38,9 +39,9 @@ class Pose(object):
     def getTransformationMatrix(self):
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
-            [np.cos(self.theta), -np.sin(self.theta), 0.0, self.x],\
-            [np.sin(self.theta), np.cos(self.theta), 0.0, self, y],\
-            [0, 0, 1.0, 1.0]])
+            [np.cos(self.theta), -np.sin(self.theta), self.x],\
+            [np.sin(self.theta), np.cos(self.theta), self.y],\
+            [0, 0, 1.0]])
         return T
 
 
