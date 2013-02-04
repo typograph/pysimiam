@@ -99,16 +99,16 @@ class PySimiamFrame(wx.Frame):
         self.menu_bar.Append(self.filem, "&File")
         self.SetMenuBar(self.menu_bar)
 
-        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
-        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.onClose, id=wx.ID_CLOSE)
+        self.Bind(wx.EVT_MENU, self.onOpen, id=wx.ID_OPEN)
 
     def __set_properties(self):
-        self.Bind(wx.EVT_BUTTON, self.OnButton, id=wx.ID_ANY) 
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_BUTTON, self.onButton, id=wx.ID_ANY) 
+        self.Bind(wx.EVT_CLOSE, self.onClose)
 
     # Event Handlers
 
-    def OnButton(self, event):
+    def onButton(self, event):
         eventId = event.GetId()
 
         if eventId == ID_PLAY:
@@ -121,19 +121,19 @@ class PySimiamFrame(wx.Frame):
             print 'ButtonPress: unknown'
 
         event.Skip()
-        #End OnButton
+        #End onButton
 
-    def OnOpen(self, event):
+    def onOpen(self, event):
         event.Skip()
 
-        #End OnOpen
+        #End onOpen
 
-    def OnClose(self, event):
+    def onClose(self, event):
         # Stop simulator thread
         self.simulatorThread.Stop()
         self.Destroy()
 
-        #End OnClose
+        #End onClose
 
 #end PySimiamFrame class
 
