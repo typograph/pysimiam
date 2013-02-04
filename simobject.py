@@ -29,15 +29,9 @@ class Polygon(SimObject):
     def envelope(self):
         return self.__shape
     
-    def draw(self,gc):
-        if not isinstance(gc,wc.GraphicsContext):
-            raise ValueError("Draw error, cannot draw on %s" % gc.__class__.__name__)
-        
-        gc.PushState()
-        brush = gc.CreateBrush(wx.Brush(self.__color))
-        gc.SetBrush(brush)
-        gc.SetTransform(self.getPose().getGraphicsMatrix(gc))
-        gc.DrawLines(self.envelope())
-        gc.PopState()
+    def draw(self,r):
+        r.setPose(self.Pose())
+        r.setBrush(self.__color)
+        r.drawPolygon(self.getEnvelope())
         
     
