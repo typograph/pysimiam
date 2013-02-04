@@ -1,3 +1,5 @@
+from simobject import SimObject
+
 class Robot(SimObject):
     def PoseAfter(self,dt):
         """

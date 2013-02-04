@@ -6,6 +6,7 @@
 #
 
 import random
+from simobject import SimObject
 
 class Sensor:
     @classmethod
@@ -24,4 +25,12 @@ class InternalSensor(SimObject):
     def Pose(self):
         return super().Pose() + self.__robot.Pose()
     
-    
+class ProximitySensor(InternalSensor):
+    def __init__(self,pose,robot):
+        super().__init__(pose,robot)
+        
+    def distance(self):
+        pass
+
+class IRSensor(ProximitySensor):
+    pass

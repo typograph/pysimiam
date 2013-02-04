@@ -28,7 +28,7 @@ class Pose(object):
             self.x = args[0].x
             self.y = args[0].y
             self.theta = args[0].theta
-        elif len(args) == 3
+        elif len(args) == 3:
             self.x = float(args[0])
             self.y = float(args[1])
             self.theta = float(args[2])
