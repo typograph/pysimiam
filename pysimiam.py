@@ -8,25 +8,6 @@ import os
 import simulator as sim
 import wx.lib.newevent
 
-mEVT_VIEWER_EVENT = wx.NewEventType()
-EVT_VIEWER_EVENT = wx.PyEventBinder(mEVT_VIEWER_EVENT, 1)
-# Custom Event class for simulator notifications
-class ViewerEvent(wx.PyCommandEvent):
-    def __init__(self, id=0, index):
-    """Constructor
-    @param index - int describing index of image
-    in buffer to draw to screen
-    """
-        evttype = myEVT_VIEWER_EVENT
-        super(ViewerEvent, self).__init__(evttype, id)
-        wx.PyCommandEvent.__init__(self, myEVT_VIEWER_EVENT, id)
-        self.index = index
-
-    def getIndex(self):
-        return self.index
-        
-# end class ViewerEvent
-
 class PySimiamApp(wx.App):
 	def OnInit(self):
 		self.frame = PySimiamFrame(None, size=wx.Size(800,600), title="PySimiam")
@@ -42,6 +23,9 @@ ID_PLAY = wx.NewId()
 ID_PAUSE = wx.NewId()
 ID_RESET = wx.NewId()
 
+BITMAP_WIDTH = 600
+BITMAP_HEIGHT = 800
+
 class PySimiamFrame(wx.Frame):
     
     def __init__(self, *args, **kwds):
@@ -49,6 +33,14 @@ class PySimiamFrame(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
 
         #Objects
+
+        # ImageList
+        self.bitmaplist = []
+
+        # Append two bitmaps of preset size
+        for i in range(0,2):
+            self.bitmaplist.append(wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT))
+
 
         #Interface buttons
         # Reset
@@ -74,7 +66,7 @@ class PySimiamFrame(wx.Frame):
         self.viewer = SimulatorViewer(self)
 
         # Create the simulator thread
-        self.simulatorThread = sim.Simulator(self, wx.ID_ANY)
+        self.simulatorThread = sim.Simulator(self, self.bitmaplist, wx.ID_ANY)
         self.simulatorThread.start()
 
 
@@ -125,12 +117,13 @@ class PySimiamFrame(wx.Frame):
     def __set_properties(self):
         self.Bind(wx.EVT_BUTTON, self.onButton, id=wx.ID_ANY) 
         self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.Bind(sim.EVT_VIEWER_EVENT, self.updateViewer)
 
     # Methods
-    def updateViewer(self):
-        self.viewer.paintNow()
 
     # Event Handlers
+    def updateViewer(self, event):
+        self.viewer.paintNow(self.bitmaplist[event.getIndex()])
 
     def onButton(self, event):
         eventId = event.GetId()
@@ -169,11 +162,15 @@ class SimulatorViewer(wx.ScrolledWindow):
 
     def __set_properties(self):
         self.SetScrollbars(1,1,1,1)        
+        self.Bind(wx.EVT_PAINT, self.onPaint)
 
     # Methods
-    def paintNow(self):
-        pass
+    def paintNow(self, bmp):
+        dc = wx.ClientDC(self)
+        dc.DrawBitmap(bmp, 0, 0, False) # no mask
 
+    def onPaint(self, event):
+        pass
 
 
 if __name__ == "__main__":
