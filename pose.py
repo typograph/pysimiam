@@ -39,8 +39,8 @@ class Pose(object):
     def getTransformationMatrix(self):
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
-            [np.cos(self.theta), -np.sin(self.theta), self.x],\
-            [np.sin(self.theta), np.cos(self.theta), self.y],\
+            [math.cos(self.theta), -math.sin(self.theta), self.x],\
+            [math.sin(self.theta), math.cos(self.theta), self.y],\
             [0, 0, 1.0]])
         return T
 
