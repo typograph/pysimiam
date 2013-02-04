@@ -14,7 +14,7 @@ class Pose(object):
         self.y = y  
         self.theta = theta 
 
-    def set_pose(self, *args):
+    def setPose(self, *args):
         """pose setter using another pose
         @param
         args[0] - Pose object 
@@ -32,10 +32,10 @@ class Pose(object):
             self.y = args[1]
             self.theta = args[2]
 
-    def get_pose_list(self):
+    def getPoseList(self):
         return [self.x, self.y, self.theta]
 
-    def get_transformation_matrix(self):
+    def getTransformationMatrix(self):
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
             [np.cos(self.theta), -np.sin(self.theta), 0.0],\
