@@ -51,7 +51,7 @@ class Simulator(threading.Thread):
                 #Test Mutex and post event
                 pass    
             
-            sleep(3) # 100 milliseconds
+            sleep(0.05) # 100 milliseconds
 
 
             # Draw to buffer-bitmap
@@ -60,14 +60,17 @@ class Simulator(threading.Thread):
             # Post Redraw Event to UI
             if(self.targetwin):
                 event = ViewerEvent() 
-                event.setIndex(0)
+                event.setIndex(self.__swapIndex(imageIndex))
                 wx.PostEvent(self.targetwin, event)
 
             #Swap buffer index
-            if imageIndex == 1:
-                imageIndex = 0
-            else:
-                imageIndex = 1
+            imageIndex = self.__swapIndex(imageIndex)
+
+    def __swapIndex(self, ind):
+        if ind == 1:
+            return 0
+        else:
+            return 1
 
     def draw(self, imageIndex):
         print imageIndex
