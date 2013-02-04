@@ -162,11 +162,15 @@ class SimulatorViewer(wx.ScrolledWindow):
 
     def __set_properties(self):
         self.SetScrollbars(1,1,1,1)        
+        self.Bind(wx.EVT_PAINT, self.onPaint)
 
     # Methods
     def paintNow(self, bmp):
-        print "painting"
+        dc = wx.ClientDC(self)
+        dc.DrawBitmap(bmp, 0, 0, False) # no mask
 
+    def onPaint(self, event):
+        pass
 
 
 if __name__ == "__main__":

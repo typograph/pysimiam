@@ -55,13 +55,12 @@ class Simulator(threading.Thread):
 
 
             # Draw to buffer-bitmap
-            self.drawObjects(imageIndex)
+            self.draw(imageIndex)
 
             # Post Redraw Event to UI
             if(self.targetwin):
                 event = ViewerEvent() 
                 event.setIndex(0)
-                print 'posting event'
                 wx.PostEvent(self.targetwin, event)
 
             #Swap buffer index
@@ -70,10 +69,14 @@ class Simulator(threading.Thread):
             else:
                 imageIndex = 1
 
-    def drawObjects(self, imageIndex):
+    def draw(self, imageIndex):
+        print imageIndex
         dc = wx.MemoryDC(self.bitmaplist[imageIndex])
-        dc.SetPen(wx.Pen(wx.Colour(0,0,0)))
-        dc.DrawLine(0,0,100,100)
+        if imageIndex == 1:
+            dc.SetPen(wx.Pen(wx.Colour(255, 0, 0)))
+        else:
+            dc.SetPen(wx.Pen(wx.Colour(0, 255, 0)))
+        dc.DrawLine(0,0,400,400)
 
     # Stops the thread
     def Stop(self):
