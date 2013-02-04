@@ -54,11 +54,13 @@ class Simulator(threading.Thread):
             sleep(0.05) # 100 milliseconds
 
 
-            # Draw to buffer-bitmap
-            self.draw(imageIndex)
-
+            
             # Post Redraw Event to UI
             if(self.targetwin):
+                # Draw to buffer-bitmap
+                self.draw(imageIndex)
+
+                # Create UI Event
                 event = ViewerEvent() 
                 event.setIndex(self.__swapIndex(imageIndex))
                 wx.PostEvent(self.targetwin, event)
