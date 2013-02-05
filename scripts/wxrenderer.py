@@ -10,12 +10,16 @@ from renderer import Renderer
 
 class wxGCRenderer(Renderer):
     def __init__(self,DC):
-        #super(wxGCRenderer, self).__init__()
-        self.dc = wx.GCDC(DC)
-        self.gc = self.dc.GetGraphicsContext()
+        Renderer.__init__(self,DC.GetSizeTuple())
+        self.dc = DC
+        self.gc = wx.GraphicsContext.Create(self.dc)
         self._pens = {}
         self._brushes = {}
-        
+        self.gc.PushState()
+
+    def clearScreen(self):
+        self.dc.Clear()
+
     def resetPose(self):
         """Resets the renderer to world coordinates
         """
@@ -76,7 +80,13 @@ class wxGCRenderer(Renderer):
     def drawRectangle(self, x, y, w, h):
         """Draws a rectangle.
         """
-        self.gc.DrawRectange(x,y,w,h)
+        self.gc.DrawRectangle(x,y,w,h)
+
+    def fillRectangle(self, x, y, w, h):
+        """Draws a rectangle.
+        """
+        self.gc.DrawLines([(x,y),(x+w,y),(x+w,y+h),(x,y+h)])
+        self.gc.DrawRectangle(x,y,w,h)
     
     def drawText(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position.

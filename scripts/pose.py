@@ -8,12 +8,19 @@ The pose class allows for a posing of objects in 2D space
 import numpy as np
 
 class Pose(object):
-    def __init__(self, x=0.0, y=0.0, theta=0.0):
+    def __init__(self, *args):
         #Units in mm
         #convert to float just in case someone types an integer
-        self.x = float(x)
-        self.y = float(y)
-        self.theta = float(theta)
+        if len(args) == 0:
+            self.setPose(0,0,0)
+        elif len(args) == 1:
+            self.setPose(*args[0])
+        elif len(args) == 2:
+            self.setPose(args[0],args[1],0)
+        elif len(args) == 3:
+            self.setPose(*args)
+        else:
+            raise ValueError("Invalid way to initialize a pose")
 
     def setPose(self, *args):
         """pose setter using another pose

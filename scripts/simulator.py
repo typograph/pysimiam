@@ -8,7 +8,7 @@ from time import sleep
 
 import khepera3
 import pose
-import wxrenderer
+import simobject
 
 PAUSE = 0
 RUN = 1
@@ -37,7 +37,7 @@ class ViewerEvent(wx.PyCommandEvent):
 
 class Simulator(threading.Thread):
 
-    def __init__(self, targetwin, bitmaplist, id):
+    def __init__(self, targetwin, renderer, id):
         super(Simulator, self).__init__()
         
         #Attributes
@@ -45,50 +45,44 @@ class Simulator(threading.Thread):
         self.targetwin = targetwin
         self.stop = False
         self.state = PAUSE
-        self.bitmaplist = bitmaplist
+        self.renderer = renderer
         
         #test code
-        pos = pose.Pose(10.0, 10.0, 0.0)
-        self.robot = khepera3.Khepera3(pos)
+        self.robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
+        self.robot.setWheelSpeeds(16,18)
+        self.obstacles = [
+            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+            ]
         #end test code
 
     def run(self):
         print 'starting simulator thread'
-        imageIndex = 0
+        time_constant = 0.1
         while not self.stop:
             if self.state == RUN:
                 pass    
             
-            sleep(0.05) # 100 milliseconds
+            sleep(time_constant) # 100 milliseconds
 
-
+            self.robot.moveTo(self.robot.poseAfter(time_constant))
             
             # Post Redraw Event to UI
             if(self.targetwin):
                 # Draw to buffer-bitmap
-                self.draw(imageIndex)
+                self.draw()
 
                 # Create UI Event
                 event = ViewerEvent() 
-                event.setIndex(self.__swapIndex(imageIndex))
                 wx.PostEvent(self.targetwin, event)
 
-            #Swap buffer index
-            imageIndex = self.__swapIndex(imageIndex)
-
-    def __swapIndex(self, ind):
-        if ind == 1:
-            return 0
-        else:
-            return 1
-
-    def draw(self, imageIndex):
-        print imageIndex
-        dc = wx.MemoryDC(self.bitmaplist[imageIndex])
-
+    def draw(self):
         #Test code
-        gc = wxrenderer.wxGCRenderer(dc)
-        self.robot.draw(gc)
+        self.renderer.clearScreen()
+        self.robot.draw(self.renderer)
+        for obstacle in self.obstacles:
+            obstacle.draw(self.renderer)
         #end test code
 
     # Stops the thread

@@ -8,8 +8,8 @@
 #
 
 class Renderer:
-    def __init__():
-        pass
+    def __init__(self,size):
+        self.size = size
    
     def resetPose(self):
         """Resets the renderer to world coordinates
@@ -39,6 +39,12 @@ class Renderer:
         Color is interpreted as 0xRRGGBB.
         """
         pass
+    
+    def clearScreen(self):
+        """Clears the canvas using the current brush
+        """
+        self.setBrush(0xFFFFFF)
+        self.fillRectangle(0,0,self.size[0],self.size[1])
 
     def drawPolygon(self,points):
         """Draws a polygon.
@@ -54,6 +60,11 @@ class Renderer:
 
     def drawRectangle(self, x, y, w, h):
         """Draws a rectangle.
+        """
+        pass
+    
+    def fillRectangle(self, x, y, w, h):    
+        """Draws a rectangle with current pen and fills it with current brush
         """
         pass
     

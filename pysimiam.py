@@ -8,16 +8,17 @@ sys.path.insert(0, './scripts')
 import wx
 import os
 import wx.lib.newevent
+from wxrenderer import wxGCRenderer
 
 import simulator as sim
 
 class PySimiamApp(wx.App):
-	def OnInit(self):
-		self.frame = PySimiamFrame(None, size=wx.Size(800,600), title="PySimiam")
-		self.SetTopWindow(self.frame)
-		self.frame.Show()
+    def OnInit(self):
+        self.frame = PySimiamFrame(None, size=wx.Size(800,600), title="PySimiam")
+        self.SetTopWindow(self.frame)
+        self.frame.Show()
 
-		return True
+        return True
 
 #end PySimiamApp class
 
@@ -38,12 +39,9 @@ class PySimiamFrame(wx.Frame):
         #Objects
 
         # ImageList
-        self.bitmaplist = []
-
-        # Append two bitmaps of preset size
-        for i in range(0,2):
-            self.bitmaplist.append(wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT))
-
+        self.bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+        dc = wx.MemoryDC(self.bitmap)
+        self.renderer = wxGCRenderer(dc)
 
         #Interface buttons
         # Reset
@@ -68,8 +66,8 @@ class PySimiamFrame(wx.Frame):
         # Simulation Panel (now just a text placeholder)
         self.viewer = SimulatorViewer(self)
 
-        # Create the simulator thread
-        self.simulatorThread = sim.Simulator(self, self.bitmaplist, wx.ID_ANY)
+        # create the simulator thread
+        self.simulatorThread = sim.Simulator(self, self.renderer, wx.ID_ANY)
         self.simulatorThread.start()
 
 
@@ -104,7 +102,7 @@ class PySimiamFrame(wx.Frame):
         self.SetSizer(mainSizer)
 
     def __create_toolbars(self):
-        #MenuBar	
+        #MenuBar    
         self.menu_bar = wx.MenuBar()
         self.filem = wx.Menu()
         self.filem.Append(wx.ID_OPEN, "Open Supervisor\tCtrl+O")
@@ -126,7 +124,7 @@ class PySimiamFrame(wx.Frame):
 
     # Event Handlers
     def updateViewer(self, event):
-        self.viewer.paintNow(self.bitmaplist[event.getIndex()])
+        self.viewer.paintNow(self.bitmap)
 
     def onButton(self, event):
         eventId = event.GetId()
@@ -159,9 +157,10 @@ class PySimiamFrame(wx.Frame):
 
 class SimulatorViewer(wx.ScrolledWindow):
     def __init__(self, parent):
-	super(SimulatorViewer, self).__init__(parent)
-        
+        super(SimulatorViewer, self).__init__(parent)
         self.__set_properties()
+        self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+        self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
 
     def __set_properties(self):
         self.SetScrollbars(1,1,1,1)        
@@ -169,11 +168,12 @@ class SimulatorViewer(wx.ScrolledWindow):
 
     # Methods
     def paintNow(self, bmp):
-        dc = wx.ClientDC(self)
-        dc.DrawBitmap(bmp, 0, 0, False) # no mask
+        self.__bitmap_dc.DrawBitmap(bmp, 0, 0, False) # no mask
+        self.onPaint(None)
 
     def onPaint(self, event):
-        pass
+        dc = wx.ClientDC(self)
+        dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
 
 
 if __name__ == "__main__":

@@ -23,13 +23,13 @@ class Khepera3_IRSensor(IRSensor):
     def reading(self):
         pass
 
-def motion_f(t,y):
+def motion_f(t,y,*f_args):
     """The Drive problem
     """
     theta,v,w = y[2:]
-    return (v*cos(theta),-v*sin(theta),w,0,0)
+    return [v*cos(theta),-v*sin(theta),w,0,0]
 
-def motion_jac(t,y):
+def motion_jac(t,y,*jac_args):
     """The Jacobian of the drive problem
     """
     (x,y,theta,v,w) = y
@@ -40,7 +40,7 @@ def motion_jac(t,y):
     j[1][4] = cos(theta) # d(v*cos(theta))/dv
     j[2][4] = -sin(theta) # d(-v*sin(theta))/dv
     j[3][5] = 1 # dw/dw
-    return (v*cos(theta),-v*sin(theta),w,0,0)
+    return j
 
 class Khepera3(Robot):
     
@@ -48,25 +48,25 @@ class Khepera3(Robot):
         Robot.__init__(self,pose)
         
         # create shape
-        self._p1 = np.array([[-0.031,  0.043, 1],
-                             [-0.031, -0.043, 1],
-                             [ 0.033, -0.043, 1],
-                             [ 0.052, -0.021, 1],
-                             [ 0.057,  0    , 1],
-                             [ 0.052,  0.021, 1],
-                             [ 0.033,  0.043, 1]])
-        self._p2 = np.array([[-0.024,  0.064, 1],
-                             [ 0.033,  0.064, 1],
-                             [ 0.057,  0.043, 1],
-                             [ 0.074,  0.010, 1],
-                             [ 0.074, -0.010, 1],
-                             [ 0.057, -0.043, 1],
-                             [ 0.033, -0.064, 1],
-                             [-0.025, -0.064, 1],
-                             [-0.042, -0.043, 1],
-                             [-0.048, -0.010, 1],
-                             [-0.048,  0.010, 1],
-                             [-0.042,  0.043, 1]])
+        self._p1 = np.array([[-3.1,  4.3, 1],
+                             [-3.1, -4.3, 1],
+                             [ 3.3, -4.3, 1],
+                             [ 5.2, -2.1, 1],
+                             [ 5.7,  0    , 1],
+                             [ 5.2,  2.1, 1],
+                             [ 3.3,  4.3, 1]])
+        self._p2 = np.array([[-2.4,  6.4, 1],
+                             [ 3.3,  6.4, 1],
+                             [ 5.7,  4.3, 1],
+                             [ 7.4,  1.0, 1],
+                             [ 7.4, -1.0, 1],
+                             [ 5.7, -4.3, 1],
+                             [ 3.3, -6.4, 1],
+                             [-2.5, -6.4, 1],
+                             [-4.2, -4.3, 1],
+                             [-4.8, -1.0, 1],
+                             [-4.8,  1.0, 1],
+                             [-4.2,  4.3, 1]])
 
         # create IR sensors
         self.ir_sensors = []
@@ -88,8 +88,11 @@ class Khepera3(Robot):
         # initialize motion
         self.ang_velocity = (0.0,0.0)
 
-        self.wheel_radius = 21.0
-        self.wheel_base_length = 88.5
+        # these were original parameters
+        #self.wheel_radius = 21.0
+        #self.wheel_base_length = 88.5
+        self.wheel_radius = 3.0
+        self.wheel_base_length = 12.8
 #       #I'm not sure we need those
 #        self.ticks_per_rev = 2765
 #        self.speed_factor = 6.2953e-6
@@ -110,14 +113,17 @@ class Khepera3(Robot):
     def poseAfter(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.getUniformSpeeds());
-        self.integrator.set_initial_value(self.Pose().getPoseList() + list(self.getUniformSpeeds()),0)
+        self.integrator.set_initial_value(self.getPose().getPoseList() +
+                                          list(self.getUniformSpeeds()),0)
+        #self.integrator.set_f_params().set_jac_params()
         self.integrator.integrate(dt)
-        return Pose(r.y[:3]);
+        print(self.integrator.y)
+        return Pose(self.integrator.y[:3]);
     
     def __coerce_wheel_speeds(self):
         (v,w) = self.getUniformSpeeds();
-        v = max(min(v,0.314),-0.3148);
-        w = max(min(w,2.276),-2.2763);
+        #v = max(min(v,0.314),-0.3148);
+        #w = max(min(w,2.276),-2.2763);
         self.ang_velocity = self.uni2diff((v,w))
     
     def diff2uni(self,diff):
@@ -129,8 +135,8 @@ class Khepera3(Robot):
     def uni2diff(self,uni):
         (v,w) = uni
         # Assignment Week 2
-        vl = 0.0
-        wl = 0.0
+        vr = (self.wheel_base_length*w +2*v)/2/self.wheel_radius
+        vl = vr - self.wheel_base_length*w/self.wheel_radius
         # End Assignment
         return (vl,vr)
     
@@ -145,4 +151,10 @@ class Khepera3(Robot):
             self.ang_velocity = args
         else:
             self.ang_velocity = args
-        self.___coerce_wheel_speeds()
+        self.__coerce_wheel_speeds()
+
+if __name__ == "__main__":
+    k = Khepera3(Pose(0,0,0))
+    print(k.diff2uni(k.uni2diff((1,2))))
+    print(k.uni2diff(k.diff2uni((1,2))))
+    print(k.diff2uni((100,80)))

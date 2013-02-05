@@ -8,5 +8,5 @@ class Robot(SimObject):
         pass
     
     def moveTo(self,pose):
-        self.__pose = pose
+        self.setPose(pose)
 

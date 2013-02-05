@@ -8,6 +8,11 @@ class SimObject:
         """Returns the pose of the object in world coordinates
         """
         return self.__pose
+
+    def setPose(self,pose):
+        """Returns the pose of the object in world coordinates
+        """
+        self.__pose = pose
     
     def draw(self,dc):
         """Draws the object on the passed DC
@@ -22,15 +27,15 @@ class SimObject:
     
 class Polygon(SimObject):
     def __init__(self,pose,shape,color):
-        super().__init__(pose)
+        SimObject.__init__(self,pose)
         self.__shape = shape
         self.__color = color
         
-    def envelope(self):
+    def getEnvelope(self):
         return self.__shape
     
     def draw(self,r):
-        r.setPose(self.Pose())
+        r.setPose(self.getPose())
         r.setBrush(self.__color)
         r.drawPolygon(self.getEnvelope())
         
