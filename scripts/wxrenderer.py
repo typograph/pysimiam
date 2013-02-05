@@ -35,9 +35,12 @@ class wxGCRenderer(Renderer):
         self.gc.Rotate(pose.theta)
         pass
 
-    @classmethod
+    @staticmethod
     def __wxcolor(color):
-        return wx.Colour("0x%.6X"%color)
+        r = (color >> 16) & 0xFF
+        g = (color >> 8) & 0xFF
+        b = (color) & 0xFF
+        return wx.Colour(r,g,b,255)
 
     def setPen(self,color):
         """Sets the line color.

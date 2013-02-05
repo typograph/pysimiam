@@ -7,7 +7,7 @@ from scipy.integrate import ode
 
 class Khepera3_IRSensor(IRSensor):
     def __init__(self,pose,robot):
-        super(Khepera3_IRSensor, self).__init__(pose,robot)
+        IRSensor.__init__(self,pose,robot)
         # values copied from SimIAm
         self.rmin = 0.02
         self.rmax = 0.2
@@ -45,7 +45,7 @@ def motion_jac(t,y):
 class Khepera3(Robot):
     
     def __init__(self, pose):
-        #super(Khepera3, self).__init__(pose)
+        Robot.__init__(self,pose)
         
         # create shape
         self._p1 = np.array([[-0.031,  0.043, 1],
@@ -97,19 +97,17 @@ class Khepera3(Robot):
         self.integrator = ode(motion_f,motion_jac)
         self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
 
-    def draw(self,gc):
-        gc.PushState()
-        gc.SetTransform(self.getPose().getGraphicsMatrix(gc))
-        gc.SetBrush(gc.CreateBrush(wx.Brush(wx.Colour('GREY'))))
-        gc.DrawLines(self._p2)
-        gc.SetBrush(gc.CreateBrush(wx.Brush(wx.Colour('BLUE'))))
-        gc.DrawLines(self._p1)
-        gc.PopState()               
+    def draw(self,r):
+        r.setPose(self.getPose())
+        r.setBrush(0xCCCCCC)
+        r.drawPolygon(self._p2)
+        r.setBrush(0x000000)
+        r.drawPolygon(self._p1)
         
     def getEnvelope(self):
         return self._p2
         
-    def PoseAfter(self,dt):
+    def poseAfter(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.getUniformSpeeds());
         self.integrator.set_initial_value(self.Pose().getPoseList() + list(self.getUniformSpeeds()),0)
