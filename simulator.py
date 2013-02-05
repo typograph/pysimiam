@@ -6,8 +6,8 @@ import threading
 import wx
 from time import sleep
 
-import khepera3
 import pose
+import khepera3
 import wxrenderer
 
 PAUSE = 0
@@ -46,50 +46,43 @@ class Simulator(threading.Thread):
         self.stop = False
         self.state = PAUSE
         self.bitmaplist = bitmaplist
-        
-        #test code
-        pose = pose.Pose(10.0, 10.0, 0.0)
-        self.robot = khepera3.Khepera3(pose)
-        #end test code
 
     def run(self):
         print 'starting simulator thread'
+        #Test
+        pos = pose.Pose(10.0, 10.0, 0.0) # (x,y,theta)
+        robot = Khepera3(pos)
+
         imageIndex = 0
         while not self.stop:
             if self.state == RUN:
+                #Test Mutex and post event
                 pass    
             
-            sleep(0.05) # 100 milliseconds
+            sleep(3) # 100 milliseconds
 
 
-            
+            # Draw to buffer-bitmap
+            self.draw(imageIndex)
+
             # Post Redraw Event to UI
             if(self.targetwin):
-                # Draw to buffer-bitmap
-                self.draw(imageIndex)
-
-                # Create UI Event
                 event = ViewerEvent() 
-                event.setIndex(self.__swapIndex(imageIndex))
+                event.setIndex(imageIndex)
                 wx.PostEvent(self.targetwin, event)
 
             #Swap buffer index
-            imageIndex = self.__swapIndex(imageIndex)
-
-    def __swapIndex(self, ind):
-        if ind == 1:
-            return 0
-        else:
-            return 1
+            if imageIndex == 1:
+                imageIndex = 0
+            else:
+                imageIndex = 1
 
     def draw(self, imageIndex):
         print imageIndex
         dc = wx.MemoryDC(self.bitmaplist[imageIndex])
+        wxR = wxrenderer.
 
-        #Test code
-        gc = wxrenderer.wxGCRenderer(dc)
-        robot.draw(gc)
-        #end test code
+
 
     # Stops the thread
     def Stop(self):
