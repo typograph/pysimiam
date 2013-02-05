@@ -7,7 +7,7 @@ from scipy.integrate import ode
 
 class Khepera3_IRSensor(IRSensor):
     def __init__(self,pose,robot):
-        super.__init__(pose,robot)
+        super(Khepera3_IRSensor, self).__init__(pose,robot)
         # values copied from SimIAm
         self.rmin = 0.02
         self.rmax = 0.2
@@ -44,8 +44,8 @@ def motion_jac(t,y):
 
 class Khepera3(Robot):
     
-    def __init__(self,pose):
-        super().__init__(pose)
+    def __init__(self, pose):
+        #super(Khepera3, self).__init__(pose)
         
         # create shape
         self._p1 = np.array([[-0.031,  0.043, 1],

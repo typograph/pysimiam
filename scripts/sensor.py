@@ -19,7 +19,7 @@ class Sensor:
   
 class InternalSensor(SimObject):
     def __init__(self,pose,robot):
-        super().__init__(pose)
+        super(InternalSensor, self).__init__(pose)
         self.__robot = robot
        
     def Pose(self):
@@ -27,7 +27,7 @@ class InternalSensor(SimObject):
     
 class ProximitySensor(InternalSensor):
     def __init__(self,pose,robot):
-        super().__init__(pose,robot)
+        super(ProximitySensor, self).__init__(pose,robot)
         
     def distance(self):
         pass

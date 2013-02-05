@@ -1,6 +1,6 @@
 import wx
 
-class SimObject:
+class SimObject(object):
     def __init__(self,pose):
         self.__pose = pose
     

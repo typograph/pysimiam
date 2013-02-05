@@ -10,7 +10,7 @@ from renderer import Renderer
 
 class wxGCRenderer(Renderer):
     def __init__(self,DC):
-        super().__init__()
+        #super(wxGCRenderer, self).__init__()
         self.dc = wx.GCDC(DC)
         self.gc = self.dc.GetGraphicsContext()
         self._pens = {}

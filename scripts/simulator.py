@@ -48,8 +48,8 @@ class Simulator(threading.Thread):
         self.bitmaplist = bitmaplist
         
         #test code
-        pose = pose.Pose(10.0, 10.0, 0.0)
-        self.robot = khepera3.Khepera3(pose)
+        pos = pose.Pose(10.0, 10.0, 0.0)
+        self.robot = khepera3.Khepera3(pos)
         #end test code
 
     def run(self):
@@ -88,7 +88,7 @@ class Simulator(threading.Thread):
 
         #Test code
         gc = wxrenderer.wxGCRenderer(dc)
-        robot.draw(gc)
+        self.robot.draw(gc)
         #end test code
 
     # Stops the thread
