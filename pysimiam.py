@@ -3,10 +3,13 @@ Author: Jonathan Whitten
 ChangeDate: 2 FEB 2013; 1134EST
 Description: This is the top-level application for PySimiam.
 """
+import sys
+sys.path.insert(0, './scripts')
 import wx
 import os
-import simulator as sim
 import wx.lib.newevent
+
+import simulator as sim
 
 class PySimiamApp(wx.App):
 	def OnInit(self):
