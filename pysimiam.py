@@ -11,6 +11,7 @@ import wx.lib.newevent
 from wxrenderer import wxGCRenderer
 
 import simulator as sim
+import threading
 
 class PySimiamApp(wx.App):
     def OnInit(self):
@@ -58,11 +59,10 @@ class PySimiamFrame(wx.Frame):
                 bitmap=bmp, size=(32, 32))
 
 
-        # Simulation Panel (now just a text placeholder)
-        self.viewer = SimulatorViewer(self)
-
+        # Simulation Panel
+        viewer = SimulatorViewer(self)
         # create the simulator thread
-        self.simulatorThread = sim.Simulator(self.viewer.renderer, self.viewer.updateBitmap)
+        self.simulatorThread = sim.Simulator(viewer.renderer, viewer.updateBitmap)
         self.simulatorThread.start()
 
 
@@ -153,6 +153,7 @@ class SimulatorViewer(wx.ScrolledWindow):
         self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
         self.__blt_bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+        self.lock = threading.Lock()
         dc = wx.MemoryDC(self.__blt_bitmap)
         self.renderer = wxGCRenderer(dc)
 
@@ -162,12 +163,17 @@ class SimulatorViewer(wx.ScrolledWindow):
 
     # Methods
     def updateBitmap(self):
+        self.lock.acquire()
         self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
-        self.onPaint(None)
+        self.lock.release()
+        wx.CallAfter(self.onPaint,None)
+        
 
     def onPaint(self, event):
+        self.lock.acquire()
         dc = wx.ClientDC(self)
         dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
+        self.lock.release()
 
 
 if __name__ == "__main__":

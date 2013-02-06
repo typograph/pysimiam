@@ -40,12 +40,12 @@ class Simulator(threading.Thread):
 
     def run(self):
         print 'starting simulator thread'
-        time_constant = 0.1
+        time_constant = 0.1  # 100 milliseconds
         while not self.__stop:
             if self.state == RUN:
                 pass    
             
-            sleep(time_constant) # 100 milliseconds
+            sleep(time_constant)
 
             self.robot.moveTo(self.robot.poseAfter(time_constant))
             

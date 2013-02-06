@@ -29,13 +29,12 @@ class SimulationWidget(QtGui.QMainWindow):
         
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
-        self.viewer = SimulatorViewer()
-        scrollArea.setWidget(self.viewer)
+        viewer = SimulatorViewer()
+        scrollArea.setWidget(viewer)
         scrollArea.setWidgetResizable(True)
-        self.viewer.show()
         
         # create the simulator thread
-        self.simulatorThread = sim.Simulator(self.viewer.renderer,self.viewer.update)
+        self.simulatorThread = sim.Simulator(viewer.renderer,viewer.updateBitmap)
         self.simulatorThread.start()
 
     def __create_toolbar(self):
@@ -84,19 +83,22 @@ class SimulatorViewer(QtGui.QFrame):
         self.__bitmap = QtGui.QPixmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__blt_bitmap = QtGui.QPixmap(BITMAP_WIDTH,BITMAP_HEIGHT)
         self.renderer = QtRenderer(self.__blt_bitmap)
-        self.event = threading.Event()
-        self.event.set()
-
-    def __delete__(self):
-        self.event.set()
+        self.lock = threading.Lock()
 
     def paintEvent(self, event):
         super(SimulatorViewer, self).paintEvent(event)
+        self.lock.acquire()
         painter = QtGui.QPainter(self)
         painter.drawPixmap(0,0,self.__blt_bitmap)
+        self.lock.release()
         
-    def setBitmap(self):
-        pass
+    def updateBitmap(self):
+        self.lock.acquire()
+        painter = QtGui.QPainter(self.__bitmap)
+        painter.drawPixmap(0,0,self.__blt_bitmap)
+        #self.__bitmap = QtGui.QPixmap(self.__blt_bitmap)
+        self.lock.release()
+        self.update()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
