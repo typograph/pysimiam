@@ -12,8 +12,9 @@ class wxGCRenderer(Renderer):
     def __init__(self,DC):
         Renderer.__init__(self,DC.GetSizeTuple())
         self.dc = DC
-        self.dc.SetAxisOrientation(True,True)
         self.gc = wx.GraphicsContext.Create(self.dc)
+        self.gc.Scale(1,-1)
+        self.gc.Translate(0,-self.size[1])
         self._pens = {}
         self._brushes = {}
         self.gc.PushState()
@@ -26,12 +27,6 @@ class wxGCRenderer(Renderer):
         """
         self.gc.PopState()
         self.gc.PushState()
-    
-    def setPose(self,pose):
-        """Set a coordinate transformation based on the pose
-        """
-        self.resetPose()
-        self.addPose(pose)
     
     def addPose(self,pose):
         """Add a pose transformation to the current transformation
@@ -81,12 +76,6 @@ class wxGCRenderer(Renderer):
     def drawRectangle(self, x, y, w, h):
         """Draws a rectangle.
         """
-        self.gc.DrawRectangle(x,y,w,h)
-
-    def fillRectangle(self, x, y, w, h):
-        """Draws a rectangle.
-        """
-        self.gc.DrawLines([(x,y),(x+w,y),(x+w,y+h),(x,y+h)])
         self.gc.DrawRectangle(x,y,w,h)
     
     def drawText(self, text, x, y, bgcolor = 0):
