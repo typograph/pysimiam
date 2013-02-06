@@ -64,7 +64,7 @@ class Simulator(threading.Thread):
 
             sleep(time_constant) # 100 milliseconds
 
-            self.robot.moveTo(self.robot.poseAfter(time_constant))
+            self._robot.moveTo(self._robot.poseAfter(time_constant))
 
             # Post Redraw Event to UI
             if(self._targetwin):
@@ -78,7 +78,7 @@ class Simulator(threading.Thread):
     def draw(self):
         #Test code
         self._renderer.clearScreen()
-        self._robot.draw(self.renderer)
+        self._robot.draw(self._renderer)
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
         #end test code
