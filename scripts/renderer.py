@@ -2,7 +2,7 @@
 # Renderer class
 #
 # A glue layer between SimObject and UI
-# 
+#
 # I realise this is a very simple renderer with very few functions,
 # but I intend this to be just an example
 #
@@ -10,65 +10,65 @@
 class Renderer:
     def __init__(self,size):
         self.size = size
-   
-    def resetPose(self):
+
+    def reset_pose(self):
         """Resets the renderer to world coordinates
         """
         pass
-    
-    def setPose(self,pose):
+
+    def set_pose(self,pose):
         """Set a coordinate transformation based on the pose
         """
         pass
-    
-    def addPose(self,pose):
+
+    def add_pose(self,pose):
         """Add a pose transformation to the current transformation
         """
         pass
 
-    def setPen(self,color):
+    def set_pen(self,color):
         """Sets the line color.
 
         Color is interpreted as 0xRRGGBB.
         """
-        pass        
+        pass
 
-    def setBrush(self,color):
+    def set_brush(self,color):
         """Sets the fill color.
 
         Color is interpreted as 0xRRGGBB.
         """
         pass
-    
-    def clearScreen(self):
+
+    def clear_screen(self):
         """Clears the canvas using the current brush
         """
         self.setBrush(0xFFFFFF)
         self.fillRectangle(0,0,self.size[0],self.size[1])
 
-    def drawPolygon(self,points):
+    def draw_polygon(self,points):
         """Draws a polygon.
-        
+
         Expects a list of points as a list of tuples or as a numpy array.
         """
         pass
-        
-    def drawEllipse(self, x, y, w, h):
+
+    def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.
         """
         pass
 
-    def drawRectangle(self, x, y, w, h):
+    def draw_rectangle(self, x, y, w, h):
         """Draws a rectangle.
         """
         pass
-    
-    def fillRectangle(self, x, y, w, h):    
+
+    def fill_rectangle(self, x, y, w, h):
         """Draws a rectangle with current pen and fills it with current brush
         """
         pass
-    
-    def drawText(self, text, x, y, bgcolor = 0):
+
+    def draw_text(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position.
         """
         pass

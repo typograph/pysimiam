@@ -101,27 +101,27 @@ class Khepera3(Robot):
         self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
 
     def draw(self,r):
-        r.setPose(self.getPose())
-        r.setBrush(0xCCCCCC)
-        r.drawPolygon(self._p2)
-        r.setBrush(0x000000)
-        r.drawPolygon(self._p1)
+        r.set_pose(self.get_pose())
+        r.set_brush(0xCCCCCC)
+        r.draw_polygon(self._p2)
+        r.set_brush(0x000000)
+        r.draw_polygon(self._p1)
 
-    def getEnvelope(self):
+    def get_envelope(self):
         return self._p2
 
-    def poseAfter(self,dt):
+    def pose_after(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.getUniformSpeeds());
-        self.integrator.set_initial_value(self.getPose().get_list() +
-                                          list(self.getUniformSpeeds()),0)
+        self.integrator.set_initial_value(self.get_pose().get_list() +
+                                          list(self.get_uniform_speeds()),0)
         #self.integrator.set_f_params().set_jac_params()
         self.integrator.integrate(dt)
         print(self.integrator.y)
         return Pose(self.integrator.y[:3]);
 
     def __coerce_wheel_speeds(self):
-        (v,w) = self.getUniformSpeeds();
+        (v,w) = self.get_uniform_speeds();
         #v = max(min(v,0.314),-0.3148);
         #w = max(min(w,2.276),-2.2763);
         self.ang_velocity = self.uni2diff((v,w))
@@ -140,13 +140,13 @@ class Khepera3(Robot):
         # End Assignment
         return (vl,vr)
 
-    def getDifferentialSpeeds(self):
+    def get_differential_speeds(self):
         return self.ang_velocity
 
-    def getUniformSpeeds(self):
-        return self.diff2uni(self.getDifferentialSpeeds())
+    def get_uniform_speeds(self):
+        return self.diff2uni(self.get_differential_speeds())
 
-    def setWheelSpeeds(self,*args):
+    def set_wheel_speeds(self,*args):
         if len(args) == 2:
             self.ang_velocity = args
         else:

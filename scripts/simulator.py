@@ -47,7 +47,7 @@ class Simulator(threading.Thread):
 
         #test code
         self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
-        self._robot.setWheelSpeeds(16,18)
+        self._robot.set_wheel_speeds(16,18)
         self._obstacles = [
             simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
             simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
@@ -64,7 +64,7 @@ class Simulator(threading.Thread):
 
             sleep(time_constant) # 100 milliseconds
 
-            self._robot.moveTo(self._robot.poseAfter(time_constant))
+            self._robot.move_to(self._robot.pose_after(time_constant))
 
             # Post Redraw Event to UI
             if(self._targetwin):
@@ -77,7 +77,7 @@ class Simulator(threading.Thread):
 
     def draw(self):
         #Test code
-        self._renderer.clearScreen()
+        self._renderer.clear_screen()
         self._robot.draw(self._renderer)
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
