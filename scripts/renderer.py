@@ -9,10 +9,14 @@
 
 class Renderer:
     def __init__(self,size):
+        """Create a Renderer on canvas of size _size_.
+        
+        The default pen and brush are transparent
+        """
         self.size = size
    
     def resetPose(self):
-        """Resets the renderer to world coordinates
+        """Reset the renderer to world coordinates
         """
         pass
     
@@ -31,6 +35,7 @@ class Renderer:
         """Sets the line color.
 
         Color is interpreted as 0xRRGGBB.
+        Use None to unset a pen
         """
         pass        
 
@@ -38,6 +43,7 @@ class Renderer:
         """Sets the fill color.
 
         Color is interpreted as 0xRRGGBB.
+        Use None to unset a brush
         """
         pass
     

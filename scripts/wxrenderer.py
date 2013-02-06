@@ -17,6 +17,8 @@ class wxGCRenderer(Renderer):
         self.gc.Translate(0,-self.size[1])
         self._pens = {}
         self._brushes = {}
+        self.setPen(None)
+        self.setBrush(None)
         self.gc.PushState()
 
     def clearScreen(self):
@@ -37,6 +39,8 @@ class wxGCRenderer(Renderer):
 
     @staticmethod
     def __wxcolor(color):
+        if color is None:
+            return None
         r = (color >> 16) & 0xFF
         g = (color >> 8) & 0xFF
         b = (color) & 0xFF
@@ -66,7 +70,9 @@ class wxGCRenderer(Renderer):
         
         Expects a list of points as a list of tuples or as a numpy array. Ignores Z if available
         """
-        self.gc.DrawLines([point[:2] for point in points])
+        xy_pts = [point[:2] for point in points]
+        xy_pts.append(xy_pts[0])
+        self.gc.DrawLines(xy_pts)
        
     def drawEllipse(self, x, y, w, h):
         """Draws an ellipse.

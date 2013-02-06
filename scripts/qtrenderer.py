@@ -5,7 +5,7 @@
 # 
 from renderer import Renderer
 from PyQt4.QtGui import QPainter,QColor,QPolygonF
-from PyQt4.QtCore import QPointF
+from PyQt4.QtCore import QPointF,Qt
 
 class QtRenderer(Renderer):
     def __init__(self,pd):
@@ -15,9 +15,10 @@ class QtRenderer(Renderer):
         self._paintdevice = pd
         self._painter = QPainter(pd)
         # invert the y axis
-        #self._painter.translate(0,-pd.height()/2)
         self._painter.scale(1,-1)
         self._painter.translate(0,-pd.height())
+        
+        self.setPen(None)
         # push the default state
         self._painter.save()
 
@@ -49,14 +50,20 @@ class QtRenderer(Renderer):
 
         Color is interpreted as 0xRRGGBB.
         """
-        self._painter.setPen(QColor(color))
+        if color is None:
+            self._painter.setPen(Qt.NoPen)
+        else:
+            self._painter.setPen(QColor(color))
 
     def setBrush(self,color):
         """Sets the fill color.
 
         Color is interpreted as 0xRRGGBB.
         """
-        self._painter.setBrush(QColor(color))
+        if color is None:
+            self._painter.setBrush(Qt.NoBrush)
+        else:
+            self._painter.setBrush(QColor(color))
     
     def drawPolygon(self,points):
         """Draws a polygon.
