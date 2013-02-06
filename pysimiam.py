@@ -38,11 +38,6 @@ class PySimiamFrame(wx.Frame):
 
         #Objects
 
-        # ImageList
-        self.bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
-        dc = wx.MemoryDC(self.bitmap)
-        self.renderer = wxGCRenderer(dc)
-
         #Interface buttons
         # Reset
         path = os.path.abspath("./res/image/arrow-left-double.png")
@@ -67,7 +62,7 @@ class PySimiamFrame(wx.Frame):
         self.viewer = SimulatorViewer(self)
 
         # create the simulator thread
-        self.simulatorThread = sim.Simulator(self, self.renderer, wx.ID_ANY)
+        self.simulatorThread = sim.Simulator(self.viewer.renderer, self.viewer.updateBitmap)
         self.simulatorThread.start()
 
 
@@ -118,14 +113,10 @@ class PySimiamFrame(wx.Frame):
     def __set_properties(self):
         self.Bind(wx.EVT_BUTTON, self.onButton, id=wx.ID_ANY) 
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        self.Bind(sim.EVT_VIEWER_EVENT, self.updateViewer)
 
     # Methods
 
     # Event Handlers
-    def updateViewer(self, event):
-        self.viewer.paintNow(self.bitmap)
-
     def onButton(self, event):
         eventId = event.GetId()
 
@@ -148,7 +139,7 @@ class PySimiamFrame(wx.Frame):
 
     def onClose(self, event):
         # Stop simulator thread
-        self.simulatorThread.Stop()
+        self.simulatorThread.stop()
         self.Destroy()
 
         #End onClose
@@ -161,14 +152,17 @@ class SimulatorViewer(wx.ScrolledWindow):
         self.__set_properties()
         self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
+        self.__blt_bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+        dc = wx.MemoryDC(self.__blt_bitmap)
+        self.renderer = wxGCRenderer(dc)
 
     def __set_properties(self):
         self.SetScrollbars(1,1,1,1)        
         self.Bind(wx.EVT_PAINT, self.onPaint)
 
     # Methods
-    def paintNow(self, bmp):
-        self.__bitmap_dc.DrawBitmap(bmp, 0, 0, False) # no mask
+    def updateBitmap(self):
+        self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
         self.onPaint(None)
 
     def onPaint(self, event):
