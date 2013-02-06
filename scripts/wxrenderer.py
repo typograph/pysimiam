@@ -12,6 +12,7 @@ class wxGCRenderer(Renderer):
     def __init__(self,DC):
         Renderer.__init__(self,DC.GetSizeTuple())
         self.dc = DC
+        self.dc.SetAxisOrientation(True,True)
         self.gc = wx.GraphicsContext.Create(self.dc)
         self._pens = {}
         self._brushes = {}
@@ -95,3 +96,7 @@ class wxGCRenderer(Renderer):
             self._brushes[bgcolor] = self.gc.CreateBrush(wx.Brush(self.__wxcolor(bgcolor)))
         self.gc.DrawText(text,x,y,self._brushes[bgcolor])
     
+    def drawLine(self, x1, y1, x2, y2):
+        """Draws a line using the current pen from (x1,y1) to (x2,y2)
+        """
+        self.gc.DrawLines([(x1,y1),(x2,y2)])
