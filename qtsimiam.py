@@ -84,6 +84,8 @@ class SimulatorViewer(QtGui.QFrame):
         self.__blt_bitmap = QtGui.QPixmap(BITMAP_WIDTH,BITMAP_HEIGHT)
         self.renderer = QtRenderer(self.__blt_bitmap)
         self.lock = threading.Lock()
+        # code for async calling of update
+        self.update_ = self.metaObject().method(self.metaObject().indexOfMethod('update()'))
 
     def paintEvent(self, event):
         super(SimulatorViewer, self).paintEvent(event)
@@ -98,7 +100,7 @@ class SimulatorViewer(QtGui.QFrame):
         painter.drawPixmap(0,0,self.__blt_bitmap)
         #self.__bitmap = QtGui.QPixmap(self.__blt_bitmap)
         self.lock.release()
-        self.update()
+        self.update_.invoke(self,QtCore.Qt.QueuedConnection)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
