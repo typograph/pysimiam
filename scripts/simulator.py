@@ -43,11 +43,15 @@ class Simulator(threading.Thread):
         print 'starting simulator thread'
 
         time_constant = 0.1  # 100 milliseconds
+        
+        self.draw() # Draw at least once (Move to open afterwards)
+        
         while not self.__stop:
-            if self.state == RUN:
-                pass    
-            
+           
             sleep(time_constant)
+
+            if self.state != RUN:
+                continue
 
             self._robot.move_to(self._robot.pose_after(time_constant))
             
