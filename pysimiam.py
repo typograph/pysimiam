@@ -60,9 +60,9 @@ class PySimiamFrame(wx.Frame):
 
 
         # Simulation Panel
-        viewer = SimulatorViewer(self)
+        self.viewer = SimulatorViewer(self)
         # create the simulator thread
-        self.simulatorThread = sim.Simulator(viewer.renderer, viewer.updateBitmap)
+        self.simulatorThread = sim.Simulator(self.viewer.renderer, self.viewer.updateBitmap)
         self.simulatorThread.start()
 
 
