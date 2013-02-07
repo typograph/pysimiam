@@ -9,9 +9,13 @@ class Khepera3_IRSensor(IRSensor):
     def __init__(self,pose,robot):
         IRSensor.__init__(self,pose,robot)
         # values copied from SimIAm
-        self.rmin = 0.02
-        self.rmax = 0.2
+        self.rmin = 10 # 0.02
+        self.rmax = 100 # 0.2
         self.phi  = np.radians(20)
+        self.pts = [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
+                    (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
+                    (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2)),
+                    (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
     
     @staticmethod
     def __distance_to_value(dst):
@@ -22,6 +26,14 @@ class Khepera3_IRSensor(IRSensor):
    
     def reading(self):
         pass
+    
+    def draw(self, r):
+        #r.set_pose(self.get_pose())
+        r.add_pose(self.get_internal_pose())
+        r.set_brush(0xFF5566)
+        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmax/2))
+        r.draw_polygon(self.pts)
+
 
 def motion_f(t,y,v,w):
     """The Drive problem
@@ -69,14 +81,14 @@ class Khepera3(Robot):
         self.ir_sensors = []
               
         ir_sensor_poses = [
-                           Pose( 0.019,  0.064, np.radians(75)),
-                           Pose( 0.050,  0.050, np.radians(42)),
-                           Pose( 0.070,  0.017, np.radians(13)),
-                           Pose( 0.070, -0.017, np.radians(-13)),
-                           Pose( 0.050, -0.050, np.radians(-42)),
-                           Pose( 0.019, -0.064, np.radians(-75)),
-                           Pose(-0.038, -0.048, np.radians(-128)),
-                           Pose(-0.048,  0.000, np.radians(180))
+                           Pose( 1.9,  6.4, np.radians(75)),
+                           Pose( 5.0,  5.0, np.radians(42)),
+                           Pose( 7.0,  1.7, np.radians(13)),
+                           Pose( 7.0, -1.7, np.radians(-13)),
+                           Pose( 5.0, -5.0, np.radians(-42)),
+                           Pose( 1.9, -6.4, np.radians(-75)),
+                           Pose(-3.8, -4.8, np.radians(-128)),
+                           Pose(-4.8,  0.0, np.radians(180))
                            ]                          
                            
         for pose in ir_sensor_poses:
@@ -98,26 +110,26 @@ class Khepera3(Robot):
         self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
 
     def draw(self,r):
-        r.setPose(self.getPose())
-        r.setBrush(0xCCCCCC)
-        r.drawPolygon(self._p2)
-        r.setBrush(0x000000)
-        r.drawPolygon(self._p1)
+        r.set_pose(self.get_pose())
+        r.set_brush(0xCCCCCC)
+        r.draw_polygon(self._p2)
+        r.set_brush(0x000000)
+        r.draw_polygon(self._p1)
         
-    def getEnvelope(self):
+    def get_envelope(self):
         return self._p2
         
-    def poseAfter(self,dt):
+    def pose_after(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
-#        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.getUniformSpeeds());
-        self.integrator.set_initial_value(self.getPose().getPoseList(),0)
-        (v,w) = self.getUniformSpeeds()
+#        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_uniform_speeds());
+        self.integrator.set_initial_value(self.get_pose().get_pose_list(),0)
+        (v,w) = self.get_uniform_speeds()
         self.integrator.set_f_params(v,w).set_jac_params(v,w)
         self.integrator.integrate(dt)
         return Pose(self.integrator.y);
     
     def __coerce_wheel_speeds(self):
-        (v,w) = self.getUniformSpeeds();
+        (v,w) = self.get_uniform_speeds();
         #v = max(min(v,0.314),-0.3148);
         #w = max(min(w,2.276),-2.2763);
         self.ang_velocity = self.uni2diff((v,w))
@@ -136,13 +148,13 @@ class Khepera3(Robot):
         # End Assignment
         return (vl,vr)
     
-    def getDifferentialSpeeds(self):
+    def get_differential_speeds(self):
         return self.ang_velocity
     
-    def getUniformSpeeds(self):
-        return self.diff2uni(self.getDifferentialSpeeds())
+    def get_uniform_speeds(self):
+        return self.diff2uni(self.get_differential_speeds())
     
-    def setWheelSpeeds(self,*args):
+    def set_wheel_speeds(self,*args):
         if len(args) == 2:
             self.ang_velocity = args
         else:

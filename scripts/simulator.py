@@ -21,17 +21,18 @@ class Simulator(threading.Thread):
         and a threading.Event (viewer.event) to signal the end of painting
         """
         super(Simulator, self).__init__()
-        
+
         #Attributes
         self.__stop = False
         self.state = PAUSE
-        self.renderer = renderer
+        self._renderer = renderer
         self.updateView = update_callback
+        #self._renderer.set_zoom(2)
         
         #test code
-        self.robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
-        self.robot.setWheelSpeeds(18,16)
-        self.obstacles = [
+        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
+        self._robot.set_wheel_speeds(18,16)
+        self._obstacles = [
             simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
             simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
             simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
@@ -40,6 +41,7 @@ class Simulator(threading.Thread):
 
     def run(self):
         print 'starting simulator thread'
+
         time_constant = 0.1  # 100 milliseconds
         while not self.__stop:
             if self.state == RUN:
@@ -47,7 +49,7 @@ class Simulator(threading.Thread):
             
             sleep(time_constant)
 
-            self.robot.moveTo(self.robot.poseAfter(time_constant))
+            self._robot.move_to(self._robot.pose_after(time_constant))
             
             # Draw to buffer-bitmap
             self.draw()
@@ -56,10 +58,13 @@ class Simulator(threading.Thread):
     def draw(self):
        
         #Test code
-        self.renderer.clearScreen()
-        self.robot.draw(self.renderer)
-        for obstacle in self.obstacles:
-            obstacle.draw(self.renderer)
+        #self._renderer.set_screen_center_pose(self._robot.get_pose())
+        self._renderer.clear_screen()
+        self._robot.draw(self._renderer)
+        for s in self._robot.ir_sensors:
+            s.draw(self._renderer)
+        for obstacle in self._obstacles:
+            obstacle.draw(self._renderer)
         #end test code
         
         self.updateView()
@@ -69,14 +74,14 @@ class Simulator(threading.Thread):
         print 'stopping simulator thread'
         self.__stop = True
 
-    def startSimulation(self):
+    def start_simulation(self):
         self.state = RUN
 
-    def pauseSimulation(self):
+    def pause_simulation(self):
         self.state = PAUSE
 
-    def resetSimulation(self):
+    def reset_simulation(self):
         pass
 
-        
+
 #end class Simulator
