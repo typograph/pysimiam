@@ -1,7 +1,7 @@
 import unittest
 from xmlparser import XMLParser
 
-class Test(unittest.TestCase):
+class TestXMLParser(unittest.TestCase):
 
     def test_parse_legal(self):
         xml_parser = XMLParser("testfiles/settings.xml")
@@ -10,7 +10,7 @@ class Test(unittest.TestCase):
         assert objects[0] == \
             ('robot', 
              'khepera3.K3Supervisor', 
-             (0.0, 0.0, 0.0))
+             (1.0, 1.0, 1.5708))
         assert objects[1] == \
             ('obstacle', 
              (1.0, 1.2, 0.0), 

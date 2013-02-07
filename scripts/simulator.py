@@ -5,6 +5,7 @@ import pysimiam
 import threading
 import wx
 from time import sleep
+from xmlparser import XMLParser
 
 import khepera3
 import pose
@@ -17,14 +18,14 @@ mEVT_VIEWER_EVENT = wx.NewEventType()
 EVT_VIEWER_EVENT = wx.PyEventBinder(mEVT_VIEWER_EVENT, 1)
 # Custom Event class for simulator notifications
 class ViewerEvent(wx.PyCommandEvent):
-    def __init__(self, index=0, id=0):
+    def __init__(self, index=0, id_=0):
         """Constructor
         @param index - int describing index of image
         in buffer to draw to screen
         """
         evttype = mEVT_VIEWER_EVENT
-        #wx.PyEvent.__init__(self, id, evttype)
-        wx.PyCommandEvent.__init__(self, evttype, id)
+        #wx.PyEvent.__init__(self, id_, evttype)
+        wx.PyCommandEvent.__init__(self, evttype, id_)
         self.index = None 
 
     def setIndex(self, ind):
@@ -37,11 +38,11 @@ class ViewerEvent(wx.PyCommandEvent):
 
 class Simulator(threading.Thread):
 
-    def __init__(self, targetwin, renderer, id):
+    def __init__(self, targetwin, renderer, id_):
         super(Simulator, self).__init__()
         
         #Attributes
-        self.id = id
+        self.id = id_
         self.targetwin = targetwin
         self.stop = False
         self.state = PAUSE
@@ -57,6 +58,35 @@ class Simulator(threading.Thread):
             ]
         #end test code
 
+    def read_config(self, config):
+        ''' Read in the objects from the XML configuration file '''
+
+        print 'reading initial configuration'
+        parser = XMLParser(config)
+        world = parser.parse()
+        self.robot = None
+        self.obstacles = []
+        for thing in world:
+            thing_type = thing[0]
+            if thing_type == 'robot':
+                robot_type, robot_pose  = thing[1], thing[2] 
+                if robot_type == 'khepera3.K3Supervisor':
+                    self.robot = khepera3.Khepera3(pose.Pose(robot_pose))
+                else:
+                    raise Exception('[Simulator.__init__] Unknown robot type!')
+            elif thing_type == 'obstacle':
+                obstacle_pose, obstacle_coords = thing[1], thing[2]
+                self.obstacles.append(
+                    simobject.Polygon(pose.Pose(obstacle_pose),
+                                      obstacle_coords,
+                                      0xFF0000))
+            else:
+                raise Exception('[Simulator.__init__] Unknown object: ' 
+                                + str(thing_type))
+        
+        if self.robot == None:
+            raise Exception('[Simulator.__init__] No robot specified!')
+    
     def run(self):
         print 'starting simulator thread'
         time_constant = 0.1
