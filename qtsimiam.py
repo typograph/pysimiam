@@ -67,6 +67,7 @@ class SimulationWidget(QtGui.QMainWindow):
 
     def closeEvent(self,event):
         self.simulatorThread.stop()
+        self.simulatorThread.join()
         super(SimulationWidget,self).closeEvent(event)
 
     # Slots

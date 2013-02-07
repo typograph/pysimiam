@@ -140,6 +140,7 @@ class PySimiamFrame(wx.Frame):
     def onClose(self, event):
         # Stop simulator thread
         self.simulatorThread.stop()
+        self.simulatorThread.join()
         self.Destroy()
 
         #End onClose
