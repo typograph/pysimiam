@@ -88,25 +88,34 @@ class QtRenderer(Renderer):
         self._painter.translate(pose.x,pose.y)
         self._painter.rotate(degrees(pose.theta))
 
-    def setPen(self,color):
-        """Sets the line color.
+    @staticmethod
+    def __qcolor(color):
+        """Returns qcolor for a given ARGB color
+        """
+        c = QColor(color)
+        if color > 0xFFFFFF:
+            c.setAlpha((color >> 24) & 0xFF)
+        return c
 
-        Color is interpreted as 0xRRGGBB.
+    def set_pen(self,color):
+        """Sets the line color.
+        
+        Color is interpreted as 0xAARRGGBB.
         """
         if color is None:
             self._painter.setPen(Qt.NoPen)
         else:
-            self._painter.setPen(QColor(color))
+            self._painter.setPen(self.__qcolor(color))
 
     def set_brush(self,color):
         """Sets the fill color.
-
-        Color is interpreted as 0xRRGGBB.
+        
+        Color is interpreted as 0xAARRGGBB.
         """
         if color is None:
             self._painter.setBrush(Qt.NoBrush)
         else:
-            self._painter.setBrush(Qcolor(color))
+            self._painter.setBrush(self.__qcolor(color))
         
     def draw_polygon(self,points):
         """Draws a polygon.

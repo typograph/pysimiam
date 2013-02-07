@@ -93,7 +93,11 @@ class wxGCRenderer(Renderer):
         r = (color >> 16) & 0xFF
         g = (color >> 8) & 0xFF
         b = (color) & 0xFF
-        return wx.Colour(r,g,b,255)
+        if color > 0xFFFFFF: # Opaque component
+            o = (color >> 24) & 0xFF
+        else:
+            o = 0xFF
+        return wx.Colour(r,g,b,o)
 
     def set_pen(self, color):
         """Sets the line color.

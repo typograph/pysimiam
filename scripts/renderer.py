@@ -60,7 +60,8 @@ class Renderer:
     def set_pen(self, color):
         """Sets the line color.
 
-        Color is interpreted as 0xRRGGBB.
+        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
+        is considered fully opaque.
         Use None to unset a pen
         """
         pass        
@@ -68,7 +69,8 @@ class Renderer:
     def set_brush(self, color):
         """Sets the fill color.
 
-        Color is interpreted as 0xRRGGBB.
+        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
+        is considered fully opaque.
         Use None to unset a brush
         """
         pass
