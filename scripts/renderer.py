@@ -19,6 +19,8 @@ class Renderer:
     def set_pose(self,pose):
         """Set a coordinate transformation based on the pose
         """
+        self.reset_pose()
+        self.add_pose(pose)
         pass
 
     def add_pose(self,pose):
@@ -43,16 +45,12 @@ class Renderer:
     def clear_screen(self):
         """Clears the canvas using the current brush
         """
-        self.setBrush(0xFFFFFF)
-        self.fillRectangle(0,0,self.size[0],self.size[1])
-
-    def draw_polygon(self,points):
-        """Draws a polygon.
-
-        Expects a list of points as a list of tuples or as a numpy array.
-        """
         pass
 
+    def draw_line(self, x1, y1, x2, y2):
+        """Draw a line using the current pen from (x1,y1) to (x2, y2)
+        """
+            pass
     def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.
         """
@@ -72,8 +70,3 @@ class Renderer:
         """Draws a text string at the defined position.
         """
         pass
-
-    def draw_line(self, x1, y1, x2, y2):
-        """Draw a line using the current pen from (x1,y1) to (x2, y2)
-        """
-            pass
