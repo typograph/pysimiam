@@ -72,3 +72,8 @@ class Renderer:
         """Draws a text string at the defined position.
         """
         pass
+
+    def draw_line(self, x1, y1, x2, y2):
+        """Draw a line using the current pen from (x1,y1) to (x2, y2)
+        """
+            pass
