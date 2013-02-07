@@ -13,7 +13,7 @@ class Khepera3_IRSensor(IRSensor):
         self.rmax = 0.2
         self.phi  = np.radians(20)
 
-    @classmethod
+    @staticmethod
     def __distance_to_value(dst):
         if dst < self.rmin :
             return 3960;
@@ -29,17 +29,13 @@ def motion_f(t,y,*f_args):
     theta,v,w = y[2:]
     return [v*cos(theta),-v*sin(theta),w,0,0]
 
-def motion_jac(t,y,*jac_args):
+def motion_jac(t,y,v,w):
     """The Jacobian of the drive problem
     """
-    (x,y,theta,v,w) = y
-
-    j = np.zeros((5,5))
-    j[1][3] = -v*sin(theta) # d(v*cos(theta))/dtheta
-    j[2][3] = -v*cos(theta) # d(v*cos(theta))/dtheta
-    j[1][4] = cos(theta) # d(v*cos(theta))/dv
-    j[2][4] = -sin(theta) # d(-v*sin(theta))/dv
-    j[3][5] = 1 # dw/dw
+    theta = y[2]
+    j = np.zeros((3,3))
+    j[0][2] = -v*sin(theta) # d(v*cos(theta))/dtheta
+    j[1][2] = v*cos(theta) # d(v*sin(theta))/dtheta
     return j
 
 class Khepera3(Robot):
@@ -113,12 +109,11 @@ class Khepera3(Robot):
     def pose_after(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.getUniformSpeeds());
-        self.integrator.set_initial_value(self.get_pose().get_list() +
-                                          list(self.get_uniform_speeds()),0)
-        #self.integrator.set_f_params().set_jac_params()
+        self.integrator.set_initial_value(self.get_pose().get_list(),0)
+        (v,w) = self.get_uniform_speeds()
+        self.integrator.set_f_params(v,w).set_jac_params(v,w)
         self.integrator.integrate(dt)
-        print(self.integrator.y)
-        return Pose(self.integrator.y[:3]);
+        return Pose(self.integrator.y);
 
     def __coerce_wheel_speeds(self):
         (v,w) = self.get_uniform_speeds();
