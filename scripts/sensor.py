@@ -7,6 +7,8 @@
 
 import random
 from simobject import SimObject
+from pose import Pose
+from math import sin, cos
 
 class Sensor:
     @classmethod
@@ -21,9 +23,14 @@ class InternalSensor(SimObject):
     def __init__(self,pose,robot):
         SimObject.__init__(self,pose)
         self.__robot = robot
+
+    def get_internal_pose(self):
+        return SimObject.get_pose(self)
        
     def get_pose(self):
-        return super().get_pose() + self.__robot.get_pose()
+        x, y, t = SimObject.get_pose(self)
+        rx, ry, rt = self.__robot.get_pose()
+        return Pose(rx+x*cos(rt)-y*sin(rt),ry+x*sin(rt)+y*cos(rt),t+rt)
     
 class ProximitySensor(InternalSensor):
     def __init__(self,pose,robot):

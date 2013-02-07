@@ -5,8 +5,37 @@
 # 
 
 class Renderer:
-    def __init__(self, size):
+    def __init__(self, size, canvas):
         self.size = size
+        self.set_canvas(canvas)
+   
+    def set_canvas(self, canvas):
+        """Tell the renderer to draw on canvas
+        
+        The type of canvas is implementation-dependent
+        """
+        pass
+   
+    def set_zoom(self, zoom_level):
+        """Zoom up the drawing by a factor of zoom_level
+        
+        This method will clear the canvas
+        """
+        pass
+    
+    def set_screen_pose(self, pose):
+        """Set the default offset/rotation of the drawing (the pose of bottom-left corner)
+        
+        This method will clear the canvas
+        """
+        pass
+
+    def set_screen_center_pose(self, pose):
+        """Set the default offset/rotation of the drawing (the pose of the center)
+
+        This method will clear the canvas
+        """
+        pass
    
     def reset_pose(self):
         """Resets the renderer to world coordinates
