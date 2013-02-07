@@ -4,7 +4,7 @@ from xmlparser import XMLParser
 class TestXMLParser(unittest.TestCase):
 
     def test_parse_legal(self):
-        xml_parser = XMLParser("testfiles/settings.xml")
+        xml_parser = XMLParser("../testfiles/settings.xml")
         objects = xml_parser.parse()
 
         assert objects[0] == \
@@ -52,35 +52,35 @@ class TestXMLParser(unittest.TestCase):
         self.assertRaises(Exception, XMLParser, "pysimiam_rules")
         
     def test_parse_no_robot_supervisor(self):
-        xml_parser = XMLParser("testfiles/no_robot_supervisor.xml")
+        xml_parser = XMLParser("../testfiles/no_robot_supervisor.xml")
         self.assertRaises(Exception, xml_parser.parse)
     
     def test_parse_no_robot_pose(self):
-        xml_parser = XMLParser("testfiles/no_robot_pose.xml")
+        xml_parser = XMLParser("../testfiles/no_robot_pose.xml")
         self.assertRaises(Exception, xml_parser.parse)
 
     def test_parse_bad_robot_coordinate(self):
-        xml_parser = XMLParser("testfiles/bad_robot_coord.xml")
+        xml_parser = XMLParser("../testfiles/bad_robot_coord.xml")
         self.assertRaises(Exception, xml_parser.parse)
                 
     def test_parse_no_obstacle_pose(self):
-        xml_parser = XMLParser("testfiles/no_obstacle_pose.xml")
+        xml_parser = XMLParser("../testfiles/no_obstacle_pose.xml")
         self.assertRaises(Exception, xml_parser.parse)
         
     def test_parse_no_obstacle_geometry(self):
-        xml_parser = XMLParser("testfiles/no_obstacle_geometry.xml")
+        xml_parser = XMLParser("../testfiles/no_obstacle_geometry.xml")
         self.assertRaises(Exception, xml_parser.parse)
         
     def test_parse_bad_obstacle_coordinate(self):
-        xml_parser = XMLParser("testfiles/bad_obstacle_coord.xml")
+        xml_parser = XMLParser("../testfiles/bad_obstacle_coord.xml")
         self.assertRaises(Exception, xml_parser.parse)    
         
     def test_parse_missing_obstacle_coordinate(self):
-        xml_parser = XMLParser("testfiles/missing_obstacle_coord.xml")
+        xml_parser = XMLParser("../testfiles/missing_obstacle_coord.xml")
         self.assertRaises(Exception, xml_parser.parse)
         
     def test_parse_too_few_obstacle_points(self):
-        xml_parser = XMLParser("testfiles/too_few_points.xml")
+        xml_parser = XMLParser("../testfiles/too_few_points.xml")
         self.assertRaises(Exception, xml_parser.parse)
     
 if __name__ == "__main__":

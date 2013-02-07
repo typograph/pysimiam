@@ -5,7 +5,7 @@ class TestSimulator(unittest.TestCase):
 
     def test_read_config_default_xml_settings(self):
         sim = Simulator(None, None, 0)
-        sim.read_config('testfiles/settings.xml')
+        sim.read_config('../testfiles/settings.xml')
         
         assert sim.robot.getPose().getPoseList() ==  [1.0, 1.0, 1.5708]
         # TODO --- have Robot return type via getter, check here
