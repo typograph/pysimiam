@@ -21,28 +21,34 @@ class wxGCRenderer(Renderer):
         # Reset cached brushes & pens
         self._pens = {}
         self._brushes = {}
+        
         # Set dc
         self._dc = DC
         self._gc = wx.GraphicsContext.Create(self._dc)
+        
         self._gc.Scale(1,-1)
         self._gc.Translate(0, -self.size[1])
+        
+        self.set_pen(None)
+        self.set_brush(None)
+        
         self._gc.PushState() # The first pushed state is the default blank
         self._gc.PushState() # The second pushed state is the scaled one (zoom=1) with default pose
         self.__update_default_state()
 
     def set_zoom(self, zoom_level):
-        self._zoom = zoom_level
+        self._zoom = float(zoom_level)
         self.__update_default_state()
         
     def __update_default_state(self):
         self._gc.PopState() # Reset state
         self._gc.PopState() # Set zoom to 1     
         self._gc.PushState() # Re-save the zoom-1
-        self._gc.Rotate(-self._defpose.theta)
-        self._gc.Translate(-self._defpose.x, -self._defpose.y)
-        self._gc.Scale(self._zoom,self._zoom)
         if self._zoom_c:
             self._gc.Translate(self.size[0]/2,self.size[1]/2)
+        self._gc.Scale(self._zoom,self._zoom)
+        self._gc.Rotate(-self._defpose.theta)
+        self._gc.Translate(-self._defpose.x, -self._defpose.y)
         self._gc.PushState() # Save the zoomed state
         self.clear_screen()
 
@@ -82,10 +88,16 @@ class wxGCRenderer(Renderer):
 
     @staticmethod
     def __wxcolor(color):
+        if color is None:
+            return None
         r = (color >> 16) & 0xFF
         g = (color >> 8) & 0xFF
         b = (color) & 0xFF
-        return wx.Colour(r,g,b,255)
+        if color > 0xFFFFFF: # Opaque component
+            o = (color >> 24) & 0xFF
+        else:
+            o = 0xFF
+        return wx.Colour(r,g,b,o)
 
     def set_pen(self, color):
         """Sets the line color.
@@ -111,7 +123,9 @@ class wxGCRenderer(Renderer):
         
         Expects a list of points as a list of tuples or as a numpy array. Ignores Z if available
         """
-        self._gc.DrawLines([point[:2] for point in points])
+        xy_pts = [point[:2] for point in points]
+        xy_pts.append(xy_pts[0])
+        self._gc.DrawLines(xy_pts)
        
     def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.

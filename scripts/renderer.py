@@ -6,6 +6,10 @@
 
 class Renderer:
     def __init__(self, size, canvas):
+        """Create a Renderer on canvas of size _size_.
+        
+        The default pen and brush are transparent
+        """
         self.size = size
         self.set_canvas(canvas)
    
@@ -56,14 +60,18 @@ class Renderer:
     def set_pen(self, color):
         """Sets the line color.
 
-        Color is interpreted as 0xRRGGBB.
+        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
+        is considered fully opaque.
+        Use None to unset a pen
         """
         pass        
 
     def set_brush(self, color):
         """Sets the fill color.
 
-        Color is interpreted as 0xRRGGBB.
+        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
+        is considered fully opaque.
+        Use None to unset a brush
         """
         pass
     
