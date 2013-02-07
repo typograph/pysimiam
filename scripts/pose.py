@@ -12,17 +12,17 @@ class Pose(object):
         #Units in mm
         #convert to float just in case someone types an integer
         if len(args) == 0:
-            self.setPose(0,0,0)
+            self.set_pose(0,0,0)
         elif len(args) == 1:
-            self.setPose(*args[0])
+            self.set_pose(*args[0])
         elif len(args) == 2:
-            self.setPose(args[0],args[1],0)
+            self.set_pose(args[0],args[1],0)
         elif len(args) == 3:
-            self.setPose(*args)
+            self.set_pose(*args)
         else:
             raise ValueError("Invalid way to initialize a pose")
 
-    def setPose(self, *args):
+    def set_pose(self, *args):
         """pose setter using another pose
         @param
         args[0] - Pose object 
@@ -40,10 +40,10 @@ class Pose(object):
             self.y = float(args[1])
             self.theta = float(args[2])
 
-    def getPoseList(self):
+    def get_pose_list(self):
         return [self.x, self.y, self.theta]
 
-    def getTransformationMatrix(self):
+    def get_transformation_matrix(self):
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
             [math.cos(self.theta), -math.sin(self.theta), self.x],\

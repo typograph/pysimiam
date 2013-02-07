@@ -4,12 +4,12 @@ class SimObject:
     def __init__(self,pose):
         self.__pose = pose
     
-    def getPose(self):
+    def get_pose(self):
         """Returns the pose of the object in world coordinates
         """
         return self.__pose
 
-    def setPose(self,pose):
+    def set_pose(self,pose):
         """Returns the pose of the object in world coordinates
         """
         self.__pose = pose
@@ -19,7 +19,7 @@ class SimObject:
         """
         pass
     
-    def getEnvelope(self):
+    def get_envelope(self):
         """The envelope of the object in object's local coordinates
         """
         ## At the moment the proposed format is a list of points
@@ -31,12 +31,12 @@ class Polygon(SimObject):
         self.__shape = shape
         self.__color = color
         
-    def getEnvelope(self):
+    def get_envelope(self):
         return self.__shape
     
     def draw(self,r):
-        r.setPose(self.getPose())
-        r.setBrush(self.__color)
-        r.drawPolygon(self.getEnvelope())
+        r.set_pose(self.get_pose())
+        r.set_brush(self.__color)
+        r.draw_polygon(self.get_envelope())
         
     

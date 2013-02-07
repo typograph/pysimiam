@@ -9,7 +9,7 @@ import wx
 from renderer import Renderer
 
 class wxGCRenderer(Renderer):
-    def __init__(self,DC):
+    def __init__(self, DC):
         Renderer.__init__(self,DC.GetSizeTuple())
         self.dc = DC
         self.gc = wx.GraphicsContext.Create(self.dc)
@@ -19,16 +19,16 @@ class wxGCRenderer(Renderer):
         self._brushes = {}
         self.gc.PushState()
 
-    def clearScreen(self):
+    def clear_screen(self):
         self.dc.Clear()
 
-    def resetPose(self):
+    def reset_pose(self):
         """Resets the renderer to world coordinates
         """
         self.gc.PopState()
         self.gc.PushState()
     
-    def addPose(self,pose):
+    def add_pose(self, pose):
         """Add a pose transformation to the current transformation
         """
         self.gc.Translate(pose.x, pose.y)
@@ -42,7 +42,7 @@ class wxGCRenderer(Renderer):
         b = (color) & 0xFF
         return wx.Colour(r,g,b,255)
 
-    def setPen(self,color):
+    def set_pen(self, color):
         """Sets the line color.
 
         Color is interpreted as 0xRRGGBB.
@@ -52,7 +52,7 @@ class wxGCRenderer(Renderer):
         self.gc.SetPen(self._pens[color])       
         
 
-    def setBrush(self,color):
+    def set_brush(self, color):
         """Sets the fill color.
 
         Color is an integer interpreted as 0xRRGGBB.
@@ -61,31 +61,31 @@ class wxGCRenderer(Renderer):
             self._brushes[color] = self.gc.CreateBrush(wx.Brush(self.__wxcolor(color)))
         self.gc.SetBrush(self._brushes[color])
 
-    def drawPolygon(self,points):
+    def draw_polygon(self, points):
         """Draws a polygon.
         
         Expects a list of points as a list of tuples or as a numpy array. Ignores Z if available
         """
         self.gc.DrawLines([point[:2] for point in points])
        
-    def drawEllipse(self, x, y, w, h):
+    def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.
         """
         self.gc.DrawEllipse(x,y,w,h)
 
-    def drawRectangle(self, x, y, w, h):
+    def draw_rectangle(self, x, y, w, h):
         """Draws a rectangle.
         """
         self.gc.DrawRectangle(x,y,w,h)
     
-    def drawText(self, text, x, y, bgcolor = 0):
+    def draw_text(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position.
         """
         if bgcolor not in self._brushes:
             self._brushes[bgcolor] = self.gc.CreateBrush(wx.Brush(self.__wxcolor(bgcolor)))
         self.gc.DrawText(text,x,y,self._brushes[bgcolor])
     
-    def drawLine(self, x1, y1, x2, y2):
+    def draw_line(self, x1, y1, x2, y2):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
         self.gc.DrawLines([(x1,y1),(x2,y2)])

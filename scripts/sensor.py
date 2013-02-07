@@ -10,7 +10,7 @@ from simobject import SimObject
 
 class Sensor:
     @classmethod
-    def addGaussNoise(value, sigma):
+    def add_gauss_noise(value, sigma):
         """Returns the value with an added normal noise
         
         The return value is normally distributed around value with a standard deviation sigma
@@ -22,8 +22,8 @@ class InternalSensor(SimObject):
         SimObject.__init__(self,pose)
         self.__robot = robot
        
-    def Pose(self):
-        return super().Pose() + self.__robot.Pose()
+    def get_pose(self):
+        return super().get_pose() + self.__robot.get_pose()
     
 class ProximitySensor(InternalSensor):
     def __init__(self,pose,robot):
