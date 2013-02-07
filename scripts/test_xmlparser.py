@@ -1,5 +1,5 @@
 import unittest
-from xmlparser.xmlparser import XMLParser
+from xmlparser import XMLParser
 
 class Test(unittest.TestCase):
 
