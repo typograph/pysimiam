@@ -37,18 +37,18 @@ class wxGCRenderer(Renderer):
         self.__update_default_state()
 
     def set_zoom(self, zoom_level):
-        self._zoom = zoom_level
+        self._zoom = float(zoom_level)
         self.__update_default_state()
         
     def __update_default_state(self):
         self._gc.PopState() # Reset state
         self._gc.PopState() # Set zoom to 1     
         self._gc.PushState() # Re-save the zoom-1
-        self._gc.Rotate(-self._defpose.theta)
-        self._gc.Translate(-self._defpose.x, -self._defpose.y)
-        self._gc.Scale(self._zoom,self._zoom)
         if self._zoom_c:
             self._gc.Translate(self.size[0]/2,self.size[1]/2)
+        self._gc.Scale(self._zoom,self._zoom)
+        self._gc.Rotate(-self._defpose.theta)
+        self._gc.Translate(-self._defpose.x, -self._defpose.y)
         self._gc.PushState() # Save the zoomed state
         self.clear_screen()
 

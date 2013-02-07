@@ -27,7 +27,7 @@ class Simulator(threading.Thread):
         self.state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
-        #self._renderer.set_zoom(2)
+        self._renderer.set_zoom(2)
         
         #test code
         self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
@@ -58,13 +58,14 @@ class Simulator(threading.Thread):
     def draw(self):
        
         #Test code
-        #self._renderer.set_screen_center_pose(self._robot.get_pose())
+        self._renderer.set_screen_center_pose(self._robot.get_pose())
         self._renderer.clear_screen()
+        for obstacle in self._obstacles:
+            obstacle.draw(self._renderer)
+        # Draw the robot and sensors after obstacles
         self._robot.draw(self._renderer)
         for s in self._robot.ir_sensors:
             s.draw(self._renderer)
-        for obstacle in self._obstacles:
-            obstacle.draw(self._renderer)
         #end test code
         
         self.updateView()
