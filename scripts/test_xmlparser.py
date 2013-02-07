@@ -12,42 +12,38 @@ class Test(unittest.TestCase):
              'khepera3.K3Supervisor', 
              (0.0, 0.0, 0.0))
         assert objects[1] == \
-            ('robot', 
-             'khepera3.K3Supervisor', 
-             (1.0, 1.0, 1.5708))
-        assert objects[2] == \
             ('obstacle', 
              (1.0, 1.2, 0.0), 
              [(0.0, 0.0), (0.3, 0.0), (0.3, 0.3), (0.0, 0.3)])
-        assert objects[3] == \
+        assert objects[2] == \
             ('obstacle', 
              (-0.5, 0.0, 0.7854), 
              [(0.0, 0.0), (0.3, 0.0), (0.3, 0.3), (0.0, 0.3)])
-        assert objects[4] == \
+        assert objects[3] == \
             ('obstacle', 
              (0.65, 0.0, 0.7854), 
              [(0.0, 0.0), (0.3, 0.0), (0.3, 0.3), (0.0, 0.3)])
-        assert objects[5] == \
+        assert objects[4] == \
             ('obstacle', 
              (0.2, 0.8, 0.0), 
              [(0.0, 0.0), (0.3, 0.0), (0.3, 0.3), (0.0, 0.3)])
-        assert objects[6] == \
+        assert objects[5] == \
             ('obstacle', 
              (-1.0, -1.0, 0.0), 
              [(0.0, 0.0), (1.5, 0.0), (1.5, 0.3), (0.0, 0.3)]) 
-        assert objects[7] == \
+        assert objects[6] == \
             ('obstacle', 
              (-1.6, -1.5, 0.0), 
              [(0.0, 0.0), (3.0, 0.0), (3.0, 0.1), (0.0, 0.1)])
-        assert objects[8] == \
+        assert objects[7] == \
             ('obstacle', 
              (-1.5, -1.4, 1.5708), 
              [(0.0, 0.0), (3.0, 0.0), (3.0, 0.1), (0.0, 0.1)])
-        assert objects[9] == \
+        assert objects[8] == \
             ('obstacle', 
              (1.5, -1.5, 1.5708), 
              [(0.0, 0.0), (3.0, 0.0), (3.0, 0.1), (0.0, 0.1)])
-        assert objects[10] == \
+        assert objects[9] == \
             ('obstacle', 
              (-1.5, 1.5, 0.0), 
              [(0.0, 0.0), (3.0, 0.0), (3.0, 0.1), (0.0, 0.1)])
