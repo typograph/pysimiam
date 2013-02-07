@@ -55,7 +55,7 @@ class XMLParser(object):
                         raise Exception('[obstacle] Invalid point!')
                     points.append((float(x), float(y)))
                     
-                if not len(points) == 4:
+                if not len(points) < 3:
                     raise Exception('[obstacle] Too few points in geometry!')
                 
                 x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
