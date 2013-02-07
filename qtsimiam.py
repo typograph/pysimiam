@@ -11,8 +11,8 @@ from qtrenderer import QtRenderer
 import simulator as sim
 import threading
 
-BITMAP_WIDTH = 600
-BITMAP_HEIGHT = 800
+BITMAP_WIDTH = 400
+BITMAP_HEIGHT = 400
 
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
@@ -34,15 +34,22 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidgetResizable(True)
         
         # create the simulator thread
-        self.simulatorThread = sim.Simulator(viewer.renderer,viewer.updateBitmap)
-        self.simulatorThread.start()
+        self._simulator_thread = sim.Simulator(viewer.renderer,viewer.update_bitmap)
+        self._simulator_thread.start()
 
     def __create_toolbar(self):
         
         tbar = QtGui.QToolBar("Control",self)
-        tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),"Rewind")
-        tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),"Run")
-        tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),"Pause")
+        tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
+                       "Rewind",
+                       self._on_rewind)
+        tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),
+                       "Run",
+                       self._on_run)
+        tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
+                       "Pause",
+                       self._on_pause)
+                       
         self.addToolBar(tbar)
 
     def __create_menu(self):
@@ -52,7 +59,7 @@ class SimulationWidget(QtGui.QMainWindow):
         file_menu = menu.addMenu("&File")
         file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
                             "Open Supervisor",
-                            self.onOpen,
+                            self._on_open,
                             QtGui.QKeySequence(QtGui.QKeySequence.Open))
                             
         file_menu.addSeparator()
@@ -66,15 +73,27 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setStatusBar(QtGui.QStatusBar())
 
     def closeEvent(self,event):
-        self.simulatorThread.stop()
-        self.simulatorThread.join()
+        self._simulator_thread.stop()
+        self._simulator_thread.join()
         super(SimulationWidget,self).closeEvent(event)
 
     # Slots
     @QtCore.pyqtSlot()
-    def onOpen(self):
+    def _on_open(self):
         # Load new definition
         pass
+
+    @QtCore.pyqtSlot()
+    def _on_rewind(self): # Start from the beginning
+        self._simulator_thread.reset_simulation()
+
+    @QtCore.pyqtSlot()
+    def _on_run(self): # Run/unpause
+        self._simulator_thread.start_simulation()
+
+    @QtCore.pyqtSlot()
+    def _on_pause(self): # Pause
+        self._simulator_thread.pause_simulation()
 
 #end PySimiamFrame class
 
@@ -92,10 +111,10 @@ class SimulatorViewer(QtGui.QFrame):
         super(SimulatorViewer, self).paintEvent(event)
         self.lock.acquire()
         painter = QtGui.QPainter(self)
-        painter.drawPixmap(0,0,self.__blt_bitmap)
+        painter.drawPixmap(0,0,self.__bitmap)
         self.lock.release()
         
-    def updateBitmap(self):
+    def update_bitmap(self):
         self.lock.acquire()
         painter = QtGui.QPainter(self.__bitmap)
         painter.drawPixmap(0,0,self.__blt_bitmap)
