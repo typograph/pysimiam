@@ -15,8 +15,9 @@ import threading
 
 class PySimiamApp(wx.App):
     def OnInit(self):
-        self.frame = PySimiamFrame(None, size=wx.Size(BITMAP_WIDTH,
-BITMAP_HEIGHT), title="PySimiam")
+        self.frame = PySimiamFrame(None,
+                                   size = wx.Size(BITMAP_WIDTH, BITMAP_HEIGHT),
+                                   title = "PySimiam")
         self.SetTopWindow(self.frame)
         self.frame.Show()
 
@@ -29,8 +30,8 @@ ID_PLAY = wx.NewId()
 ID_PAUSE = wx.NewId()
 ID_RESET = wx.NewId()
 
-BITMAP_WIDTH = 800
-BITMAP_HEIGHT = 600
+BITMAP_WIDTH = 400
+BITMAP_HEIGHT = 400
 
 class PySimiamFrame(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -60,9 +61,10 @@ class PySimiamFrame(wx.Frame):
 
 
         # Simulation Panel
-        self._viewer = SimulatorViewer(self)
+        self._viewer = SimulatorViewerPanel(self)
         # create the simulator thread
-        self._simulator_thread = sim.Simulator(self._viewer.renderer, self._viewer.update_bitmap)
+        self._simulator_thread = sim.Simulator(self._viewer.renderer,
+                                               self._viewer.update_bitmap)
         self._simulator_thread.start()
 
         # Create layouts to arrange objects
@@ -89,8 +91,17 @@ class PySimiamFrame(wx.Frame):
         buttonSizer.Add(self._pause_button, 0, wx.ALL, 2)
         mainSizer.Add(buttonSizer, 0, wx.EXPAND)
 
+
+        ##Create scrolling area
+        scroller = wx.ScrolledWindow(self)
+        scroller.SetScrollbars(1,1,1,1)
+        self._viewer.Reparent(scroller)
+        sizer = wx.BoxSizer()
+        sizer.Add(self._viewer, 1, wx.EXPAND)
+        scroller.SetSizer(sizer)
+
         # Layout Simulator
-        mainSizer.Add(self._viewer, 1, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
+        mainSizer.Add(scroller, 1, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
 
         # Set 'mainsizer' as the sizer for the frame
         self.SetSizer(mainSizer)
@@ -124,7 +135,7 @@ class PySimiamFrame(wx.Frame):
         elif event_id == ID_PAUSE:
             self._simulator_thread.pause_simulation()
         elif event_id == ID_RESET:
-            print 'ButtonPress: reset'
+            self._simulator_thread.reset_simulation()
         else:
             print 'ButtonPress: unknown'
 
@@ -144,39 +155,31 @@ class PySimiamFrame(wx.Frame):
 
 #end PySimiamFrame class
 
-class SimulatorViewer(wx.ScrolledWindow):
+class SimulatorViewerPanel(wx.Panel):
     def __init__(self, parent):
-        super(SimulatorViewer, self).__init__(parent)
+        super(SimulatorViewerPanel, self).__init__(parent)
 
-        ##Create Subpanel for scrolling feature
-        #self._viewer = SimulatorViewerPanel(self)
-
-        ##Create layout
-        #sizer = wx.BoxSizer()
-        #sizer.Add(self._viewer, 1, wx.EXPAND)
-        #self.SetSizer(sizer)
-
-        #Add scrollbars
-        self.__set_properties()
+        # Create bitmaps and contexts
         self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
+        
         self.__blt_bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+        self.renderer = wxGCRenderer(wx.MemoryDC(self.__blt_bitmap))
+        
         self.lock = threading.Lock()
-        dc = wx.MemoryDC(self.__blt_bitmap)
-        self.renderer = wxGCRenderer(dc)
-
-    def __set_properties(self):
-        self.SetScrollbars(1,1,1,1)
+        
+        self.Bind(wx.EVT_PAINT, self._on_paint)
+        
 
     # Methods
     def update_bitmap(self):
         self.lock.acquire()
         self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
         self.lock.release()
-        wx.CallAfter(self.onPaint,None)
+        wx.CallAfter(self._on_paint,None)
         
 
-    def onPaint(self, event):
+    def _on_paint(self, event):
         self.lock.acquire()
         dc = wx.ClientDC(self)
         dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
