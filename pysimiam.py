@@ -220,7 +220,9 @@ class SimulatorViewerPanel(wx.Panel):
     def _on_paint(self, event):
         self.lock.acquire()
         dc = wx.ClientDC(self)
-        dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
+        dc.Blit(0, 0, BITMAP_WIDTH, BITMAP_HEIGHT,
+                self.__bitmap_dc, 0, 0,
+                wx.COPY, False, 0, 0)
         self.lock.release()
 
 if __name__ == "__main__":
