@@ -26,7 +26,7 @@ class Khepera3_IRSensor(IRSensor):
 def motion_f(t,y,*f_args):
     """The Drive problem
     """
-    theta,v,w = y[2:]
+    theta = y[2]
     return [v*cos(theta),-v*sin(theta),w,0,0]
 
 def motion_jac(t,y,v,w):

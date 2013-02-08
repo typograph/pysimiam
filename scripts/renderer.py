@@ -6,7 +6,6 @@
 # I realise this is a very simple renderer with very few functions,
 # but I intend this to be just an example
 #
-
 class Renderer:
     def __init__(self,size):
         self.size = size
@@ -50,7 +49,8 @@ class Renderer:
     def draw_line(self, x1, y1, x2, y2):
         """Draw a line using the current pen from (x1,y1) to (x2, y2)
         """
-            pass
+        pass
+
     def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.
         """
