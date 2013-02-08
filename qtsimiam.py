@@ -23,9 +23,24 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__create_toolbar()
         self.__create_menu()
         self.__create_statusbar()
-        # Create status bar with intro messages
+        # Set intro message
         self.statusBar().showMessage("Welcome to QtSimiam") 
         
+        # create XML file dialog
+        self._world_dialog = QtGui.QFileDialog(self,
+                                "Select World.xml File",
+                                "worlds", 
+                                "WorldFile (*.xml)")
+        self._world_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
+        self._world_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
+
+        # create supervisor file dialog
+        self._supervisor_dialog = QtGui.QFileDialog(self,
+                                     "Select Supervisor File",
+                                     "supervisors", 
+                                     "Supervisor (*.py)")
+        self._supervisor_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
+        self._supervisor_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
         
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
@@ -58,13 +73,17 @@ class SimulationWidget(QtGui.QMainWindow):
         
         file_menu = menu.addMenu("&File")
         file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
-                            "Open Supervisor",
+                            "Open XML &World",
+                            self._on_open_world,
+                            QtGui.QKeySequence("Ctrl+W"))
+        file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
+                            "&Open Supervisor",
                             self._on_open,
                             QtGui.QKeySequence(QtGui.QKeySequence.Open))
                             
         file_menu.addSeparator()
         file_menu.addAction(QtGui.QIcon.fromTheme("application-exit"),
-                            "Exit",
+                            "E&xit",
                             self.close,
                             QtGui.QKeySequence(QtGui.QKeySequence.Quit)
                             ).setToolTip("Quit the Program")
@@ -81,7 +100,10 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot()
     def _on_open(self):
         # Load new definition
-        pass
+        if self._supervisor_dialog.exec_():
+            QtGui.QMessageBox.information(self,
+                                          "Opening supervisor...",
+                                          "Not implemented yet")
 
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
@@ -94,6 +116,11 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot()
     def _on_pause(self): # Pause
         self._simulator_thread.pause_simulation()
+
+    @QtCore.pyqtSlot()
+    def _on_open_world(self):
+        if self._world_dialog.exec_():
+            self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
 
 #end PySimiamFrame class
 
