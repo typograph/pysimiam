@@ -10,7 +10,16 @@ class Renderer:
         """
         self.size = size
         self.set_canvas(canvas)
-   
+    
+    def show_grid(self, show=True):
+        """Draw the grid on the canvas background.
+        
+        The grid is adaptive, with minimum interline distance of 20 px,
+        and a maximum of 80 px.
+        This method will clear the canvas
+        """
+        pass
+    
     def set_canvas(self, canvas):
         """Tell the renderer to draw on canvas
         
