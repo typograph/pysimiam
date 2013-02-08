@@ -30,7 +30,7 @@ class Khepera3_IRSensor(IRSensor):
     def draw(self, r):
         r.set_pose(self.get_pose())
         r.set_brush(0x11FF5566)
-        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmax/2))
+        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
         r.draw_polygon(self.pts)
 
 
@@ -80,7 +80,7 @@ class Khepera3(Robot):
         self.ir_sensors = []
               
         ir_sensor_poses = [
-                           Pose( 0.038, -0.048, np.radians(128)),
+                           Pose(-0.038,  0.048, np.radians(128)),
                            Pose( 0.019,  0.064, np.radians(75)),
                            Pose( 0.050,  0.050, np.radians(42)),
                            Pose( 0.070,  0.017, np.radians(13)),
