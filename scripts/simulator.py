@@ -54,6 +54,34 @@ class Simulator(threading.Thread):
             simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
             ]
         #end test code
+    def read_config(self, config):
+        ''' Read in the objects from the XML configuration file '''
+
+        print 'reading initial configuration'
+        parser = XMLParser(config)
+        world = parser.parse()
+        self.robot = None
+        self.obstacles = []
+        for thing in world:
+            thing_type = thing[0]
+            if thing_type == 'robot':
+                robot_type, robot_pose  = thing[1], thing[2] 
+                if robot_type == 'khepera3.K3Supervisor':
+                    self.robot = khepera3.Khepera3(pose.Pose(robot_pose))
+                else:
+                    raise Exception('[Simulator.__init__] Unknown robot type!')
+            elif thing_type == 'obstacle':
+                obstacle_pose, obstacle_coords = thing[1], thing[2]
+                self.obstacles.append(
+                    simobject.Polygon(pose.Pose(obstacle_pose),
+                                      obstacle_coords,
+                                      0xFF0000))
+            else:
+                raise Exception('[Simulator.__init__] Unknown object: ' 
+                                + str(thing_type))
+        
+        if self.robot == None:
+            raise Exception('[Simulator.__init__] No robot specified!')
 
     def run(self):
         print 'starting simulator thread'
