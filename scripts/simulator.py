@@ -33,6 +33,7 @@ class Simulator(threading.Thread):
         #test code
         self._robot = None
         self._obstacles = []
+        
 #        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
 #        self._robot.set_wheel_speeds(18,16)
 #        self._obstacles = [
@@ -70,6 +71,8 @@ class Simulator(threading.Thread):
         
         if self._robot == None:
             raise Exception('[Simulator.__init__] No robot specified!')
+        else:
+            self.draw()
 
 
     def run(self):
@@ -77,8 +80,10 @@ class Simulator(threading.Thread):
 
         time_constant = 0.1  # 100 milliseconds
         
+        self._renderer.clear_screen() #create a white screen
+        self.updateView()
+
         #self.draw() # Draw at least once (Move to open afterwards)
-        
         while not self.__stop:
             sleep(time_constant)
             if self.state != RUN:
