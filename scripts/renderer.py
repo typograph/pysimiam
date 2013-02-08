@@ -36,6 +36,14 @@ class Renderer:
         This method will clear the canvas.
         """
         pass
+
+    def scale_zoom_level(self, factor):
+        """Zoom up the drawing by a factor of zoom_level
+        
+        The zoom center is at the last set screen pose.
+        This method will clear the canvas.
+        """
+        self.set_zoom_level(self._zoom*factor)
     
     def set_view_rect(self, x, y, width, height):
         """Zoom on the rectangle to fit it into the view

@@ -28,6 +28,7 @@ class Simulator(threading.Thread):
         self.state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
+        self.__center_on_robot = False
         
         self._robot = None
         self._obstacles = []
@@ -61,8 +62,7 @@ class Simulator(threading.Thread):
         if self._robot == None:
             raise Exception('[Simulator.__init__] No robot specified!')
 
-        # Insert code to scale the renderer 
-        self.center_view()
+        self.focus_on_world()
 
         self.draw() # Draw at least once to show the user it has loaded
 
@@ -82,20 +82,23 @@ class Simulator(threading.Thread):
 
     def draw(self):
        
-        #Test code
-        #self._renderer.set_screen_center_pose(self._robot.get_pose())
+        if self.__center_on_robot:
+            self._renderer.set_screen_center_pose(self._robot.get_pose())
+
         self._renderer.clear_screen()
+
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
+
         # Draw the robot and sensors after obstacles
         self._robot.draw(self._renderer)
         for s in self._robot.ir_sensors:
             s.draw(self._renderer)
-        #end test code
         
         self.updateView()
 
-    def center_view(self):
+    def focus_on_world(self):
+        self.__center_on_robot = False
         xl, yb, xr, yt = self._robot.get_bounds()
         for obstacle in self._obstacles:
             xlo, ybo, xro, yto = obstacle.get_bounds()
@@ -108,7 +111,18 @@ class Simulator(threading.Thread):
             if yto > yt:
                 yt = yto
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
+    
+    def focus_on_robot(self):
+        self.__center_on_robot = True
+    
+    def show_grid(self, show=True):
+        self._renderer.show_grid(show)
+        if self._robot is not None and self.state != RUN:
+            self.draw()
         
+    def adjust_zoom(self,factor):
+        self._renderer.scale_zoom_level(factor)
+    
     # Stops the thread
     def stop(self):
         print 'stopping simulator thread'

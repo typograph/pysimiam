@@ -20,7 +20,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setWindowTitle("QtSimiam")
         self.resize(BITMAP_WIDTH,BITMAP_HEIGHT)
         
-        self.__create_toolbar()
+        self.__create_toolbars()
         self.__create_menu()
         self.__create_statusbar()
         # Set intro message
@@ -52,7 +52,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread = sim.Simulator(viewer.renderer,viewer.update_bitmap)
         self._simulator_thread.start()
 
-    def __create_toolbar(self):
+    def __create_toolbars(self):
         
         tbar = QtGui.QToolBar("Control",self)
         tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
@@ -64,6 +64,41 @@ class SimulationWidget(QtGui.QMainWindow):
         tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
                        "Pause",
                        self._on_pause)
+                       
+        self.addToolBar(tbar)
+
+        tbar = QtGui.QToolBar("View",self)
+        a = tbar.addAction(QtGui.QIcon("./res/image/grid.png"),
+                           "Show/Hide grid")
+        a.triggered[bool].connect(self._show_grid)
+        a.setCheckable(True)
+        a.setChecked(False)
+        
+        zoom_group = QtGui.QActionGroup(tbar)
+        a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
+                           "Show all",
+                            self._zoom_scene)
+        a.setCheckable(True)
+        a.setChecked(True)
+        zoom_group.addAction(a)
+        
+        a = tbar.addAction(QtGui.QIcon("./res/image/zoom-robot.png"),
+                           "Follow robot",
+                           self._zoom_robot)
+        a.setCheckable(True)
+        a.setChecked(False)
+        zoom_group.addAction(a)
+
+        self.__zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
+        self.__zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
+        self.__zoom_slider.setMaximumWidth(300)
+        self.__zoom_slider.setRange(-100,100)
+        self.__zoom_slider.setValue(0)
+        self.__zoom_slider.setEnabled(False)
+        self.__zoom_slider.valueChanged[int].connect(self._scale_zoom)
+        tbar.addWidget(self.__zoom_slider)
+        
+        self.__zoom_factor = 0
                        
         self.addToolBar(tbar)
 
@@ -121,7 +156,28 @@ class SimulationWidget(QtGui.QMainWindow):
     def _on_open_world(self):
         if self._world_dialog.exec_():
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
+            
+    @QtCore.pyqtSlot(bool)
+    def _show_grid(self,show):
+        self._simulator_thread.show_grid(show)
+            
+    @QtCore.pyqtSlot()
+    def _zoom_scene(self):
+        self._simulator_thread.focus_on_world()
+        self.__zoom_slider.setEnabled(False)
 
+    @QtCore.pyqtSlot()
+    def _zoom_robot(self):
+        self._simulator_thread.focus_on_robot()
+        self.__zoom_slider.setEnabled(True)
+        self._simulator_thread.adjust_zoom(
+            2.0**(self.__zoom_factor/60.0))        
+            
+    @QtCore.pyqtSlot(int)
+    def _scale_zoom(self,value):
+        self._simulator_thread.adjust_zoom(2.0**((value-self.__zoom_factor)/60.0))
+        self.__zoom_factor = value
+            
 #end PySimiamFrame class
 
 class SimulatorViewer(QtGui.QFrame):
