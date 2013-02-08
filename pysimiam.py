@@ -1,6 +1,4 @@
 """PySimiam
-Author: Jonathan Whitten
-ChangeDate: 5 FEB 2013; 2204EST
 Description: This is the top-level application for PySimiam.
 """
 import sys
@@ -61,9 +59,12 @@ class PySimiamFrame(wx.Frame):
 
         # Simulation Panel
         self._viewer = SimulatorViewerPanel(self)
+
         # create the simulator thread
         self._simulator_thread = sim.Simulator(self._viewer.renderer,
                                                self._viewer.update_bitmap)
+        
+        # start simulator thread
         self._simulator_thread.start()
 
         # Create layouts to arrange objects
@@ -89,7 +90,6 @@ class PySimiamFrame(wx.Frame):
         buttonSizer.Add(self._play_button, 0, wx.ALL, 2)
         buttonSizer.Add(self._pause_button, 0, wx.ALL, 2)
         mainSizer.Add(buttonSizer, 0, wx.EXPAND)
-
 
         ##Create scrolling area
         scroller = wx.ScrolledWindow(self)
@@ -128,22 +128,8 @@ class PySimiamFrame(wx.Frame):
 
     # Event Handlers
     def _update_viewer(self, event):
-        #Swap index for renderer
-        #dc = wx.MemoryDC(self._bitmaplist[self.__swap_index()])
-        #self._renderer.set_dc(dc)
-
         #paint bitmap to panel
         self._viewer.paint_now(self._bitmap)
-        #self._viewer.paint_now(self._bitmaplist[self._image_index])
-
-        #Swap viewer index
-        #self._image_index = self.__swap_index()
-
-    #def __swap_index(self):
-    #    if self._image_index == 0:
-    #        return 1
-    #    else:
-    #        return 0
 
     def _on_button(self, event):
         event_id = event.GetId()
@@ -180,12 +166,10 @@ class SimulatorViewerPanel(wx.Panel):
         # Create bitmaps and contexts
         self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
-        
         self.__blt_bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
+
         self.renderer = wxGCRenderer(wx.MemoryDC(self.__blt_bitmap))
-        
         self.lock = threading.Lock()
-        
         self.Bind(wx.EVT_PAINT, self._on_paint)
         
 
@@ -195,7 +179,6 @@ class SimulatorViewerPanel(wx.Panel):
         self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
         self.lock.release()
         wx.CallAfter(self._on_paint,None)
-        
 
     def _on_paint(self, event):
         self.lock.acquire()
