@@ -1,3 +1,6 @@
+# Python pre-compiled
+*.pyc
+
 # Numerous always-ignore extensions
 *.diff
 *.err

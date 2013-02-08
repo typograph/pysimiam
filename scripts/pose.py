@@ -43,6 +43,11 @@ class Pose(object):
     def get_list(self):
         return [self.x, self.y, self.theta]
 
+    def __iter__(self):
+        yield self.x
+        yield self.y
+        yield self.theta
+
     def get_transformation(self):
         #Z-axis ccw rotation transformation matrix
         T = np.array([\

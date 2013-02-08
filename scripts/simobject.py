@@ -18,7 +18,7 @@ class SimObject:
         """Draws the object on the passed DC
         """
         pass
-
+    
     def get_envelope(self):
         """The envelope of the object in object's local coordinates
         """
@@ -38,5 +38,3 @@ class Polygon(SimObject):
         r.set_pose(self.get_pose())
         r.set_brush(self.__color)
         r.draw_polygon(self.get_envelope())
-
-
