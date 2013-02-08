@@ -155,7 +155,7 @@ class PySimiamFrame(wx.Frame):
             defaultDir="supervisors", 
             defaultFile="",
             wildcard=wildcard,
-            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            style=wx.OPEN | wx.CHANGE_DIR
             ) 
 
         res = dlg.ShowModal()
@@ -174,7 +174,7 @@ class PySimiamFrame(wx.Frame):
             defaultDir="worlds", 
             defaultFile="",
             wildcard=wildcard,
-            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            style=wx.OPEN | wx.CHANGE_DIR
             ) 
 
         res = dlg.ShowModal()

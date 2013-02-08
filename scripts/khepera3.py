@@ -9,8 +9,8 @@ class Khepera3_IRSensor(IRSensor):
     def __init__(self,pose,robot):
         IRSensor.__init__(self,pose,robot)
         # values copied from SimIAm
-        self.rmin = 10 # 0.02
-        self.rmax = 100 # 0.2
+        self.rmin = 0.02
+        self.rmax = 0.2
         self.phi  = np.radians(20)
         self.pts = [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
                     (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
@@ -56,38 +56,39 @@ class Khepera3(Robot):
         Robot.__init__(self,pose)
         
         # create shape
-        self._p1 = np.array([[-3.1,  4.3, 1],
-                             [-3.1, -4.3, 1],
-                             [ 3.3, -4.3, 1],
-                             [ 5.2, -2.1, 1],
-                             [ 5.7,  0    , 1],
-                             [ 5.2,  2.1, 1],
-                             [ 3.3,  4.3, 1]])
-        self._p2 = np.array([[-2.4,  6.4, 1],
-                             [ 3.3,  6.4, 1],
-                             [ 5.7,  4.3, 1],
-                             [ 7.4,  1.0, 1],
-                             [ 7.4, -1.0, 1],
-                             [ 5.7, -4.3, 1],
-                             [ 3.3, -6.4, 1],
-                             [-2.5, -6.4, 1],
-                             [-4.2, -4.3, 1],
-                             [-4.8, -1.0, 1],
-                             [-4.8,  1.0, 1],
-                             [-4.2,  4.3, 1]])
+        self._p1 = np.array([[-0.031,  0.043, 1],
+                             [-0.031, -0.043, 1],
+                             [ 0.033, -0.043, 1],
+                             [ 0.052, -0.021, 1],
+                             [ 0.057,  0    , 1],
+                             [ 0.052,  0.021, 1],
+                             [ 0.033,  0.043, 1]])
+        self._p2 = np.array([[-0.024,  0.064, 1],
+                             [ 0.033,  0.064, 1],
+                             [ 0.057,  0.043, 1],
+                             [ 0.074,  0.010, 1],
+                             [ 0.074, -0.010, 1],
+                             [ 0.057, -0.043, 1],
+                             [ 0.033, -0.064, 1],
+                             [-0.025, -0.064, 1],
+                             [-0.042, -0.043, 1],
+                             [-0.048, -0.010, 1],
+                             [-0.048,  0.010, 1],
+                             [-0.042,  0.043, 1]])
 
         # create IR sensors
         self.ir_sensors = []
               
         ir_sensor_poses = [
-                           Pose( 1.9,  6.4, np.radians(75)),
-                           Pose( 5.0,  5.0, np.radians(42)),
-                           Pose( 7.0,  1.7, np.radians(13)),
-                           Pose( 7.0, -1.7, np.radians(-13)),
-                           Pose( 5.0, -5.0, np.radians(-42)),
-                           Pose( 1.9, -6.4, np.radians(-75)),
-                           Pose(-3.8, -4.8, np.radians(-128)),
-                           Pose(-4.8,  0.0, np.radians(180))
+                           Pose( 0.038, -0.048, np.radians(128)),
+                           Pose( 0.019,  0.064, np.radians(75)),
+                           Pose( 0.050,  0.050, np.radians(42)),
+                           Pose( 0.070,  0.017, np.radians(13)),
+                           Pose( 0.070, -0.017, np.radians(-13)),
+                           Pose( 0.050, -0.050, np.radians(-42)),
+                           Pose( 0.019, -0.064, np.radians(-75)),
+                           Pose(-0.038, -0.048, np.radians(-128)),
+                           Pose(-0.048,  0.000, np.radians(180))
                            ]                          
                            
         for pose in ir_sensor_poses:
@@ -97,10 +98,8 @@ class Khepera3(Robot):
         self.ang_velocity = (0.0,0.0)
 
         # these were the original parameters
-        #self.wheel_radius = 21.0
-        #self.wheel_base_length = 88.5
-        self.wheel_radius = 3.0
-        self.wheel_base_length = 12.8
+        self.wheel_radius = 0.21
+        self.wheel_base_length = 0.885
 #       #I'm not sure we need those
 #        self.ticks_per_rev = 2765
 #        self.speed_factor = 6.2953e-6

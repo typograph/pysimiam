@@ -28,7 +28,10 @@ class Simulator(threading.Thread):
         self.state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
-        self._renderer.set_zoom(2)
+        
+        # Zoom on scene - Move to read_config later
+        self._renderer.set_zoom(130)
+        self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
         
         #test code
         self._robot = None
@@ -74,6 +77,10 @@ class Simulator(threading.Thread):
         else:
             self.draw()
 
+        # Insert code to scale the renderer 
+
+        self.draw() # Draw at least once to show the user it has loaded
+
 
     def run(self):
         print 'starting simulator thread'
@@ -95,7 +102,7 @@ class Simulator(threading.Thread):
     def draw(self):
        
         #Test code
-        self._renderer.set_screen_center_pose(self._robot.get_pose())
+#        self._renderer.set_screen_center_pose(self._robot.get_pose())
         self._renderer.clear_screen()
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
@@ -113,7 +120,8 @@ class Simulator(threading.Thread):
         self.__stop = True
 
     def start_simulation(self):
-        self.state = RUN
+        if self._robot is not None:
+            self.state = RUN
 
     def pause_simulation(self):
         self.state = PAUSE
