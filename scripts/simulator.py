@@ -71,13 +71,15 @@ class Simulator(threading.Thread):
         if self._robot == None:
             raise Exception('[Simulator.__init__] No robot specified!')
 
+        # Insert code to scale the renderer 
+
+        self.draw() # Draw at least once to show the user it has loaded
+
 
     def run(self):
         print 'starting simulator thread'
 
-        time_constant = 0.1  # 100 milliseconds
-        
-        #self.draw() # Draw at least once (Move to open afterwards)
+        time_constant = 0.1  # 100 milliseconds       
         
         while not self.__stop:
             sleep(time_constant)
