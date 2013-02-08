@@ -7,6 +7,7 @@ from time import sleep
 import khepera3
 import pose
 import simobject
+from xmlparser import XMLParser
 
 PAUSE = 0
 RUN = 1
@@ -30,34 +31,61 @@ class Simulator(threading.Thread):
         self._renderer.set_zoom(2)
         
         #test code
-        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
-        self._robot.set_wheel_speeds(18,16)
-        self._obstacles = [
-            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-            ]
+        self._robot = None
+        self._obstacles = []
+#        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
+#        self._robot.set_wheel_speeds(18,16)
+#        self._obstacles = [
+#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+#            ]
         #end test code
+
+    def read_config(self, config):
+        ''' Read in the objects from the XML configuration file '''
+
+        print 'reading initial configuration'
+        parser = XMLParser(config)
+        world = parser.parse()
+        self._robot = None
+        self._obstacles = []
+        for thing in world:
+            thing_type = thing[0]
+            if thing_type == 'robot':
+                robot_type, robot_pose  = thing[1], thing[2] 
+                if robot_type == 'khepera3.K3Supervisor':
+                    self._robot = khepera3.Khepera3(pose.Pose(robot_pose))
+                else:
+                    raise Exception('[Simulator.__init__] Unknown robot type!')
+            elif thing_type == 'obstacle':
+                obstacle_pose, obstacle_coords = thing[1], thing[2]
+                self._obstacles.append(
+                    simobject.Polygon(pose.Pose(obstacle_pose),
+                                      obstacle_coords,
+                                      0xFF0000))
+            else:
+                raise Exception('[Simulator.__init__] Unknown object: ' 
+                                + str(thing_type))
+        
+        if self._robot == None:
+            raise Exception('[Simulator.__init__] No robot specified!')
+
 
     def run(self):
         print 'starting simulator thread'
 
         time_constant = 0.1  # 100 milliseconds
         
-        self.draw() # Draw at least once (Move to open afterwards)
+        #self.draw() # Draw at least once (Move to open afterwards)
         
         while not self.__stop:
-           
             sleep(time_constant)
-
             if self.state != RUN:
                 continue
-
             self._robot.move_to(self._robot.pose_after(time_constant))
-            
             # Draw to buffer-bitmap
             self.draw()
-
 
     def draw(self):
        

@@ -149,17 +149,17 @@ class PySimiamFrame(wx.Frame):
         #End _on_button
 
     def _on_open(self, event):
-        wildcard = "WorldFile(*.xml)|*.xml|"
+        wildcard = "Supervisor(*.py)|*.py|"
         dlg = wx.FileDialog(
-            self, message="Select World.xml File",
-            defaultDir="worlds", 
+            self, message="Select Supervisor.py File",
+            defaultDir="supervisors", 
             defaultFile="",
             wildcard=wildcard,
             style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
             ) 
 
         res = dlg.ShowModal()
-        if (res == wx.OK):
+        if (res == wx.ID_OK):
             print 'hi'
 
         dlg.Destroy()
@@ -178,9 +178,8 @@ class PySimiamFrame(wx.Frame):
             ) 
 
         res = dlg.ShowModal()
-        if (res == wx.OK):
-            print 'hi'
-
+        if (res == wx.ID_OK):
+            self._simulator_thread.read_config(dlg.GetPath())
         dlg.Destroy()
         event.Skip()
 
