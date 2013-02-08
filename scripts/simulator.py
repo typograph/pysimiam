@@ -8,6 +8,7 @@ import khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
+import pylygon
 
 PAUSE = 0
 RUN = 1
@@ -30,17 +31,18 @@ class Simulator(threading.Thread):
         self.updateView = update_callback
         self._renderer.set_zoom(2)
         
-        #test code
-        self._robot = None
+        # World objects
+        self._robots = []
         self._obstacles = []
         
-#        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
-#        self._robot.set_wheel_speeds(18,16)
-#        self._obstacles = [
-#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-#            ]
+        #test code
+        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
+        self._robots[0].set_wheel_speeds(18,16)
+        self._obstacles = [
+            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+            ]
         #end test code
 
     def read_config(self, config):
@@ -49,14 +51,14 @@ class Simulator(threading.Thread):
         print 'reading initial configuration'
         parser = XMLParser(config)
         world = parser.parse()
-        self._robot = None
+        self._robots = []
         self._obstacles = []
         for thing in world:
             thing_type = thing[0]
             if thing_type == 'robot':
                 robot_type, robot_pose  = thing[1], thing[2] 
                 if robot_type == 'khepera3.K3Supervisor':
-                    self._robot = khepera3.Khepera3(pose.Pose(robot_pose))
+                    self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
                 else:
                     raise Exception('[Simulator.__init__] Unknown robot type!')
             elif thing_type == 'obstacle':
@@ -88,21 +90,31 @@ class Simulator(threading.Thread):
             sleep(time_constant)
             if self.state != RUN:
                 continue
-            self._robot.move_to(self._robot.pose_after(time_constant))
+            for robot in self._robots:
+                robot.move_to(robot.pose_after(time_constant))
             # Draw to buffer-bitmap
             self.draw()
+            
+            if self.check_collisions():
+                print "Collision detected!"
+                self.__stop = True
 
     def draw(self):
        
         #Test code
-        self._renderer.set_screen_center_pose(self._robot.get_pose())
+        #  
+        if (len(self._robots) > 0):
+            # Temporary fix - center onto first robot
+            robot = self._robots[0]
+            self._renderer.set_screen_center_pose(robot.get_pose())
         self._renderer.clear_screen()
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
-        # Draw the robot and sensors after obstacles
-        self._robot.draw(self._renderer)
-        for s in self._robot.ir_sensors:
-            s.draw(self._renderer)
+        # Draw the robots and sensors after obstacles
+        for robot in self._robots:
+            robot.draw(self._renderer)
+            for s in robot.ir_sensors:
+                s.draw(self._renderer)
         #end test code
         
         self.updateView()
@@ -121,5 +133,49 @@ class Simulator(threading.Thread):
     def reset_simulation(self):
         pass
 
+    def check_collisions(self):
+        poly_obstacles = []
+        # prepare polygons for obstacles
+        for obstacle in self._obstacles:
+            poly = pylygon.Polygon(obstacle.get_envelope())
+            x, y, theta = obstacle.get_pose().get_list()
+            poly.move_ip(x, y)
+            poly.rotate_ip(theta)
+            poly_obstacles.append(poly)
+            #print "Obstacle:", poly
+        
+        poly_robots = []
+        # prepare polygons for robots
+        for robot in self._robots:
+            points = [(x,y) for x,y,t in robot.get_envelope()]
+            poly = pylygon.Polygon(points)
+            x, y, theta = robot.get_pose().get_list()
+            poly.move_ip(x, y)
+            poly.rotate_ip(theta)
+            poly_robots.append(poly)
+            #print "Robot:", poly
+            
+        checked_robots = []
+            
+        # check each robot's polygon
+        for robot in poly_robots:
+            # against obstacles
+            for obstacle in poly_obstacles:
+                collisions = robot.collidepoly(obstacle)
+                # collidepoly returns False value or
+                # an array of projections if found
+                if not collisions is False:
+                    return True
+                
+            # against other robots
+            for other in poly_robots: 
+                if other == robot: continue
+                if other in checked_robots: continue
+                collisions = robot.collidepoly(other)
+                if not collisions is False:
+                    return True
+            
+            checked_robots.append(robot)
+        return False
 
 #end class Simulator
