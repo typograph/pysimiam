@@ -74,7 +74,7 @@ class Simulator(threading.Thread):
                 raise Exception('[Simulator.__init__] Unknown object: ' 
                                 + str(thing_type))
         
-        if self._robot == None:
+        if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
             self.draw()
@@ -132,7 +132,7 @@ class Simulator(threading.Thread):
         self.__stop = True
 
     def start_simulation(self):
-        if self._robot is not None:
+        if self._robots is not None:
             self.state = RUN
 
     def pause_simulation(self):
