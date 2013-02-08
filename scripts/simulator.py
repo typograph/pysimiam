@@ -108,7 +108,8 @@ class Simulator(threading.Thread):
         self.__stop = True
 
     def start_simulation(self):
-        self.state = RUN
+        if self._robot is not None:
+            self.state = RUN
 
     def pause_simulation(self):
         self.state = PAUSE
