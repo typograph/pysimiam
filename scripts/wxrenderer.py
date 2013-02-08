@@ -123,7 +123,7 @@ class wxGCRenderer(Renderer):
 
         Expects a list of points as a list of tuples or as a numpy array. Ignores Z if available
         """
-        self.gc.DrawLines([point[:2] for point in points])
+        #self.gc.DrawLines([point[:2] for point in points])
         xy_pts = [point[:2] for point in points]
         xy_pts.append(xy_pts[0])
         self._gc.DrawLines(xy_pts)
