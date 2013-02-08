@@ -155,7 +155,7 @@ class PySimiamFrame(wx.Frame):
             defaultDir="supervisors", 
             defaultFile="",
             wildcard=wildcard,
-            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            style=wx.OPEN | wx.CHANGE_DIR
             ) 
 
         res = dlg.ShowModal()
@@ -174,7 +174,7 @@ class PySimiamFrame(wx.Frame):
             defaultDir="worlds", 
             defaultFile="",
             wildcard=wildcard,
-            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            style=wx.OPEN | wx.CHANGE_DIR
             ) 
 
         res = dlg.ShowModal()
@@ -211,13 +211,20 @@ class SimulatorViewerPanel(wx.Panel):
         self.lock.acquire()
         self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
         self.lock.release()
-        wx.CallAfter(self._on_paint,None)
+        wx.CallAfter(self._paint_now,None)
 
-    def _on_paint(self, event):
+    def _paint_now(self, event):
         self.lock.acquire()
         dc = wx.ClientDC(self)
-        dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
+        dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
         self.lock.release()
+
+    def _on_paint(self, event):
+        pass
+        #self.lock.acquire()
+        #dc = wx.PaintDC(self)
+        #dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
+        #self.lock.release()
 
 if __name__ == "__main__":
     #provider = wx.SimpleHelpProvider()
