@@ -23,6 +23,7 @@ BITMAP_HEIGHT), title="PySimiam")
 #end PySimiamApp class
 
 # Create any event IDs that may be needed
+ID_OPEN_XML = wx.NewId()
 ID_PLAY = wx.NewId()
 ID_PAUSE = wx.NewId()
 ID_RESET = wx.NewId()
@@ -109,6 +110,7 @@ class PySimiamFrame(wx.Frame):
         #MenuBar
         self._menu_bar = wx.MenuBar()
         self._filem = wx.Menu()
+        self._filem.Append(ID_OPEN_XML, "Open XML World\tCtrl+W")
         self._filem.Append(wx.ID_OPEN, "Open Supervisor\tCtrl+O")
         self._filem.AppendSeparator()
 
@@ -118,6 +120,7 @@ class PySimiamFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self._on_close, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self._on_open, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self._on_open_world, id=ID_OPEN_XML)
 
     def __set_properties(self):
         self.Bind(wx.EVT_BUTTON, self._on_button, id=wx.ID_ANY)
@@ -133,7 +136,6 @@ class PySimiamFrame(wx.Frame):
 
     def _on_button(self, event):
         event_id = event.GetId()
-
         if event_id == ID_PLAY:
             self._simulator_thread.start_simulation()
         elif event_id == ID_PAUSE:
@@ -147,8 +149,40 @@ class PySimiamFrame(wx.Frame):
         #End _on_button
 
     def _on_open(self, event):
+        wildcard = "WorldFile(*.xml)|*.xml|"
+        dlg = wx.FileDialog(
+            self, message="Select World.xml File",
+            defaultDir="worlds", 
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            ) 
+
+        res = dlg.ShowModal()
+        if (res == wx.OK):
+            print 'hi'
+
+        dlg.Destroy()
+
         event.Skip()
         #End _on_open
+
+    def _on_open_world(self, event):
+        wildcard = "WorldFile(*.xml)|*.xml|"
+        dlg = wx.FileDialog(
+            self, message="Select World.xml File",
+            defaultDir="worlds", 
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR
+            ) 
+
+        res = dlg.ShowModal()
+        if (res == wx.OK):
+            print 'hi'
+
+        dlg.Destroy()
+        event.Skip()
 
     def _on_close(self, event):
         # Stop simulator thread
