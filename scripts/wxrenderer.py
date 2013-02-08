@@ -89,7 +89,7 @@ class wxGCRenderer(Renderer):
         self._gc.PopState()
         self.set_pen(None)
 
-    def set_zoom(self, zoom_level):
+    def set_zoom_level(self, zoom_level):
         # Determine the right grid spacing for this zoom level
         self._grid_spacing *= zoom_level
         while self._grid_spacing > 80:

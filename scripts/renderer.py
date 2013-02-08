@@ -2,6 +2,8 @@
 # Renderer class
 #
 # A glue layer between SimObject and UI
+from pose import Pose
+
 class Renderer:
     def __init__(self, size, canvas):
         """Create a Renderer on canvas of size _size_.
@@ -27,12 +29,19 @@ class Renderer:
         """
         pass
    
-    def set_zoom(self, zoom_level):
+    def set_zoom_level(self, zoom_level):
         """Zoom up the drawing by a factor of zoom_level
         
-        This method will clear the canvas
+        The zoom center is at the last set screen pose.
+        This method will clear the canvas.
         """
         pass
+    
+    def set_view_rect(self, x, y, width, height):
+        """Zoom on the rectangle to fit it into the view
+        """
+        self.set_screen_pose(Pose(x,y,0))
+        self.set_zoom_level(min(self.size[0]/float(width), self.size[1]/float(height)))
     
     def set_screen_pose(self, pose):
         """Set the default offset/rotation of the drawing (the pose of bottom-left corner)

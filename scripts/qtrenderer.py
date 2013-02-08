@@ -38,6 +38,7 @@ class QtRenderer(Renderer):
         # push the default state
         self._painter.save()
         self._painter.save()
+        self.__update_default_state()
         
     def show_grid(self, show=True):
         """Draw the grid on the canvas background.
@@ -79,7 +80,7 @@ class QtRenderer(Renderer):
                     i * self._grid_spacing, ymax)
                 for i in range(*x_ticks)])
 
-    def set_zoom(self, zoom_level):
+    def set_zoom_level(self, zoom_level):
         # Determine the right grid spacing for this zoom level
         self._grid_spacing *= zoom_level
         while self._grid_spacing > 80:

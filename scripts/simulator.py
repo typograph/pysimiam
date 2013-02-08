@@ -29,21 +29,8 @@ class Simulator(threading.Thread):
         self._renderer = renderer
         self.updateView = update_callback
         
-        # Zoom on scene - Move to read_config later
-        self._renderer.set_zoom(130)
-        self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
-        
-        #test code
         self._robot = None
         self._obstacles = []
-#        self._robot = khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0))
-#        self._robot.set_wheel_speeds(18,16)
-#        self._obstacles = [
-#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-#            ]
-        #end test code
 
     def read_config(self, config):
         ''' Read in the objects from the XML configuration file '''
@@ -75,6 +62,7 @@ class Simulator(threading.Thread):
             raise Exception('[Simulator.__init__] No robot specified!')
 
         # Insert code to scale the renderer 
+        self.center_view()
 
         self.draw() # Draw at least once to show the user it has loaded
 
@@ -95,7 +83,7 @@ class Simulator(threading.Thread):
     def draw(self):
        
         #Test code
-#        self._renderer.set_screen_center_pose(self._robot.get_pose())
+        #self._renderer.set_screen_center_pose(self._robot.get_pose())
         self._renderer.clear_screen()
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
@@ -106,6 +94,20 @@ class Simulator(threading.Thread):
         #end test code
         
         self.updateView()
+
+    def center_view(self):
+        xl, yb, xr, yt = self._robot.get_bounds()
+        for obstacle in self._obstacles:
+            xlo, ybo, xro, yto = obstacle.get_bounds()
+            if xlo < xl:
+                xl = xlo
+            if xro > xr:
+                xr = xro
+            if ybo < yb:
+                yb = ybo
+            if yto > yt:
+                yt = yto
+        self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
         
     # Stops the thread
     def stop(self):
