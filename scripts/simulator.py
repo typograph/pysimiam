@@ -31,7 +31,6 @@ class Simulator(threading.Thread):
         self.updateView = update_callback
         self.__center_on_robot = False
         
-<<<<<<< HEAD
         # Zoom on scene - Move to read_config later
         self._renderer.set_zoom(130)
         self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
@@ -41,18 +40,16 @@ class Simulator(threading.Thread):
         self._obstacles = []
         
         #test code
-        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
-        self._robots[0].set_wheel_speeds(18,16)
-        self._obstacles = [
-            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-            ]
+#        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
+#        self._robots[0].set_wheel_speeds(18,16)
+#        self._obstacles = [
+#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+#            ]
         #end test code
-=======
-        self._robot = None
-        self._obstacles = []
->>>>>>> d6bfec3d145badc4e8a497f959c1eee7c942a8a0
+#        self._robot = None
+#        self._obstacles = []
 
     def read_config(self, config):
         ''' Read in the objects from the XML configuration file '''
