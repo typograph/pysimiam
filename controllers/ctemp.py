@@ -1,18 +1,27 @@
 """PySimiam
 Author: John Alexander
-ChangeDate: 4 FEB 2013; 1300EST
-Description: This is the Supervisor class for PySimiam.
+ChangeDate: 8 FEB 2013; 2300EST
+Description: This is a template for the controller class for PySimiam.
 """
-from scripts.controller import Controller
+
+from controller import Controller
+import math
+import numpy
 
 class Ctemp(Controller):
-    '''
-    This is a template for the user-defined class, the criteria method reads the ir sensors (or other available information) from the robot and makes a decision as to which controller to use
-    '''
-    def algorithm(self,*args):
+    def __init__(self):
+        '''read another .xml for PID parameters?'''
+        self.kp=10
+        self.ki=0
+        self.kd=0
+        '''
+        Error Terms:
+        self.E_k = 0
+        self.e_k_1 = 0
+        '''
+
+    def algorithm(self,pose_est):
         #Modify Below Here
         
-        self.current = 'ctemp'
-        wheelspeeds
         #Modify Above Here
         return wheelspeeds

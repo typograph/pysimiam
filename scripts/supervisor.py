@@ -1,41 +1,37 @@
 """PySimiam
 Author: John Alexander
-ChangeDate: 4 FEB 2013; 1300EST
+ChangeDate: 8 FEB 2013; 2300EST
 Description: This is the Supervisor class for PySimiam.
 """
-import controllers
+
 from string import capitalize
 
 class Supervisor:
-    '''
-    I'm sure this is a sloppy way of instantiating these classes I couldn't
-	come up with anything cleaner
-    '''
-    def __init__(self,robot,cntrlList):
-        self.attachRobot(robot)
-        for module in cntrlList:
-            __import__('controllers.'+module)
-        self.buildDict(cntrlList)
-        self.EstimatedPose=self.robot.get_pose
+    def __init__(self,robot,cntrl_list):
+        self.attach_robot(robot)
+        self.controller_modules={}
+        for module_name in cntrl_list:
+            self.controller_modules[module_name]=__import__(module_name)
 
-    def attachRobot(self,robot):
+        self.build_dict(cntrl_list)
+        self.pose_est=self.robot.get_pose #define the starting pose
+
+    def attach_robot(self,robot):
         self.robot=robot
 
-    def setCurrent(self, cntrl):
-        self.current=cntrl
+    def set_current(self, cntrl):
+        self.current=self.controllers[cntrl]
 
-    def getCurrent(self):
+    def get_current(self):
         return self.current
 
-    def buildDict(self,cntrlList):
+    def build_dict(self,cntrl_list):
         self.controllers={}
-        for controller in cntrlList:
-            temp=getattr(controllers,controller)
-            temp2=getattr(temp, capitalize(controller[0])+controller[1:])
-            self.controllers[controller]=temp2()
+        for controller in cntrl_list:
+            class_name=getattr(self.controller_modules[controller], capitalize(controller[0])+controller[1:])
+            self.controllers[controller]=class_name()
 
-    def execute(self):
-        self.evalcriteria(self) #User defined algorithm which selects the controller to use for this time step
-
-        wheel_speeds=self.controllers[self.current].execute()
-        self.robot.set_wheel_speeds=wheel_speeds
+    def execute(self,dt):
+        self.eval_criteria() #User-defined algorithm
+        output=self.current.execute(self,dt)#execute the current class
+        self.pose_est=[0,0,0]
