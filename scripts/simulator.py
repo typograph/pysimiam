@@ -9,7 +9,7 @@ import khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
-import pylygon
+#import pylygon
 
 PAUSE = 0
 RUN = 1
@@ -32,6 +32,8 @@ class Simulator(threading.Thread):
         self._renderer = renderer
         self.updateView = update_callback
         self.__center_on_robot = False
+        
+        self._render_lock = threading.Lock()
         
         # Zoom on scene - Move to read_config later
         self._renderer.set_zoom_level(130)
@@ -82,9 +84,8 @@ class Simulator(threading.Thread):
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
+            self.focus_on_world()
             self.draw()
-        self.focus_on_world()
-        self.draw() # Draw at least once to show the user it has loaded
 
     def run(self):
         print 'starting simulator thread'
@@ -97,20 +98,21 @@ class Simulator(threading.Thread):
         #self.draw() # Draw at least once (Move to open afterwards)
         while not self.__stop:
             sleep(time_constant)
-            if self.__state != RUN:
-                continue
-            for robot in self._robots:
-                robot.move_to(robot.pose_after(time_constant))
+            if self.__state == RUN:
+                for robot in self._robots:
+                    robot.move_to(robot.pose_after(time_constant))
+                #if self.check_collisions():
+                    #print "Collision detected!"
+                    #self.__stop = True
+
             # Draw to buffer-bitmap
             self.draw()
             
-            if self.check_collisions():
-                print "Collision detected!"
-                self.__stop = True
 
     def draw(self):
-        #Test code
-        #  
+
+        self._render_lock.acquire()
+
         if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self._robots[0]
@@ -129,6 +131,7 @@ class Simulator(threading.Thread):
         #end test code
 
         self.updateView()
+        self._render_lock.release()
 
     def focus_on_world(self):
         self.__center_on_robot = False
@@ -143,18 +146,26 @@ class Simulator(threading.Thread):
                 yb = ybo
             if yto > yt:
                 yt = yto
+        self._render_lock.acquire()
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
+        self._render_lock.release()
     
     def focus_on_robot(self):
+        self._render_lock.acquire()
         self.__center_on_robot = True
+        self._render_lock.release()
     
     def show_grid(self, show=True):
+        self._render_lock.acquire()
         self._renderer.show_grid(show)
+        self._render_lock.release()
         if self._robots[0] is not None and self.__state != RUN:
             self.draw()
         
     def adjust_zoom(self,factor):
+        self._render_lock.acquire()
         self._renderer.scale_zoom_level(factor)
+        self._render_lock.release()
     
     # Stops the thread
     def stop(self):
