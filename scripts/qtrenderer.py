@@ -15,6 +15,7 @@ class QtRenderer(Renderer):
         """
         self._grid_pen = QPen(QColor(0x808080))
         self._grid_pen.setStyle(Qt.DashLine)
+        self._painter = None
         Renderer.__init__(self, pd)
 
     def set_canvas(self, canvas):
@@ -22,6 +23,11 @@ class QtRenderer(Renderer):
         
         The type of canvas is implementation-dependent
         """
+        if self._painter is not None:
+            self._painter.restore()
+            self._painter.restore()
+            self._painter.end()
+        
         self._paintdevice = canvas
         self._painter = QPainter(canvas)
         self._painter.setRenderHint(QPainter.Antialiasing)

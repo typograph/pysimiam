@@ -11,14 +11,11 @@ from qtrenderer import QtRenderer
 import simulator as sim
 import threading
 
-BITMAP_WIDTH = 400
-BITMAP_HEIGHT = 400
-
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
-        self.resize(BITMAP_WIDTH,BITMAP_HEIGHT)
+        self.resize(400,400)
         
         self.__create_toolbars()
         self.__create_menu()
@@ -183,10 +180,11 @@ class SimulationWidget(QtGui.QMainWindow):
 class SimulatorViewer(QtGui.QFrame):
     def __init__(self, parent = None):
         super(SimulatorViewer, self).__init__(parent)
-        self.__bitmap = QtGui.QPixmap(BITMAP_WIDTH, BITMAP_HEIGHT)
-        self.__blt_bitmap = QtGui.QImage(BITMAP_WIDTH,BITMAP_HEIGHT,QtGui.QImage.Format_ARGB32)
+        self.__bitmap = QtGui.QPixmap()
+        self.__blt_bitmap = QtGui.QImage(self.size(), QtGui.QImage.Format_ARGB32)
         self.renderer = QtRenderer(self.__blt_bitmap)
         self.lock = threading.Lock()
+        self.__resize_on_paint = False
         # code for async calling of update
         self.update_ = self.metaObject().method(self.metaObject().indexOfMethod('update()'))
 
@@ -194,14 +192,31 @@ class SimulatorViewer(QtGui.QFrame):
         super(SimulatorViewer, self).paintEvent(event)
         self.lock.acquire()
         painter = QtGui.QPainter(self)
-        painter.drawPixmap(0,0,self.__bitmap)
+        painter.fillRect(self.rect(),QtCore.Qt.white)
+        s = self.__bitmap.rect().size()
+        s.scale(self.rect().size(),QtCore.Qt.KeepAspectRatio)
+        dx = (self.width() - s.width())/2
+        dy = (self.height() - s.height())/2
+        painter.drawPixmap(QtCore.QRect(QtCore.QPoint(dx,dy),s),self.__bitmap,self.__bitmap.rect())
         self.lock.release()
         
     def update_bitmap(self):
         self.lock.acquire()
         self.__bitmap = QtGui.QPixmap.fromImage(self.__blt_bitmap)
+        # resize the canvas - at this point nothing is being drawn
+        if self.__resize_on_paint:
+            self.__blt_bitmap = QtGui.QImage(self.width(),
+                                            self.height(),
+                                            QtGui.QImage.Format_ARGB32)
+            self.renderer.set_canvas(self.__blt_bitmap)          
+            self.__resize_on_paint = False
         self.lock.release()
         self.update_.invoke(self,QtCore.Qt.QueuedConnection)
+
+    def resizeEvent(self,event):
+        """Resize panel and canvas"""
+        # use cached size and flag
+        self.__resize_on_paint = True
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
