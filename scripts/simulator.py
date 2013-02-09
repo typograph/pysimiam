@@ -34,7 +34,7 @@ class Simulator(threading.Thread):
         self.__center_on_robot = False
         
         # Zoom on scene - Move to read_config later
-        self._renderer.set_zoom(130)
+        self._renderer.set_zoom_level(130)
         self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
         
         # World objects
@@ -111,13 +111,10 @@ class Simulator(threading.Thread):
     def draw(self):
         #Test code
         #  
-        if (len(self._robots) > 0):
+        if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self._robots[0]
             self._renderer.set_screen_center_pose(robot.get_pose())
-
-        if self.__center_on_robot:
-            self._renderer.set_screen_center_pose(self._robots[0].get_pose())
 
         self._renderer.clear_screen()
 
@@ -178,21 +175,14 @@ class Simulator(threading.Thread):
         poly_obstacles = []
         # prepare polygons for obstacles
         for obstacle in self._obstacles:
-            poly = pylygon.Polygon(obstacle.get_envelope())
-            x, y, theta = obstacle.get_pose().get_list()
-            poly.move_ip(x, y)
-            poly.rotate_ip(theta)
+            poly = pylygon.Polygon(obstacle.get_world_envelope())
             poly_obstacles.append(poly)
             #print "Obstacle:", poly
         
         poly_robots = []
         # prepare polygons for robots
         for robot in self._robots:
-            points = [(x,y) for x,y,t in robot.get_envelope()]
-            poly = pylygon.Polygon(points)
-            x, y, theta = robot.get_pose().get_list()
-            poly.move_ip(x, y)
-            poly.rotate_ip(theta)
+            poly = pylygon.Polygon(robot.get_world_envelope())
             poly_robots.append(poly)
             #print "Robot:", poly
             
@@ -205,7 +195,7 @@ class Simulator(threading.Thread):
                 collisions = robot.collidepoly(obstacle)
                 # collidepoly returns False value or
                 # an array of projections if found
-                if not collisions is False:
+                if isinstance(collisions,bool):
                     return True
                 
             # against other robots
@@ -213,7 +203,7 @@ class Simulator(threading.Thread):
                 if other == robot: continue
                 if other in checked_robots: continue
                 collisions = robot.collidepoly(other)
-                if not collisions is False:
+                if isinstance(collisions,bool):
                     return True
             
             checked_robots.append(robot)
