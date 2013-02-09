@@ -199,9 +199,11 @@ class SimulatorViewerPanel(wx.Panel):
         # Create bitmaps and contexts
         self.__bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
         self.__bitmap_dc = wx.MemoryDC(self.__bitmap)
+        
         self.__blt_bitmap = wx.EmptyBitmap(BITMAP_WIDTH, BITMAP_HEIGHT)
-
-        self.renderer = wxGCRenderer(wx.MemoryDC(self.__blt_bitmap))
+        self.__blt_bitmap_dc = wx.MemoryDC(self.__blt_bitmap)
+        
+        self.renderer = wxGCRenderer(self.__blt_bitmap_dc)
         self.lock = threading.Lock()
         self.Bind(wx.EVT_PAINT, self._on_paint)
         
@@ -209,14 +211,18 @@ class SimulatorViewerPanel(wx.Panel):
     # Methods
     def update_bitmap(self):
         self.lock.acquire()
-        self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
+        self.__bitmap_dc.Blit(0, 0, BITMAP_WIDTH, BITMAP_HEIGHT,
+                              self.__blt_bitmap_dc, 0, 0,
+                              wx.COPY, False, 0, 0)
         self.lock.release()
         wx.CallAfter(self._paint_now,None)
 
     def _paint_now(self, event):
         self.lock.acquire()
         dc = wx.ClientDC(self)
-        dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
+        dc.Blit(0, 0, BITMAP_WIDTH, BITMAP_HEIGHT,
+                self.__bitmap_dc, 0, 0,
+                wx.COPY, False, 0, 0)
         self.lock.release()
 
     def _on_paint(self, event):

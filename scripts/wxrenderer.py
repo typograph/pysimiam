@@ -13,8 +13,11 @@ from pose import Pose
 class wxGCRenderer(Renderer):
     def __init__(self, DC):
         self._defpose = Pose() # The pose in the bottom-left corner
-        self._zoom = 1 # The zooming factor
+        self._zoom = 1.0 # The zooming factor
         self._zoom_c = False # Whether the scaling is done from center
+        self._show_grid = False # Show the grid
+        self._dc_grid_pen = wx.Pen(wx.Colour(128,128,128,255),1,wx.SHORT_DASH)
+        self._grid_spacing = 40.0 # default for unscaled
         Renderer.__init__(self,DC.GetSizeTuple(),DC)
         
     def set_canvas(self, DC):
@@ -31,12 +34,72 @@ class wxGCRenderer(Renderer):
         
         self.set_pen(None)
         self.set_brush(None)
+        self._grid_pen = self._gc.CreatePen(self._dc_grid_pen)
         
         self._gc.PushState() # The first pushed state is the default blank
         self._gc.PushState() # The second pushed state is the scaled one (zoom=1) with default pose
         self.__update_default_state()
 
-    def set_zoom(self, zoom_level):
+    def show_grid(self, show=True):
+        """Draw the grid on the canvas background.
+        
+        The grid is adaptive, with minimum interline distance of 10 px,
+        and a maximum of 40 px.
+        This method will clear the canvas
+        """
+        self._show_grid = show
+        self.clear_screen()
+
+    def __calculate_bounds(self):
+        #transform = self._gc.CreateMatrix(*self._gc.GetTransform().Get())
+        transform = self._gc.GetTransform()
+        transform.Invert()
+        xs,ys = zip(
+                    transform.TransformPoint(0.0,0.0),
+                    transform.TransformPoint(0.0,float(self.size[1])),
+                    transform.TransformPoint(float(self.size[0]),float(self.size[1])),
+                    transform.TransformPoint(float(self.size[0]),0.0)
+                    )
+        
+        self.__bounds = (min(xs), min(ys), max(xs), max(ys))
+        
+        # Calculate grid coordinates
+        xmin, ymin, xmax, ymax = self.__bounds
+        
+        # Determine min/max x & y line indices:
+        x_ticks = (int(xmin//self._grid_spacing), int(xmax//self._grid_spacing + 1))
+        y_ticks = (int(ymin//self._grid_spacing), int(ymax//self._grid_spacing + 1))
+        
+        transform.Invert()
+        self.__grid_lines = [
+            [transform.TransformPoint(xmin,i*self._grid_spacing) for i in range(*y_ticks)],
+            [transform.TransformPoint(xmax,i*self._grid_spacing) for i in range(*y_ticks)],
+            [transform.TransformPoint(i*self._grid_spacing,ymin) for i in range(*x_ticks)],
+            [transform.TransformPoint(i*self._grid_spacing,ymax) for i in range(*x_ticks)]            
+            ]
+            
+    def __draw_grid(self):
+        self.reset_pose()
+        self._gc.PushState()
+        self._gc.SetTransform(self._gc.CreateMatrix())
+        #self._gc.SetPen(self._grid_pen)
+        self.set_pen(0x808080)
+        self._gc.StrokeLineSegments(self.__grid_lines[0], self.__grid_lines[1])
+        self._gc.StrokeLineSegments(self.__grid_lines[2], self.__grid_lines[3])
+        self._gc.PopState()
+        self.set_pen(None)
+
+    def set_zoom_level(self, zoom_level):
+        # Determine the right grid spacing for this zoom level
+        self._grid_spacing *= zoom_level
+        while self._grid_spacing > 80:
+            self._grid_spacing /= 2
+        while self._grid_spacing < 20:
+            self._grid_spacing *= 2
+        self._grid_spacing /= zoom_level
+            
+        print self._grid_spacing
+            
         self._zoom = float(zoom_level)
         self.__update_default_state()
         
@@ -50,10 +113,13 @@ class wxGCRenderer(Renderer):
         self._gc.Rotate(-self._defpose.theta)
         self._gc.Translate(-self._defpose.x, -self._defpose.y)
         self._gc.PushState() # Save the zoomed state
+        self.__calculate_bounds()
         self.clear_screen()
 
     def clear_screen(self):
         self._dc.Clear()
+        if self._show_grid:
+            self.__draw_grid()
 
     def __set_scr_pose(self,pose):
         self._defpose = pose
