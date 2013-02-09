@@ -50,8 +50,6 @@ class Simulator(threading.Thread):
 #            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
 #            ]
         #end test code
-#        self._robot = None
-#        self._obstacles = []
 
     def read_config(self, config):
         ''' Read in the objects from the XML configuration file '''
@@ -64,7 +62,7 @@ class Simulator(threading.Thread):
         for thing in world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, robot_pose  = thing[1], thing[2] 
+                robot_type, robot_pose  = thing[1], thing[2]
                 if robot_type == 'khepera3.K3Supervisor':
                     self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
                 else:
@@ -76,9 +74,8 @@ class Simulator(threading.Thread):
                                       obstacle_coords,
                                       0xFF0000))
             else:
-                raise Exception('[Simulator.__init__] Unknown object: ' 
+                raise Exception('[Simulator.__init__] Unknown object: '
                                 + str(thing_type))
-        
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
@@ -90,7 +87,6 @@ class Simulator(threading.Thread):
         print 'starting simulator thread'
 
         time_constant = 0.1  # 100 milliseconds
-        
         self._renderer.clear_screen() #create a white screen
         self.updateView()
 
@@ -101,16 +97,18 @@ class Simulator(threading.Thread):
                 continue
             for robot in self._robots:
                 robot.move_to(robot.pose_after(time_constant))
-            # Draw to buffer-bitmap
-            self.draw()
-            
+
             if self.check_collisions():
                 print "Collision detected!"
+
                 self.__stop = True
+
+            # Draw to buffer-bitmap
+            self.draw()
+
 
     def draw(self):
         #Test code
-        #  
         if (len(self._robots) > 0):
             # Temporary fix - center onto first robot
             robot = self._robots[0]
@@ -147,18 +145,18 @@ class Simulator(threading.Thread):
             if yto > yt:
                 yt = yto
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
-    
+
     def focus_on_robot(self):
         self.__center_on_robot = True
-    
+
     def show_grid(self, show=True):
         self._renderer.show_grid(show)
         if self._robots[0] is not None and self.__state != RUN:
             self.draw()
-        
+
     def adjust_zoom(self,factor):
         self._renderer.scale_zoom_level(factor)
-    
+
     # Stops the thread
     def stop(self):
         print 'stopping simulator thread'
@@ -184,7 +182,7 @@ class Simulator(threading.Thread):
             poly.rotate_ip(theta)
             poly_obstacles.append(poly)
             #print "Obstacle:", poly
-        
+
         poly_robots = []
         # prepare polygons for robots
         for robot in self._robots:
@@ -195,9 +193,9 @@ class Simulator(threading.Thread):
             poly.rotate_ip(theta)
             poly_robots.append(poly)
             #print "Robot:", poly
-            
+
         checked_robots = []
-            
+
         # check each robot's polygon
         for robot in poly_robots:
             # against obstacles
@@ -207,15 +205,15 @@ class Simulator(threading.Thread):
                 # an array of projections if found
                 if not collisions is False:
                     return True
-                
+
             # against other robots
-            for other in poly_robots: 
+            for other in poly_robots:
                 if other == robot: continue
                 if other in checked_robots: continue
                 collisions = robot.collidepoly(other)
                 if not collisions is False:
                     return True
-            
+
             checked_robots.append(robot)
         return False
 
