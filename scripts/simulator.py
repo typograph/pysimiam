@@ -32,15 +32,15 @@ class Simulator(threading.Thread):
         self._renderer = renderer
         self.updateView = update_callback
         self.__center_on_robot = False
-        
+
         # Zoom on scene - Move to read_config later
-        self._renderer.set_zoom(130)
+        #self._renderer.set_zoom(130)
         self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
-        
+
         # World objects
         self._robots = []
         self._obstacles = []
-        
+
         #test code
 #        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
 #        self._robots[0].set_wheel_speeds(18,16)
