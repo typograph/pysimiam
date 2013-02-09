@@ -56,7 +56,8 @@ class Pose(object):
             [0, 0, 1.0]])
         return T
 
-
+    def __str__(self):
+        return "(%f,%f) %f" % (self.x,self.y,self.theta)
 
 #end class Pose
 
