@@ -12,13 +12,8 @@ from pose import Pose
 
 class wxGCRenderer(Renderer):
     def __init__(self, DC):
-        self._defpose = Pose() # The pose in the bottom-left corner
-        self._zoom = 1.0 # The zooming factor
-        self._zoom_c = False # Whether the scaling is done from center
-        self._show_grid = False # Show the grid
         self._dc_grid_pen = wx.Pen(wx.Colour(128,128,128,255),1,wx.SHORT_DASH)
-        self._grid_spacing = 40.0 # default for unscaled
-        Renderer.__init__(self,DC.GetSizeTuple(),DC)
+        Renderer.__init__(self,DC)
         
     def set_canvas(self, DC):
         # Reset cached brushes & pens
@@ -29,28 +24,37 @@ class wxGCRenderer(Renderer):
         self._dc = DC
         self._gc = wx.GraphicsContext.Create(self._dc)
         
-        self._gc.Scale(1,-1)
-        self._gc.Translate(0, -self.size[1])
+        w, h = self._get_canvas_size(DC)
         
-        self.set_pen(None)
-        self.set_brush(None)
+        # Set correct x & y axes directions
+        self._gc.Scale(1,-1)
+        self._gc.Translate(0, -h)
+        
         self._grid_pen = self._gc.CreatePen(self._dc_grid_pen)
         
-        self._gc.PushState() # The first pushed state is the default blank
-        self._gc.PushState() # The second pushed state is the scaled one (zoom=1) with default pose
-        self.__update_default_state()
-
-    def show_grid(self, show=True):
-        """Draw the grid on the canvas background.
+        Renderer.set_canvas(self,DC)
         
-        The grid is adaptive, with minimum interline distance of 10 px,
-        and a maximum of 40 px.
-        This method will clear the canvas
-        """
-        self._show_grid = show
-        self.clear_screen()
+    def _get_canvas_size(self,DC):
+        """Get the canvas size tuple (width,height)"""
+        return DC.GetSizeTuple()
 
-    def __calculate_bounds(self):
+    def push_state(self):
+        """Store the current state on the stack.
+        
+        Current state includes default pose, pen and brush
+        """
+        ### FIXME store brush
+        self._gc.PushState()
+    
+    def pop_state(self):
+        """Restore the last saved state from the stack
+
+        The state includes default pose, pen and brush
+        """
+        ### FIXME store brush
+        self._gc.PopState()
+
+    def _calculate_bounds(self):
         #transform = self._gc.CreateMatrix(*self._gc.GetTransform().Get())
         transform = self._gc.GetTransform()
         transform.Invert()
@@ -62,6 +66,9 @@ class wxGCRenderer(Renderer):
                     )
         
         self.__bounds = (min(xs), min(ys), max(xs), max(ys))
+        self.__calculate_grid()
+        
+    def __calculate_grid(self):
         
         # Calculate grid coordinates
         xmin, ymin, xmax, ymax = self.__bounds
@@ -70,7 +77,7 @@ class wxGCRenderer(Renderer):
         x_ticks = (int(xmin//self._grid_spacing), int(xmax//self._grid_spacing + 1))
         y_ticks = (int(ymin//self._grid_spacing), int(ymax//self._grid_spacing + 1))
         
-        transform.Invert()
+        transform = self._gc.GetTransform()
         self.__grid_lines = [
             [transform.TransformPoint(xmin,i*self._grid_spacing) for i in range(*y_ticks)],
             [transform.TransformPoint(xmax,i*self._grid_spacing) for i in range(*y_ticks)],
@@ -78,7 +85,7 @@ class wxGCRenderer(Renderer):
             [transform.TransformPoint(i*self._grid_spacing,ymax) for i in range(*x_ticks)]            
             ]
             
-    def __draw_grid(self):
+    def _draw_grid(self):
         self.reset_pose()
         self._gc.PushState()
         self._gc.SetTransform(self._gc.CreateMatrix())
@@ -88,71 +95,37 @@ class wxGCRenderer(Renderer):
         self._gc.StrokeLineSegments(self.__grid_lines[2], self.__grid_lines[3])
         self._gc.PopState()
         self.set_pen(None)
-
-    def set_zoom_level(self, zoom_level):
-        # Determine the right grid spacing for this zoom level
-        self._grid_spacing *= zoom_level
-        while self._grid_spacing > 80:
-            self._grid_spacing /= 2
-        while self._grid_spacing < 20:
-            self._grid_spacing *= 2
-        self._grid_spacing /= zoom_level
-            
-        print self._grid_spacing
-            
-    def set_zoom(self, zoom_level):
-        self._zoom = float(zoom_level)
-        self.__update_default_state()
         
-    def __update_default_state(self):
-        self._gc.PopState() # Reset state
-        self._gc.PopState() # Set zoom to 1     
-        self._gc.PushState() # Re-save the zoom-1
-        if self._zoom_c:
-            self._gc.Translate(self.size[0]/2,self.size[1]/2)
-        self._gc.Scale(self._zoom,self._zoom)
-        self._gc.Rotate(-self._defpose.theta)
-        self._gc.Translate(-self._defpose.x, -self._defpose.y)
-        self._gc.PushState() # Save the zoomed state
-        self.__calculate_bounds()
-        self.clear_screen()
+    def scale(self, factor):
+        """Scale drawing operations by factor
+        
+        To be implemented in subclasses.
+        """
+        self._gc.Scale(factor,factor)
+    
+    def rotate(self, angle):
+        """Rotate canvas by angle (in radians)
+        
+        To be implemented in subclasses.
+        """
+        self._gc.Rotate(angle)
+    
+    def translate(self, dx, dy):
+        """Translate canvas by dx, dy
+        
+        To be implemented in subclasses.
+        """
+        self._gc.Translate(dx,dy)
 
     def clear_screen(self):
         self._dc.Clear()
-        if self._show_grid:
-            self.__draw_grid()
+        Renderer.clear_screen(self)
 
-    def __set_scr_pose(self,pose):
-        self._defpose = pose
-        self.__update_default_state()
-        self.clear_screen()
-
-    def set_screen_pose(self, pose):
-        self._zoom_c = False
-        self.__set_scr_pose(pose)
-
-    def set_screen_center_pose(self, pose):
-        self._zoom_c = True
-        self.__set_scr_pose(pose)
-
-    def reset_pose(self):
-        """Resets the renderer to default pose
-        """
-        self._gc.PopState()
-        self._gc.PushState()
-    
     #def set_pose(self, pose):
         #self.reset_pose()
         #self._gc.Translate(pose.x - self._defpose.x), pose.y - self._defpose.y)
         #self._gc.Rotate(pose.theta - self._defpose.theta)
     
-    def add_pose(self, pose):
-        """Add a pose transformation to the current transformation
-        """
-        self._gc.Translate(pose.x, pose.y)
-        self._gc.Rotate(pose.theta)
-        pass
-
     @staticmethod
     def __wxcolor(color):
         if color is None:
