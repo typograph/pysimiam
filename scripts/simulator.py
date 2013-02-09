@@ -3,6 +3,7 @@
 """
 import threading
 from time import sleep
+from xmlparser import XMLParser
 
 import khepera3
 import pose
@@ -26,7 +27,8 @@ class Simulator(threading.Thread):
 
         #Attributes
         self.__stop = False
-        self.state = PAUSE
+        #self._id = id_
+        self.__state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
         self.__center_on_robot = False
@@ -81,11 +83,8 @@ class Simulator(threading.Thread):
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
             self.draw()
-
         self.focus_on_world()
-
         self.draw() # Draw at least once to show the user it has loaded
-
 
     def run(self):
         print 'starting simulator thread'
@@ -98,7 +97,7 @@ class Simulator(threading.Thread):
         #self.draw() # Draw at least once (Move to open afterwards)
         while not self.__stop:
             sleep(time_constant)
-            if self.state != RUN:
+            if self.__state != RUN:
                 continue
             for robot in self._robots:
                 robot.move_to(robot.pose_after(time_constant))
@@ -154,7 +153,7 @@ class Simulator(threading.Thread):
     
     def show_grid(self, show=True):
         self._renderer.show_grid(show)
-        if self._robots[0] is not None and self.state != RUN:
+        if self._robots[0] is not None and self.__state != RUN:
             self.draw()
         
     def adjust_zoom(self,factor):
@@ -167,10 +166,10 @@ class Simulator(threading.Thread):
 
     def start_simulation(self):
         if self._robots is not None:
-            self.state = RUN
+            self.__state = RUN
 
     def pause_simulation(self):
-        self.state = PAUSE
+        self.__state = PAUSE
 
     def reset_simulation(self):
         pass
