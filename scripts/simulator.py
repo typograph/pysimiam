@@ -40,13 +40,13 @@ class Simulator(threading.Thread):
         self._obstacles = []
         
         #test code
-#        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
-#        self._robots[0].set_wheel_speeds(18,16)
-#        self._obstacles = [
-#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-#            ]
+        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
+        self._robots[0].set_wheel_speeds(18,16)
+        self._obstacles = [
+            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+            ]
         #end test code
 #        self._robot = None
 #        self._obstacles = []
