@@ -6,15 +6,23 @@
 from numpy import degrees
 from pose import Pose
 from renderer import Renderer
-from PyQt4.QtGui import QPainter,QColor,QPolygonF,QPen
-from PyQt4.QtCore import QPointF,QLineF,Qt
+from PyQt4.QtGui import QPainter, QColor, QPolygonF, QPen
+from PyQt4.QtCore import QPointF, QLineF, Qt, QObject, pyqtSlot, pyqtSignal
 
-class QtRenderer(Renderer):
+class QtRenderer(Renderer,QObject):
+    
+    __signal_draw_sim_objects = pyqtSignal(list)
+    
     def __init__(self, pd):
         """Creates a new renderer based on a QPaintDevice pd
         """
+        QObject.__init__(self)
+        
         self._grid_pen = QPen(QColor(0x808080))
         self._grid_pen.setStyle(Qt.DashLine)
+        
+        self.__signal_draw_sim_objects.connect(self.__draw_sim_objects,Qt.QueuedConnection)
+        
         Renderer.__init__(self, pd)
 
     def set_canvas(self, canvas):
@@ -167,3 +175,14 @@ class QtRenderer(Renderer):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
         pass
+    
+    def _async_call_draw_sim_objects(self,simobjs):
+        """Asyncronously call __draw_sim_objects
+        
+        To be implemented in subclasses
+        """
+        self.__signal_draw_sim_objects.emit(simobjs)
+        
+    @pyqtSlot(list)
+    def __draw_sim_objects(self, simobjs):
+        Renderer._draw_sim_objects(self,simobjs)

@@ -188,3 +188,10 @@ class wxGCRenderer(Renderer):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
         self._gc.DrawLines([(x1,y1),(x2,y2)])
+
+    def _async_call_draw_sim_objects(self,simobjs):
+        """Asyncronously call __draw_sim_objects
+        
+        To be implemented in subclasses
+        """
+        wx.CallAfter(Renderer._draw_sim_objects, self, simobjs)

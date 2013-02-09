@@ -8,7 +8,6 @@ from xmlparser import XMLParser
 import khepera3
 import pose
 import simobject
-from xmlparser import XMLParser
 import pylygon
 
 PAUSE = 0
@@ -16,7 +15,7 @@ RUN = 1
 
 class Simulator(threading.Thread):
 
-    def __init__(self, renderer, update_callback):
+    def __init__(self, renderer):
         """
         The viewer object supplies:
             a Renderer (viewer.renderer),
@@ -30,13 +29,8 @@ class Simulator(threading.Thread):
         #self._id = id_
         self.__state = PAUSE
         self._renderer = renderer
-        self.updateView = update_callback
         self.__center_on_robot = False
-        
-        # Zoom on scene - Move to read_config later
-        self._renderer.set_zoom(130)
-        self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
-        
+                
         # World objects
         self._robots = []
         self._obstacles = []
@@ -82,19 +76,14 @@ class Simulator(threading.Thread):
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
+            self.focus_on_world()
             self.draw()
-        self.focus_on_world()
-        self.draw() # Draw at least once to show the user it has loaded
-
+            
     def run(self):
         print 'starting simulator thread'
 
         time_constant = 0.1  # 100 milliseconds
         
-        self._renderer.clear_screen() #create a white screen
-        self.updateView()
-
-        #self.draw() # Draw at least once (Move to open afterwards)
         while not self.__stop:
             sleep(time_constant)
             if self.__state != RUN:
@@ -111,27 +100,20 @@ class Simulator(threading.Thread):
     def draw(self):
         #Test code
         #  
-        if (len(self._robots) > 0):
-            # Temporary fix - center onto first robot
-            robot = self._robots[0]
-            self._renderer.set_screen_center_pose(robot.get_pose())
+        #if (len(self._robots) > 0):
+            ## Temporary fix - center onto first robot
+            #robot = self._robots[0]
+            #self._renderer.set_screen_center_pose(robot.get_pose())
 
         if self.__center_on_robot:
             self._renderer.set_screen_center_pose(self._robots[0].get_pose())
 
-        self._renderer.clear_screen()
+        #self._renderer.clear_screen()
 
-        for obstacle in self._obstacles:
-            obstacle.draw(self._renderer)
-
-        # Draw the robots and sensors after obstacles
-        for robot in self._robots:
-            robot.draw(self._renderer)
-            for s in robot.ir_sensors:
-                s.draw(self._renderer)
+        self._renderer.async_draw_sim_objects(self._obstacles + self._robots)
+        self._renderer.draw_event.wait()       
+        
         #end test code
-
-        self.updateView()
 
     def focus_on_world(self):
         self.__center_on_robot = False

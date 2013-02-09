@@ -3,6 +3,7 @@
 #
 # A glue layer between SimObject and UI
 from pose import Pose
+from threading import Event
 
 class Renderer:
     def __init__(self, canvas):
@@ -16,6 +17,9 @@ class Renderer:
         self._show_grid = False # Show the grid
         self._grid_spacing = 40.0 # default for unscaled
         self.__view_rect = None # The rect to keep in view
+        
+        self.draw_event = Event()
+        self.draw_event.set()
         
         self.size = None
         self.set_canvas(canvas)
@@ -260,3 +264,30 @@ class Renderer:
         """Draws a text string at the defined position.
         """
         pass
+
+    def draw_sim_object(self, simobj):
+        """Draw a SimObject on canvas
+        """
+        simobj.draw(self)
+        
+    def async_draw_sim_objects(self, simobjs):
+        """Draw all simobjects from the list asyncronously on canvas.
+        """
+        self.draw_event.clear()
+        self._async_call_draw_sim_objects(simobjs)
+        
+    def _async_call_draw_sim_objects(self,simobjs):
+        """Asyncronously call __draw_sim_objects
+        
+        To be implemented in subclasses
+        """
+        pass
+
+    def _draw_sim_objects(self, simobjs):
+        """Draw all simobjects from the list on canvas.
+        """
+        self.clear_screen()
+        for so in simobjs:
+            so.draw(self)
+        self.draw_event.set()
+        
