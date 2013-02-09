@@ -100,6 +100,7 @@ class wxGCRenderer(Renderer):
             
         print self._grid_spacing
             
+    def set_zoom(self, zoom_level):
         self._zoom = float(zoom_level)
         self.__update_default_state()
         
@@ -189,7 +190,6 @@ class wxGCRenderer(Renderer):
 
         Expects a list of points as a list of tuples or as a numpy array. Ignores Z if available
         """
-        #self.gc.DrawLines([point[:2] for point in points])
         xy_pts = [point[:2] for point in points]
         xy_pts.append(xy_pts[0])
         self._gc.DrawLines(xy_pts)

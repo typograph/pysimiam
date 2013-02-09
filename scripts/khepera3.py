@@ -30,7 +30,7 @@ class Khepera3_IRSensor(IRSensor):
     def draw(self, r):
         r.set_pose(self.get_pose())
         r.set_brush(0x11FF5566)
-        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
+        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmax/2))
         r.draw_polygon(self.pts)
 
 

@@ -13,8 +13,9 @@ import threading
 
 class PySimiamApp(wx.App):
     def OnInit(self):
-        self.frame = PySimiamFrame(None, size=wx.Size(BITMAP_WIDTH,
-BITMAP_HEIGHT), title="PySimiam")
+        self.frame = PySimiamFrame(None,
+                                   size = wx.Size(BITMAP_WIDTH, BITMAP_HEIGHT),
+                                   title = "PySimiam")
         self.SetTopWindow(self.frame)
         self.frame.Show()
 
@@ -60,7 +61,6 @@ class PySimiamFrame(wx.Frame):
 
         # Simulation Panel
         self._viewer = SimulatorViewerPanel(self)
-
         # create the simulator thread
         self._simulator_thread = sim.Simulator(self._viewer.renderer,
                                                self._viewer.update_bitmap)
@@ -205,6 +205,7 @@ class SimulatorViewerPanel(wx.Panel):
         
         self.renderer = wxGCRenderer(self.__blt_bitmap_dc)
         self.lock = threading.Lock()
+        
         self.Bind(wx.EVT_PAINT, self._on_paint)
         
 
@@ -231,6 +232,16 @@ class SimulatorViewerPanel(wx.Panel):
         #dc = wx.PaintDC(self)
         #dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
         #self.lock.release()
+        self.__bitmap_dc.DrawBitmap(self.__blt_bitmap, 0, 0, False) # no mask
+        self.lock.release()
+        wx.CallAfter(self._on_paint,None)
+        
+
+    def _on_paint(self, event):
+        self.lock.acquire()
+        dc = wx.PaintDC(self)
+        dc.DrawBitmap(self.__bitmap, 0, 0, False) # no mask
+        self.lock.release()
 
 if __name__ == "__main__":
     #provider = wx.SimpleHelpProvider()

@@ -136,7 +136,7 @@ class Simulator(threading.Thread):
 
     def focus_on_world(self):
         self.__center_on_robot = False
-        xl, yb, xr, yt = self._robot.get_bounds()
+        xl, yb, xr, yt = self._robots[0].get_bounds()
         for obstacle in self._obstacles:
             xlo, ybo, xro, yto = obstacle.get_bounds()
             if xlo < xl:
