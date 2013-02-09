@@ -40,13 +40,13 @@ class Simulator(threading.Thread):
         self._obstacles = []
         
         #test code
-        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
-        self._robots[0].set_wheel_speeds(18,16)
-        self._obstacles = [
-            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-            ]
+#        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
+#        self._robots[0].set_wheel_speeds(18,16)
+#        self._obstacles = [
+#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
+#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
+#            ]
         #end test code
 #        self._robot = None
 #        self._obstacles = []
@@ -118,7 +118,7 @@ class Simulator(threading.Thread):
             self._renderer.set_screen_center_pose(robot.get_pose())
 
         if self.__center_on_robot:
-            self._renderer.set_screen_center_pose(self._robot.get_pose())
+            self._renderer.set_screen_center_pose(self._robots[0].get_pose())
 
         self._renderer.clear_screen()
 
@@ -154,7 +154,7 @@ class Simulator(threading.Thread):
     
     def show_grid(self, show=True):
         self._renderer.show_grid(show)
-        if self._robot is not None and self.state != RUN:
+        if self._robots[0] is not None and self.state != RUN:
             self.draw()
         
     def adjust_zoom(self,factor):

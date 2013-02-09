@@ -89,6 +89,7 @@ class QtRenderer(Renderer):
             self._grid_spacing *= 2
         self._grid_spacing /= zoom_level
             
+    def set_zoom(self, zoom_level):
         self._zoom = float(zoom_level)
         self.__update_default_state()
         
