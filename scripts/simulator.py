@@ -50,8 +50,6 @@ class Simulator(threading.Thread):
 #            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
 #            ]
         #end test code
-#        self._robot = None
-#        self._obstacles = []
 
     def read_config(self, config):
         ''' Read in the objects from the XML configuration file '''
@@ -85,6 +83,10 @@ class Simulator(threading.Thread):
             self.draw()
         self.focus_on_world()
         self.draw() # Draw at least once to show the user it has loaded
+        
+        # Test code - add some motion to robots
+        for robot in self._robots:
+            robot.set_wheel_speeds(3,2)
 
     def run(self):
         print 'starting simulator thread'
@@ -106,7 +108,8 @@ class Simulator(threading.Thread):
             
             if self.check_collisions():
                 print "Collision detected!"
-                self.__stop = True
+                self.__state = PAUSE
+                #self.__stop = True
 
     def draw(self):
         #Test code
@@ -175,29 +178,26 @@ class Simulator(threading.Thread):
         pass
 
     def check_collisions(self):
+        ''' Detect collisions between objects '''
+        scaling_factor = 1.
         poly_obstacles = []
         # prepare polygons for obstacles
         for obstacle in self._obstacles:
-            poly = pylygon.Polygon(obstacle.get_envelope())
-            x, y, theta = obstacle.get_pose().get_list()
-            poly.move_ip(x, y)
-            poly.rotate_ip(theta)
+            points = [(x*scaling_factor, y*scaling_factor)
+                      for x,y in obstacle.get_world_envelope()]
+            poly = pylygon.Polygon(points)
             poly_obstacles.append(poly)
-            #print "Obstacle:", poly
         
         poly_robots = []
         # prepare polygons for robots
         for robot in self._robots:
-            points = [(x,y) for x,y,t in robot.get_envelope()]
+            points = [(x*scaling_factor, y*scaling_factor)
+                      for x,y in robot.get_world_envelope()]
             poly = pylygon.Polygon(points)
-            x, y, theta = robot.get_pose().get_list()
-            poly.move_ip(x, y)
-            poly.rotate_ip(theta)
             poly_robots.append(poly)
-            #print "Robot:", poly
             
         checked_robots = []
-            
+        
         # check each robot's polygon
         for robot in poly_robots:
             # against obstacles
@@ -205,16 +205,22 @@ class Simulator(threading.Thread):
                 collisions = robot.collidepoly(obstacle)
                 # collidepoly returns False value or
                 # an array of projections if found
-                if not collisions is False:
-                    return True
+                if isinstance(collisions, bool):
+                    if collisions == False: continue
+                print "Collisions:", collisions
+                print "Robot:", robot, "\nObstacle:", obstacle
+                return True
                 
             # against other robots
             for other in poly_robots: 
                 if other == robot: continue
                 if other in checked_robots: continue
                 collisions = robot.collidepoly(other)
-                if not collisions is False:
-                    return True
+                if isinstance(collisions, bool):
+                    if collisions == False: continue
+                print "Collisions:", collisions
+                print "Robot1:", robot, "\nRobot2:", other
+                return True
             
             checked_robots.append(robot)
         return False
