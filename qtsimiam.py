@@ -184,7 +184,7 @@ class SimulatorViewer(QtGui.QFrame):
     def __init__(self, parent = None):
         super(SimulatorViewer, self).__init__(parent)
         self.__bitmap = QtGui.QPixmap(BITMAP_WIDTH, BITMAP_HEIGHT)
-        self.__blt_bitmap = QtGui.QPixmap(BITMAP_WIDTH,BITMAP_HEIGHT)
+        self.__blt_bitmap = QtGui.QImage(BITMAP_WIDTH,BITMAP_HEIGHT,QtGui.QImage.Format_ARGB32)
         self.renderer = QtRenderer(self.__blt_bitmap)
         self.lock = threading.Lock()
         # code for async calling of update
@@ -199,9 +199,7 @@ class SimulatorViewer(QtGui.QFrame):
         
     def update_bitmap(self):
         self.lock.acquire()
-        painter = QtGui.QPainter(self.__bitmap)
-        painter.drawPixmap(0,0,self.__blt_bitmap)
-        #self.__bitmap = QtGui.QPixmap(self.__blt_bitmap)
+        self.__bitmap = QtGui.QPixmap.fromImage(self.__blt_bitmap)
         self.lock.release()
         self.update_.invoke(self,QtCore.Qt.QueuedConnection)
 
