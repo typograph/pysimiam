@@ -1,5 +1,4 @@
 """Simulator Thread
-
 """
 import threading
 from time import sleep, clock
