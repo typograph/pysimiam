@@ -70,10 +70,8 @@ class Simulator(threading.Thread):
             parser = XMLParser(config)
             self._world = parser.parse_simulation()
         except Exception, e:
-            #raise Exception('[Simulator.read_config] Failed to parse ' #+ config \
-            #    + ': ' + str(e)
-            pass
-
+            raise Exception('[Simulator.read_config] Failed to parse ' + config \
+                + ': ' + str(e))
         self.construct_world()
 
     def construct_world(self):
