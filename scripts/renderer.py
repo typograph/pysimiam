@@ -39,13 +39,12 @@ class Renderer:
         
         The type of canvas is implementation-dependent
         """
-        self.reset_canvas_size(self._get_canvas_size(canvas))
         self.set_pen(None)
         self.set_brush(None)
         self.push_state() # The first pushed state is the default blank
         self.push_state() # The second pushed state is the scaled one (zoom=1) with default pose
+        self.reset_canvas_size(self._get_canvas_size(canvas))
         self._update_default_state()
-        pass
    
     def reset_canvas_size(self,size):
         """Change canvas size
@@ -116,20 +115,15 @@ class Renderer:
         """Draw the grid on screen
         """
         
-    def __set_scr_pose(self,pose):
-        """Set self._defpose and update zoom/center
-        """
-        self._defpose = pose
-        self._update_default_state()
-        self.clear_screen()
-
     def set_screen_pose(self, pose):
         """ Set the pose of lower-left corner of the canvas
         
         Will automatically switch zoom center to said corner.
         """
         self._zoom_c = False
-        self.__set_scr_pose(pose)
+        self.__view_rect = None
+        self._defpose = pose
+        self._update_default_state()
 
     def set_screen_center_pose(self, pose):
         """ Set the pose of center of the canvas
@@ -137,7 +131,9 @@ class Renderer:
         Will automatically switch zoom center to canvas center.
         """
         self._zoom_c = True
-        self.__set_scr_pose(pose)
+        self.__view_rect = None
+        self._defpose = pose
+        self._update_default_state()
    
     def set_zoom_level(self, zoom_level):
         """Zoom up the drawing by a factor of zoom_level
@@ -152,6 +148,7 @@ class Renderer:
             self._grid_spacing *= 2
         self._grid_spacing /= zoom_level
 
+        self.__view_rect = None
         self._zoom = float(zoom_level)
         self._update_default_state()
         
@@ -182,11 +179,13 @@ class Renderer:
         """
         self.__view_rect = (x,y,width,height)
         zoom = min(self.size[0]/float(width), self.size[1]/float(height))
-        xtra_width = float(width) - self.size[0]/zoom
-        xtra_height = float(height) - self.size[1]/zoom
-        self.set_screen_pose(Pose(x - xtra_height/2, y - xtra_width/2, 0))
-        self.set_zoom_level(zoom)
-     
+        xtra_width = self.size[0]/zoom - float(width)
+        xtra_height = self.size[1]/zoom - float(height)
+        self._defpose = Pose(x - xtra_width/2, y - xtra_height/2, 0)
+        self._zoom = zoom
+        self._zoom_c = False
+        self._update_default_state()
+       
     def reset_pose(self):
         """Resets the renderer to default pose
         """
