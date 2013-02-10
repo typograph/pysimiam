@@ -55,8 +55,14 @@ class Simulator(threading.Thread):
         ''' Read in the objects from the XML configuration file '''
 
         print 'reading initial configuration'
-        parser = XMLParser(config)
-        world = parser.parse()
+        try:
+            parser = XMLParser(config)
+            world = parser.parse_simulation()
+        except Exception, e:
+            raise Exception(
+                '[Simulator.read_config] Failed to parse ' + config \
+                + ': ' + str(e))
+
         self._robots = []
         self._obstacles = []
         for thing in world:
@@ -78,10 +84,6 @@ class Simulator(threading.Thread):
                                 + str(thing_type))
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
-        else:
-            self.draw()
-        self.focus_on_world()
-        self.draw() # Draw at least once to show the user it has loaded
 
     def run(self):
         print 'starting simulator thread'
