@@ -72,7 +72,7 @@ class Simulator(threading.Thread):
             self._world = parser.parse_simulation()
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
-                + ': ' + str(e)
+                + ': ' + str(e))
         self.construct_world()
 
     def construct_world(self):
