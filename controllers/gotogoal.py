@@ -7,35 +7,35 @@ from controller import Controller
 import math
 import numpy
 
-class Gotogoal(Controller):
-    def __init__(self):
+class GoToGoal(Controller):
+    def __init__(self, params):
         '''read another .xml for PID parameters?'''
-        self.kp=10
-        self.ki=0
-        self.kd=0
+              
+        self.kp = params.gains.kp
+        self.ki = params.gains.ki
+        self.kd = params.gains.kd
+        
+        self.v_goal = params.velocity
+        self.pos_goal = (params.goal.x, params.goal.y)
 
-        self.E_k = 0
-        self.e_k_1 = 0
+        self.E_k = 0 # integrated error
+        self.e_k_1 = 0 # last step error
 
 
     def algorithm(self,pose_est,dt):
-        #Modify Below Here
-        _theta=pose_est().theta
-        _destination=[pose_est().x,pose_est().y]
 
-        '''I just define the goal arbitrarily here'''
-        _goal=[500,500]
-        
-        '''I just define the speed arbitrarily here'''
-        _v=1
-        
-        e_k=math.atan2(_destination[1],_destination[0])
-        e_k=math.atan2(math.sin(e_k),math.cos(e_k))
-        
-        _w = self.kp*e_k + self.ki*(self.E_k+e_k*dt) + self.kd*(e_k-self.e_k_1)/dt;
+        x_g, y_g = self.pos_goal
+        x_r, y_r, theta = pos_est
 
-        self.E_k = self.E_k+e_k*dt;
-        self.e_k_1 = e_k;
+        e_k = math.atan2(y_g - y_r, x_g - x_r) - theta
+        e_k = math.atan2(math.sin(e_k), math.cos(e_k))
+
+        self.E_k += e_k*dt
         
-        #Modify Above Here
-        return [_w,_v]
+        _w = self.kp*e_k +
+             self.ki*self.E_k +
+             self.kd*(e_k - self.e_k_1)/dt
+
+        self.e_k_1 = e_k
+        
+        return [self.v_goal, _w]
