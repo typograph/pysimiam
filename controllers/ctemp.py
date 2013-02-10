@@ -10,7 +10,6 @@ import numpy
 
 class Ctemp(Controller):
     def __init__(self):
-        '''read another .xml for PID parameters?'''
         self.kp=10
         self.ki=0
         self.kd=0

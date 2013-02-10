@@ -66,8 +66,12 @@ class Simulator(threading.Thread):
         ''' Read in the objects from the XML configuration file '''
 
         print 'reading initial configuration'
-        parser = XMLParser(config)
-        self._world = parser.parse()
+        try:
+            parser = XMLParser(config)
+            self._world = parser.parse_simulation()
+        except Exception, e:
+            raise Exception('[Simulator.read_config] Failed to parse ' + config \
+                + ': ' + str(e)
         self.construct_world()
 
     def construct_world(self):
@@ -102,9 +106,6 @@ class Simulator(threading.Thread):
             self._robots[0].set_wheel_speeds(1.2,1.6)
             self.focus_on_world()
             self.draw()
-
-        self.focus_on_world()
-        self.draw() # Draw at least once to show the user it has loaded
 
         # Test code - add some motion to robots
         for robot in self._robots:
