@@ -114,7 +114,8 @@ class Simulator(threading.Thread):
     def run(self):
         print 'starting simulator thread'
 
-        time_constant = 0.1  # 100 milliseconds
+        time_constant = 0.02  # 100 milliseconds
+        
         self._render_lock.acquire()
         self._renderer.clear_screen() #create a white screen
         self.updateView()
@@ -133,22 +134,15 @@ class Simulator(threading.Thread):
                 self.__state = PAUSE
                 #self.__stop = True
 
+            sleep(time_constant/self.__time_multiplier)
+
             if self.__state == RUN:
-                current_clock = clock()
-                elapsed_time = (current_clock - self.__clock)*self.__time_multiplier
-                # Make sure we have at least 0.1 milliseconds,
-                # otherwise numpy complains
-                if elapsed_time < 0.0001:
-                    continue
-                self.__clock = current_clock
-                self.__time += elapsed_time
                 for robot in self._robots:
-                    robot.move_to(robot.pose_after(elapsed_time))
+                    robot.move_to(robot.pose_after(time_constant))
+                self.__time += time_constant
                 #if self.check_collisions():
                     #print "Collision detected!"
                     #self.__stop = True
-            else:
-                sleep(time_constant)
 
             # Draw to buffer-bitmap
             self.draw()
@@ -220,7 +214,6 @@ class Simulator(threading.Thread):
 
     def start_simulation(self):
         if self._robots:
-            self.__clock = clock()
             self.__state = RUN
 
     def is_running(self):
