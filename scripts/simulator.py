@@ -2,7 +2,7 @@
 
 """
 import threading
-from time import sleep
+from time import sleep, clock
 from xmlparser import XMLParser
 
 import khepera3
@@ -33,6 +33,9 @@ class Simulator(threading.Thread):
         self.updateView = update_callback
         self.__center_on_robot = False
         
+        self.__time_multiplier = 1.0
+        self.__time = 0.0
+        
         self._render_lock = threading.Lock()
         
         # Zoom on scene - Move to read_config later
@@ -42,28 +45,30 @@ class Simulator(threading.Thread):
         # World objects
         self._robots = []
         self._obstacles = []
+        self._world = None
         
-        #test code
-#        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
-#        self._robots[0].set_wheel_speeds(18,16)
-#        self._obstacles = [
-#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-#            ]
-        #end test code
-#        self._robot = None
-#        self._obstacles = []
+    #def __delete__(self):
+        #self.__state = PAUSE
+        #self.__stop = True
+        #self._render_lock.acquire()
+        #self._render_lock.release()
 
     def read_config(self, config):
         ''' Read in the objects from the XML configuration file '''
 
         print 'reading initial configuration'
         parser = XMLParser(config)
-        world = parser.parse()
+        self._world = parser.parse()
+        self.construct_world()
+        
+    def construct_world(self):
+        if self._world is None:
+            return
+        
+        self._render_lock.acquire()
         self._robots = []
         self._obstacles = []
-        for thing in world:
+        for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
                 robot_type, robot_pose  = thing[1], thing[2] 
@@ -81,29 +86,45 @@ class Simulator(threading.Thread):
                 raise Exception('[Simulator.__init__] Unknown object: ' 
                                 + str(thing_type))
         
+        self._render_lock.release()
+        self.__time = 0.0
+        
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
+            self._robots[0].set_wheel_speeds(1.2,1.6)
             self.focus_on_world()
-            self.draw()
+            self.draw()            
 
     def run(self):
         print 'starting simulator thread'
 
         time_constant = 0.1  # 100 milliseconds
         
+        self._render_lock.acquire()
         self._renderer.clear_screen() #create a white screen
         self.updateView()
+        self._render_lock.release()
 
         #self.draw() # Draw at least once (Move to open afterwards)
         while not self.__stop:
-            sleep(time_constant)
+
             if self.__state == RUN:
+                current_clock = clock()
+                elapsed_time = (current_clock - self.__clock)*self.__time_multiplier
+                # Make sure we have at least 0.1 milliseconds,
+                # otherwise numpy complains
+                if elapsed_time < 0.0001:
+                    continue
+                self.__clock = current_clock
+                self.__time += elapsed_time
                 for robot in self._robots:
-                    robot.move_to(robot.pose_after(time_constant))
+                    robot.move_to(robot.pose_after(elapsed_time))
                 #if self.check_collisions():
                     #print "Collision detected!"
                     #self.__stop = True
+            else:
+                sleep(time_constant)
 
             # Draw to buffer-bitmap
             self.draw()
@@ -173,14 +194,25 @@ class Simulator(threading.Thread):
         self.__stop = True
 
     def start_simulation(self):
-        if self._robots is not None:
+        if self._robots:
+            self.__clock = clock()
             self.__state = RUN
+
+    def is_running(self):
+        return self.__state == RUN
 
     def pause_simulation(self):
         self.__state = PAUSE
 
     def reset_simulation(self):
-        pass
+        self.pause_simulation()
+        self.construct_world()
+    
+    def set_time_multiplier(self,multiplier):
+        self.__time_multiplier = multiplier
+        
+    def get_time(self):
+        return self.__time
 
     def check_collisions(self):
         poly_obstacles = []
