@@ -104,6 +104,13 @@ class Simulator(threading.Thread):
             self.focus_on_world()
             self.draw()
 
+        self.focus_on_world()
+        self.draw() # Draw at least once to show the user it has loaded
+
+        # Test code - add some motion to robots
+        for robot in self._robots:
+            robot.set_wheel_speeds(3,2)
+
     def run(self):
         print 'starting simulator thread'
 
@@ -123,8 +130,8 @@ class Simulator(threading.Thread):
 
             if self.check_collisions():
                 print "Collision detected!"
-
-                self.__stop = True
+                self.__state = PAUSE
+                #self.__stop = True
 
             if self.__state == RUN:
                 current_clock = clock()
@@ -233,19 +240,23 @@ class Simulator(threading.Thread):
         return self.__time
 
     def check_collisions(self):
+        ''' Detect collisions between objects '''
+        scaling_factor = 1.
         poly_obstacles = []
         # prepare polygons for obstacles
         for obstacle in self._obstacles:
-            poly = pylygon.Polygon(obstacle.get_world_envelope())
+            points = [(x*scaling_factor, y*scaling_factor)
+                      for x,y in obstacle.get_world_envelope()]
+            poly = pylygon.Polygon(points)
             poly_obstacles.append(poly)
-            #print "Obstacle:", poly
 
         poly_robots = []
         # prepare polygons for robots
         for robot in self._robots:
-            poly = pylygon.Polygon(robot.get_world_envelope())
+            points = [(x*scaling_factor, y*scaling_factor)
+                      for x,y in robot.get_world_envelope()]
+            poly = pylygon.Polygon(points)
             poly_robots.append(poly)
-            #print "Robot:", poly
 
         checked_robots = []
 
@@ -256,17 +267,22 @@ class Simulator(threading.Thread):
                 collisions = robot.collidepoly(obstacle)
                 # collidepoly returns False value or
                 # an array of projections if found
-                if isinstance(collisions,bool):
-                    return True
+                if isinstance(collisions, bool):
+                    if collisions == False: continue
+                print "Collisions:", collisions
+                print "Robot:", robot, "\nObstacle:", obstacle
+                return True
 
             # against other robots
             for other in poly_robots:
                 if other == robot: continue
                 if other in checked_robots: continue
                 collisions = robot.collidepoly(other)
-                if isinstance(collisions,bool):
-                    return True
-
+                if isinstance(collisions, bool):
+                    if collisions == False: continue
+                print "Collisions:", collisions
+                print "Robot1:", robot, "\nRobot2:", other
+                return True
             checked_robots.append(robot)
         return False
 
