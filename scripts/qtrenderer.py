@@ -2,7 +2,7 @@
 # Renderer class for PyQt4
 #
 # A glue layer between SimObject and UI
-# 
+#
 from numpy import degrees
 from pose import Pose
 from renderer import Renderer
@@ -13,44 +13,49 @@ class QtRenderer(Renderer):
     def __init__(self, pd):
         """Creates a new renderer based on a QPaintDevice pd
         """
-        self._defpose = Pose() # The pose in the bottom-left corner
-        self._zoom = 1.0 # The zooming factor
-        self._zoom_c = False # Whether the scaling is done from center
         self._grid_pen = QPen(QColor(0x808080))
         self._grid_pen.setStyle(Qt.DashLine)
-        self._grid_spacing = 40.0 # default for unscaled
-        self._show_grid = False
-        Renderer.__init__(self, (pd.width(), pd.height()), pd)
+        self._painter = None
+        Renderer.__init__(self, pd)
 
     def set_canvas(self, canvas):
         """Tell the renderer to draw on canvas
-        
         The type of canvas is implementation-dependent
         """
+        if self._painter is not None:
+            self._painter.restore()
+            self._painter.restore()
+            self._painter.end()
+        
         self._paintdevice = canvas
         self._painter = QPainter(canvas)
         self._painter.setRenderHint(QPainter.Antialiasing)
+
         # invert the y axis
         self._painter.scale(1,-1)
         self._painter.translate(0,-canvas.height())
-        
-        self.set_pen(None)
-        # push the default state
-        self._painter.save()
-        self._painter.save()
-        self.__update_default_state()
-        
-    def show_grid(self, show=True):
-        """Draw the grid on the canvas background.
-        
-        The grid is adaptive, with minimum interline distance of 10 px,
-        and a maximum of 40 px.
-        This method will clear the canvas
-        """
-        self._show_grid = show
-        self.clear_screen()
 
-    def __calculate_bounds(self):
+        Renderer.set_canvas(self,canvas)
+
+    def _get_canvas_size(self,pd):
+        """Get the canvas size tuple (width,height)"""
+        return (pd.width(), pd.height())
+
+    def push_state(self):
+        """Store the current state on the stack.
+        Current state includes default pose, pen and brush
+        """
+        ### FIXME store things
+        self._painter.save()
+
+    def pop_state(self):
+        """Restore the last saved state from the stack
+        The state includes default pose, pen and brush
+        """
+        ### FIXME store things
+        self._painter.restore()
+
+    def _calculate_bounds(self):
         transform = self._painter.worldTransform().inverted()[0]
         xs,ys = zip(
                     transform.map(0.0,0.0),
@@ -58,15 +63,14 @@ class QtRenderer(Renderer):
                     transform.map(float(self.size[0]),float(self.size[1])),
                     transform.map(float(self.size[0]),0.0)
                     )
-        
-        self.__bounds = (min(xs), min(ys), max(xs), max(ys))
 
-    def __draw_grid(self):
+        self._bounds = (min(xs), min(ys), max(xs), max(ys))
+
+    def _draw_grid(self):
         self.reset_pose()
         self._painter.setPen(self._grid_pen)
-        
-        xmin, ymin, xmax, ymax = self.__bounds
-        
+        xmin, ymin, xmax, ymax = self._bounds
+
         # Determine min/max x & y line indices:
         x_ticks = (int(xmin//self._grid_spacing), int(xmax//self._grid_spacing + 1))
         y_ticks = (int(ymin//self._grid_spacing), int(ymax//self._grid_spacing + 1))
@@ -80,70 +84,32 @@ class QtRenderer(Renderer):
                     i * self._grid_spacing, ymax)
                 for i in range(*x_ticks)])
 
-    def set_zoom_level(self, zoom_level):
-        # Determine the right grid spacing for this zoom level
-        self._grid_spacing *= zoom_level
-        while self._grid_spacing > 80:
-            self._grid_spacing /= 2
-        while self._grid_spacing < 20:
-            self._grid_spacing *= 2
-        self._grid_spacing /= zoom_level
-            
-    def set_zoom(self, zoom_level):
-        self._zoom = float(zoom_level)
-        self.__update_default_state()
-        
-    def __update_default_state(self):
-        self._painter.restore() # Reset state
-        self._painter.restore() # Set zoom to 1     
-        self._painter.save() # Re-save the zoom-1
-        if self._zoom_c:
-            self._painter.translate(self.size[0]/2,self.size[1]/2)
-        self._painter.scale(self._zoom,self._zoom)
-        self._painter.rotate(degrees(-self._defpose.theta))
-        self._painter.translate(-self._defpose.x, -self._defpose.y)
-        self._painter.save() # Save the zoomed state
-        self.__calculate_bounds()
-        self.clear_screen()
+    def scale(self, factor):
+        """Scale drawing operations by factor
+        To be implemented in subclasses.
+        """
+        self._painter.scale(factor,factor)
 
-    def __set_scr_pose(self,pose):
-        self._defpose = pose
-        self.__update_default_state()
-        self.clear_screen()
+    def rotate(self, angle):
+        """Rotate canvas by angle (in radians)
+        To be implemented in subclasses.
+        """
+        self._painter.rotate(degrees(angle))
 
-    def set_screen_pose(self, pose):
-        self._zoom_c = False
-        self.__set_scr_pose(pose)
+    def translate(self, dx, dy):
+        """Translate canvas by dx, dy
+        To be implemented in subclasses.
+        """
+        self._painter.translate(dx,dy)
 
-    def set_screen_center_pose(self, pose):
-        self._zoom_c = True
-        self.__set_scr_pose(pose)
-   
     def clear_screen(self):
         self._painter.save()
         self._painter.resetTransform()
         self.set_pen(0xFFFFFF)
         self.set_brush(0xFFFFFF)
-        self.draw_rectangle(0,0,self.size[0],self.size[1])        
+        self.draw_rectangle(0,0,self.size[0],self.size[1])
         self._painter.restore()
-        if self._show_grid:
-            self.__draw_grid()
-   
-    def __delete__(self):
-        self._painter.restore()
-        self._painter.restore()
-   
-    def reset_pose(self):
-        """Resets the renderer to world coordinates
-        """
-        self._painter.restore()
-        self._painter.save()
-        
-    def add_pose(self,pose):
-        """Add a pose transformation to the current transformation
-        """
-        self._painter.translate(pose.x,pose.y)
-        self._painter.rotate(degrees(pose.theta))
+        Renderer.clear_screen(self)
 
     @staticmethod
     def __qcolor(color):
@@ -156,7 +122,6 @@ class QtRenderer(Renderer):
 
     def set_pen(self,color):
         """Sets the line color.
-        
         Color is interpreted as 0xAARRGGBB.
         """
         if color is None:
@@ -166,21 +131,19 @@ class QtRenderer(Renderer):
 
     def set_brush(self,color):
         """Sets the fill color.
-        
         Color is interpreted as 0xAARRGGBB.
         """
         if color is None:
             self._painter.setBrush(Qt.NoBrush)
         else:
             self._painter.setBrush(self.__qcolor(color))
-        
+
     def draw_polygon(self,points):
         """Draws a polygon.
-        
         Expects a list of points as a list of tuples or as a numpy array.
         """
         self._painter.drawPolygon(QPolygonF([QPointF(*point[:2]) for point in points]))
-        
+
     def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse.
         """
@@ -190,12 +153,12 @@ class QtRenderer(Renderer):
         """Draws a rectangle.
         """
         self._painter.drawRect(x,y,w,h)
-        
+
     def draw_text(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position.
         """
         pass
-    
+
     def draw_line(self, x1, y1, x2, y2):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """

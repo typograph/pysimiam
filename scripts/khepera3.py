@@ -124,17 +124,17 @@ class Khepera3(Robot):
         
     def pose_after(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
-#        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_uniform_speeds());
+#        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_unicycle_speeds());
         self.integrator.set_initial_value(self.get_pose().get_list(),0)
-        (v,w) = self.get_uniform_speeds()
+        (v,w) = self.get_unicycle_speeds()
         self.integrator.set_f_params(v,w).set_jac_params(v,w)
         self.integrator.integrate(dt)
         return Pose(self.integrator.y);
     
     def __coerce_wheel_speeds(self):
-        (v,w) = self.get_uniform_speeds();
-        #v = max(min(v,0.314),-0.3148);
-        #w = max(min(w,2.276),-2.2763);
+        (v,w) = self.get_unicycle_speeds();
+        v = max(min(v,0.314),-0.3148);
+        w = max(min(w,2.276),-2.2763);
         self.ang_velocity = self.uni2diff((v,w))
     
     def diff2uni(self,diff):
@@ -151,17 +151,24 @@ class Khepera3(Robot):
         # End Assignment
         return (vl,vr)
     
-    def get_differential_speeds(self):
+    def get_wheel_speeds(self):
         return self.ang_velocity
     
-    def get_uniform_speeds(self):
-        return self.diff2uni(self.get_differential_speeds())
+    def get_unicycle_speeds(self):
+        return self.diff2uni(self.get_wheel_speeds())
     
     def set_wheel_speeds(self,*args):
         if len(args) == 2:
             self.ang_velocity = args
         else:
-            self.ang_velocity = args
+            self.ang_velocity = args[0]
+        self.__coerce_wheel_speeds()
+
+    def set_unicycle_speeds(self,*args):
+        if len(args) == 2:
+            self.ang_velocity = self.uni2diff(args)
+        else:
+            self.ang_velocity = self.uni2diff(args[0])
         self.__coerce_wheel_speeds()
         
     def get_external_sensors(self):
