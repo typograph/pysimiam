@@ -15,7 +15,7 @@ class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
-        self.resize(400,400)
+        self.resize(700,700)
         
         self.__create_toolbars()
         self.__create_menu()
