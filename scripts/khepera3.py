@@ -27,12 +27,17 @@ class Khepera3_IRSensor(IRSensor):
     def reading(self):
         pass
     
+    def get_envelope(self):
+        return self.pts
+    
     def draw(self, r):
         r.set_pose(self.get_pose())
         r.set_brush(0x11FF5566)
         r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmax/2))
         r.draw_polygon(self.pts)
 
+    def update_distance(self, sim_object = None):
+        pass
 
 def motion_f(t,y,v,w):
     """The Drive problem
@@ -158,6 +163,9 @@ class Khepera3(Robot):
         else:
             self.ang_velocity = args
         self.__coerce_wheel_speeds()
+        
+    def get_external_sensors(self):
+        return self.ir_sensors
 
 if __name__ == "__main__":
     k = Khepera3(Pose(0,0,0))

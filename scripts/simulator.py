@@ -109,6 +109,8 @@ class Simulator(threading.Thread):
                 print "Collision detected!"
                 self.__state = PAUSE
                 #self.__stop = True
+                
+            self.update_sensors()
 
     def draw(self):
         #Test code
@@ -129,7 +131,7 @@ class Simulator(threading.Thread):
         # Draw the robots and sensors after obstacles
         for robot in self._robots:
             robot.draw(self._renderer)
-            for s in robot.ir_sensors:
+            for s in robot.get_external_sensors():
                 s.draw(self._renderer)
         #end test code
 
@@ -183,14 +185,19 @@ class Simulator(threading.Thread):
         
         # check each robot
         for robot in self._robots:
+            # reset sensors
+            robot.update_sensors()
+            
             # against obstacles
             for obstacle in self._obstacles:
+                #robot.update_sensors(obstacle)
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
             # against other robots
             for other in self._robots: 
                 if other is robot: continue
+                #robot.update_sensors(other)
                 if other in checked_robots: continue
                 if robot.has_collision(other):
                     collisions.append((robot, other))
@@ -207,7 +214,27 @@ class Simulator(threading.Thread):
         return False
 
     def update_sensors(self):
-        ''' Update sensor information '''
-        pass
+        ''' Update robot's sensors '''
+        
+        for robot in self._robots:
+            # reset sensors
+            #robot.update_sensors()
+            
+            # against obstacles
+            #for obstacle in self._obstacles:
+            #    robot.update_sensors(obstacle)
+                
+            # against other robots
+            #for other in self._robots: 
+            #    if other is robot: continue
+            #    robot.update_sensors(other)
+            
+            for sensor in robot.get_external_sensors():
+                # reset dist to max here
+                #dist = self.
+                for obstacle in self._obstacles:
+                    if sensor.has_collision(obstacle):
+                        print "Object {} in range of Sensor {}".format(
+                               obstacle, sensor)
 
 #end class Simulator

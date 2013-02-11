@@ -38,6 +38,9 @@ class ProximitySensor(InternalSensor):
         
     def distance(self):
         pass
+        
+    def update_distance(self, sim_object):
+        pass
 
 class IRSensor(ProximitySensor):
     pass
