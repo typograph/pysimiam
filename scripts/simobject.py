@@ -1,4 +1,5 @@
 from math import sin, cos
+import pylygon
 
 class SimObject:
     def __init__(self,pose):
@@ -37,6 +38,28 @@ class SimObject:
         """
         xmin, ymin, xmax, ymax = self.get_bounds()
         return (xmin,ymin,xmax-xmin,ymax-ymin)
+    
+    def has_collision(self, other):
+        """Check if the object has collided with other
+        
+        Return True or False
+        """
+        self_poly = pylygon.Polygon(self.get_world_envelope())
+        other_poly = pylygon.Polygon(other.get_world_envelope())
+        
+        # TODO: use distance() for performance
+        #print "Dist:", self_poly.distance(other_poly)
+        
+        collision = self_poly.collidepoly(other_poly)
+        if isinstance(collision, bool):
+            if not collision: return False
+        
+        # Test code - print out collisions
+        print "Object:", self, "\nObstacle:", other
+        print "Collisions:", collision
+        # end of test code
+        
+        return True
 
     def get_bounds(self):
         """Get the smallest rectangle that contains the object

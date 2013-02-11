@@ -9,7 +9,6 @@ import khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
-import pylygon
 
 PAUSE = 0
 RUN = 1
@@ -179,50 +178,36 @@ class Simulator(threading.Thread):
 
     def check_collisions(self):
         ''' Detect collisions between objects '''
-        scaling_factor = 1.
-        poly_obstacles = []
-        # prepare polygons for obstacles
-        for obstacle in self._obstacles:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in obstacle.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_obstacles.append(poly)
-        
-        poly_robots = []
-        # prepare polygons for robots
-        for robot in self._robots:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in robot.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_robots.append(poly)
-            
+        collisions = []
         checked_robots = []
         
-        # check each robot's polygon
-        for robot in poly_robots:
+        # check each robot
+        for robot in self._robots:
             # against obstacles
-            for obstacle in poly_obstacles:
-                collisions = robot.collidepoly(obstacle)
-                # collidepoly returns False value or
-                # an array of projections if found
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot:", robot, "\nObstacle:", obstacle
-                return True
-                
+            for obstacle in self._obstacles:
+                if robot.has_collision(obstacle):
+                    collisions.append((robot, obstacle))
+            
             # against other robots
-            for other in poly_robots: 
-                if other == robot: continue
+            for other in self._robots: 
+                if other is robot: continue
                 if other in checked_robots: continue
-                collisions = robot.collidepoly(other)
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot1:", robot, "\nRobot2:", other
-                return True
+                if robot.has_collision(other):
+                    collisions.append((robot, other))
             
             checked_robots.append(robot)
+            
+        if len(collisions) > 0:
+            # Test code - print out collisions
+            for (robot, obstacle) in collisions:
+                print "Collision wetween:\n", robot, "\n", obstacle
+            # end of test code
+            return True
+                
         return False
+
+    def update_sensors(self):
+        ''' Update sensor information '''
+        pass
 
 #end class Simulator
