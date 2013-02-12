@@ -14,6 +14,14 @@ class Supervisor:
         self.controller_modules = {}
         self.current = None
 
+    def get_parameters(self):
+        """Get parameters of the supervisor.
+        
+        supervisor.set_parameters(supervisor.get_parameters()) should not change
+        the state
+        """
+        return self.ui_params
+
     def get_default_parameters(self):
         """Return the default parameter set, suitable for runnig this supervisor
         

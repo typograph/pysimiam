@@ -69,7 +69,7 @@ class Path(SimObject):
         self.points = [(start.x,start.y)]
 
     def reset(self,start):
-        self.points = [start]
+        self.points = [(start.x,start.y)]
         
     def add_point(self,pose):
         self.points.append((pose.x,pose.y))

@@ -65,6 +65,8 @@ class Simulator(threading.Thread):
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))
         else:
+            self.__supervisor_param_cache = None
+            self.__center_on_robot = False
             self.construct_world()
 
     def construct_world(self):
@@ -92,6 +94,8 @@ class Simulator(threading.Thread):
                     supervisor = sup_class(robot.get_pose(),
                                            robot.get_info())
                     name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
+                    if self.__supervisor_param_cache is not None:
+                        supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
                     self.make_param_ui(robot, name, supervisor.get_ui_description())
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
@@ -122,8 +126,16 @@ class Simulator(threading.Thread):
         if not self._robots:
             raise Exception('[Simulator.construct_world] No robot specified!')
         else:
-            self.focus_on_world()
+            if not self.__center_on_robot:
+                self.focus_on_world()
             self.draw()
+            self.__supervisor_param_cache = None
+
+    def reset_world(self):
+        if self._world is None:
+            return
+        self.__supervisor_param_cache = [sv.get_parameters() for sv in self._supervisors ]
+        self.construct_world()
 
     def run(self):
         print 'starting simulator thread'
@@ -245,7 +257,7 @@ class Simulator(threading.Thread):
 
     def reset_simulation(self):
         self.pause_simulation()
-        self.construct_world()
+        self.reset_world()
 
     def set_time_multiplier(self,multiplier):
         self.__time_multiplier = multiplier

@@ -44,11 +44,15 @@ class K3Supervisor(Supervisor):
                            (('kp','Proportional gain'), p.gains.kp),
                            (('ki','Integral gain'), p.gains.ki),
                            (('kd','Differential gain'), p.gains.kd)]))])}
+
+    def get_parameters(self):
+        params = Struct()
+        params.pid = Supervisor.get_parameters(self)
+        return params
                                   
-                                    
     def set_parameters(self,params):
         Supervisor.set_parameters(self,params.pid)
-	self.gtg.set_parameters(params.pid.gains)
+        self.gtg.set_parameters(params.pid.gains)
             
     def eval_criteria(self):
         # Controller is already selected

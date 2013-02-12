@@ -141,10 +141,6 @@ class SimulationWidget(QtGui.QMainWindow):
         file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
                             "Open XML &World",
                             self._on_open_world,
-                            QtGui.QKeySequence("Ctrl+W"))
-        file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
-                            "&Open Supervisor",
-                            self._on_open,
                             QtGui.QKeySequence(QtGui.QKeySequence.Open))
                             
         file_menu.addSeparator()
@@ -163,25 +159,17 @@ class SimulationWidget(QtGui.QMainWindow):
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
-        if name not in self.__paramwindows:
-            # FIXME adding to the right for no reason
-            dock = ParamDock(self, robot_id, name,
-                            parameters, self._simulator_thread.apply_parameters)
-            self.__paramwindows[name] = dock
-            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-        else:
-            # FIXME just reload parameters in this case
-            pass
+        if name in self.__paramwindows:
+            self.__paramwindows[name].deleteLater()
+            del self.__paramwindows[name]
+
+        # FIXME adding to the right for no reason
+        dock = ParamDock(self, robot_id, name,
+                         parameters, self._simulator_thread.apply_parameters)
+        self.__paramwindows[name] = dock
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
 
     # Slots
-    @QtCore.pyqtSlot()
-    def _on_open(self):
-        # Load new definition
-        if self._supervisor_dialog.exec_():
-            QtGui.QMessageBox.information(self,
-                                          "Opening supervisor...",
-                                          "Not implemented yet")
-
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
         self.__sim_timer.stop()
@@ -204,6 +192,7 @@ class SimulationWidget(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot()
     def _on_open_world(self):
+        self._on_pause()
         if self._world_dialog.exec_():
             for name, dock in self.__paramwindows.items():
                 dock.deleteLater()
