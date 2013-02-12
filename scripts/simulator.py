@@ -41,6 +41,8 @@ class Simulator(threading.Thread):
         # World objects
         self._robots = []
         self._obstacles = []
+        self._supervisors = []
+        self._background = []
 
         self._world = None
 
@@ -71,6 +73,7 @@ class Simulator(threading.Thread):
         self._robots = []
         self._obstacles = []
         self._supervisors = []
+        self._background = []
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
@@ -87,22 +90,29 @@ class Simulator(threading.Thread):
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
                 except:
+                    print "[Simulator.construct_world] Robot creation failed!"
                     raise
-                    #raise Exception('[Simulator.__init__] Unknown robot type!')
+                    #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
                 obstacle_pose, obstacle_coords = thing[1], thing[2]
                 self._obstacles.append(
                     simobject.Polygon(pose.Pose(obstacle_pose),
                                       obstacle_coords,
                                       0xFF0000))
+            elif thing_type == 'marker':
+                obj_pose, obj_coords = thing[1], thing[2]
+                self._background.append(
+                    simobject.Polygon(pose.Pose(obj_pose),
+                                      obj_coords,
+                                      0x00FF00))
             else:
-                raise Exception('[Simulator.__init__] Unknown object: '
+                raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing_type))
                                 
         self._render_lock.release()
         self.__time = 0.0
         if not self._robots:
-            raise Exception('[Simulator.__init__] No robot specified!')
+            raise Exception('[Simulator.construct_world] No robot specified!')
         else:
             self.focus_on_world()
             self.draw()
@@ -151,6 +161,8 @@ class Simulator(threading.Thread):
 
         self._renderer.clear_screen()
 
+        for bg_object in self._background:
+            bg_object.draw(self._renderer)
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
 
