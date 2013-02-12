@@ -64,7 +64,7 @@ class Renderer:
         
         To be implemented in subclasses
         """
-        pass
+        raise NotImplementedError("Renderer._get_canvas_size")
     
     def push_state(self):
         """Store the current state on the stack.
@@ -72,7 +72,7 @@ class Renderer:
         Current state includes default pose, pen and brush.
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer.push_state")
     
     def pop_state(self):
         """Restore the last saved state from the stack
@@ -80,28 +80,29 @@ class Renderer:
         The state includes default pose, pen and brush.
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer.pop_state")
     
     def scale(self,factor):
         """Scale drawing operations by factor
         
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer.scale")
     
     def rotate(self, angle):
         """Rotate canvas by angle (in radians)
         
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer.rotate")
     
     def translate(self, dx, dy):
         """Translate canvas by dx, dy
         
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer.translate")
+
    
     def _calculate_bounds(self):
         """Store the bounds of the smallest rectangle containing the view \
@@ -109,12 +110,15 @@ class Renderer:
         
         To be implemented in subclasses.
         """
-        pass
+        raise NotImplementedError("Renderer._calculate_bounds")
    
     def _draw_grid(self):
         """Draw the grid on screen
-        """
         
+        To be implemented in subclasses.
+        """
+        raise NotImplementedError("Renderer._draw_grid")
+
     def set_screen_pose(self, pose):
         """ Set the pose of lower-left corner of the canvas
         
@@ -197,14 +201,12 @@ class Renderer:
         """
         self.reset_pose()
         self.add_pose(pose)
-        pass
 
     def add_pose(self, pose):
         """Add a pose transformation to the current transformation
         """
         self.translate(pose.x, pose.y)
         self.rotate(pose.theta)
-        pass
 
     def set_pen(self, color):
         """Sets the line color.
@@ -212,7 +214,7 @@ class Renderer:
         is considered fully opaque.
         Use None to unset a pen
         """
-        pass
+        raise NotImplementedError("Renderer.set_pen")
 
     def set_brush(self, color):
         """Sets the fill color.
@@ -221,7 +223,7 @@ class Renderer:
         is considered fully opaque.
         Use None to unset a brush
         """
-        pass
+        raise NotImplementedError("Renderer.set_brush")
 
     def clear_screen(self):
         """Clears the canvas using the current brush
@@ -232,30 +234,30 @@ class Renderer:
     def draw_line(self, x1, y1, x2, y2):
         """Draw a line using the current pen from (x1,y1) to (x2, y2)
         """
-        pass
+        raise NotImplementedError("Renderer.draw_line")
 
     def draw_ellipse(self, x, y, w, h):
         """Draws an ellipse with current pen and fills it with current brush.
         """
-        pass
+        raise NotImplementedError("Renderer.draw_ellipse")
 
     def draw_rectangle(self, x, y, w, h):
         """Draws a rectangle.
         """
-        pass
+        raise NotImplementedError("Renderer.draw_rectangle")
 
     def fill_rectangle(self, x, y, w, h):
         """Draws a rectangle with current pen and fills it with current brush
         """
-        pass
+        raise NotImplementedError("Renderer.fill_rectangle")
         
     def draw_polygon(self, points):
         """Draws a polygon with current pen and fills it with current brush
         Expects a list of points as a list of tuples or as a numpy array.
         """
-        pass
+        raise NotImplementedError("Renderer.draw_polygon")
 
     def draw_text(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position.
         """
-        pass
+        raise NotImplementedError("Renderer.draw_text")
