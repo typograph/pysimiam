@@ -84,9 +84,12 @@ class Simulator(threading.Thread):
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, robot_pose  = thing[1], thing[2]
-                if robot_type == 'khepera3.K3Supervisor':
-                    self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
+                robot_type, supervisor_type, robot_pose  = thing[1], thing[2], thing[3]
+                if robot_type == 'Khepera3':
+                    if supervisor_type == 'khepera3.K3Supervisor':
+                        self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
+                    else:
+                        raise Exception('[Simulator.__init__] Unknown supervisor')
                 else:
                     raise Exception('[Simulator.__init__] Unknown robot type!')
             elif thing_type == 'obstacle':
