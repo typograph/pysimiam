@@ -12,10 +12,29 @@ class XMLParser(object):
             raise Exception('[XMLParser.__init__] Could not open ' + file_)
        
     def parse_parameters(self):
-        parameters = []
-        if self._root.tag == 'pid':
+        goals = []
+        for goal in self._root.findall('goal'):
             try:
-                angle = self._root.find('angle')
+                points = goal.findall('point')
+                if points == None:
+                    raise Exception(
+                        '[XMLParser.parse_parameters] No goal point specified')
+                for point in points:
+                    x, y = point.get('x'), point.get('y')
+                    if x == None or y == None:
+                        raise Exception(
+                            '[XMLParser.parse_parameters] Invalid goal point!')
+                    goals.append((float(x), float(y))) 
+            except ValueError:
+                raise Exception(
+                    '[XMLParser.parse_parameters] Invalid goal (bad value)!')
+
+        parameters = []
+        for parameter in self._root.findall('pid'):
+            try:
+                identifier = parameter.get('id')
+                
+                angle = parameter.find('angle')
                 if angle == None:
                     raise Exception(
                         '[XMLParser.parse_parameters] No angle specified!')
@@ -24,7 +43,7 @@ class XMLParser(object):
                     raise Exception(
                         '[XMLParser.parse_parameters] No theta specified!')
  
-                velocity = self._root.find('velocity')
+                velocity = parameter.find('velocity')
                 if velocity == None:
                     raise Exception(
                         '[XMLParser.parse_parameters] No velocity specified!')
@@ -33,7 +52,7 @@ class XMLParser(object):
                     raise Exception(
                         '[XMLParser.parse_parameters] No v specified!')
 
-                gains = self._root.find('gains')
+                gains = parameter.find('gains')
                 if gains == None:
                     raise Exception(
                         '[XMLParser.parse_parameters] No gains specified!')
@@ -43,19 +62,16 @@ class XMLParser(object):
                         '[XMLParser.parse_parameters] Must specify all gains!')
 
                 parameters.append(
-                    ('pid', 
+                    ('pid',
+                     identifier, 
                      float(theta), 
                      float(v), 
                      [float(kp), float(ki), float(kd)]))
             except ValueError:
                 raise Exception(
                     '[XMLParser.parse_parameters] Invalid pid (bad value)!')
-        else:
-            # Add other parameter types here (only PID exists currently,
-            # but others will certainly follow
-            raise Exception('[XMLParser.parse_parameters] Invalid type!')
 
-        return parameters
+        return (goals, parameters)
      
     def parse_simulation(self):
         simulator_objects = []
