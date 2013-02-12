@@ -41,6 +41,7 @@ class Simulator(threading.Thread):
 
         # World objects
         self._robots = []
+        self._trackers = []
         self._obstacles = []
         self._supervisors = []
         self._background = []
@@ -75,6 +76,7 @@ class Simulator(threading.Thread):
         self._obstacles = []
         self._supervisors = []
         self._background = []
+        self._trackers = []
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
@@ -94,6 +96,7 @@ class Simulator(threading.Thread):
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
+                    self._trackers.append(simobject.Path(robot.get_pose(),0x0000FF))
                 except:
                     print "[Simulator.construct_world] Robot creation failed!"
                     raise
@@ -145,8 +148,9 @@ class Simulator(threading.Thread):
 
                 self.__time += time_constant
 
-                for robot in self._robots:
+                for i, robot in enumerate(self._robots):
                     robot.move(time_constant)
+                    self._trackers[i].add_point(robot.get_pose())
 
                 if self.check_collisions():
                     print "Collision detected!"
@@ -171,7 +175,9 @@ class Simulator(threading.Thread):
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
 
-        # Draw the robots and sensors after obstacles
+        # Draw the robots, trackers and sensors after obstacles
+        for tracker in self._trackers:
+            tracker.draw(self._renderer)
         for robot in self._robots:
             robot.draw(self._renderer)
             for s in robot.ir_sensors:
