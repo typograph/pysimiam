@@ -15,7 +15,7 @@ class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
-        self.resize(400,400)
+        self.resize(700,700)
         
         self.__create_toolbars()
         self.__create_menu()
@@ -75,7 +75,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__speed_slider.setToolTip("Adjust speed")
         self.__speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
         self.__speed_slider.setMaximumWidth(300)
-        self.__speed_slider.setRange(-50,200)
+        self.__speed_slider.setRange(-100,100)
         self.__speed_slider.setValue(0)
         self.__speed_slider.setEnabled(False)
         self.__speed_slider.valueChanged[int].connect(self._scale_time)
@@ -215,7 +215,7 @@ class SimulationWidget(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def _scale_time(self,value):
-        m = 10.0**((value-self.__zoom_factor)/200.0)
+        m = 10.0**((value-self.__zoom_factor)/100.0)
         self._simulator_thread.set_time_multiplier(m)
         self.__speed_label.setText(" Speed: %.1fx"%m)
 

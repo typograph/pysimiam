@@ -37,23 +37,10 @@ class Simulator(threading.Thread):
 
         self._render_lock = threading.Lock()
 
-        # Zoom on scene - Move to read_config later
-        self._renderer.set_zoom_level(130)
-        self._renderer.set_screen_pose(pose.Pose(-1.6,-1.5,0))
-
         # World objects
         self._robots = []
         self._obstacles = []
 
-        #test code
-#        self._robots = [ khepera3.Khepera3(pose.Pose(200.0, 250.0, 0.0)), ]
-#        self._robots[0].set_wheel_speeds(18,16)
-#        self._obstacles = [
-#            simobject.Polygon(pose.Pose(200,200,0),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(300,100,0.1),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000),
-#            simobject.Polygon(pose.Pose(100,300,0.4),[(-10,0),(0,-10),(10,0),(0,10)],0xFF0000)
-#            ]
-        #end test code
         self._world = None
 
     #def __delete__(self):
@@ -72,7 +59,8 @@ class Simulator(threading.Thread):
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))
-        self.construct_world()
+        else:
+            self.construct_world()
 
     def construct_world(self):
         if self._world is None:
@@ -101,60 +89,39 @@ class Simulator(threading.Thread):
             else:
                 raise Exception('[Simulator.__init__] Unknown object: '
                                 + str(thing_type))
+                                
         self._render_lock.release()
         self.__time = 0.0
         if self._robots == None:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
-            self._robots[0].set_wheel_speeds(1.2,1.6)
+            for robot in self._robots:
+                robot.set_wheel_speeds(1.2,1.6)
             self.focus_on_world()
             self.draw()
-
-        # Test code - add some motion to robots
-        for robot in self._robots:
-            robot.set_wheel_speeds(3,2)
 
     def run(self):
         print 'starting simulator thread'
 
-        time_constant = 0.1  # 100 milliseconds
+        time_constant = 0.02  # 20 milliseconds
+        
         self._render_lock.acquire()
         self._renderer.clear_screen() #create a white screen
         self.updateView()
         self._render_lock.release()
 
-        #self.draw() # Draw at least once (Move to open afterwards)
         while not self.__stop:
-            sleep(time_constant)
-            if self.__state != RUN:
-                continue
-            for robot in self._robots:
-                robot.move_to(robot.pose_after(time_constant))
 
-            if self.check_collisions():
-                print "Collision detected!"
-                self.__state = PAUSE
-                #self.__stop = True
+            sleep(time_constant/self.__time_multiplier)
 
             if self.__state == RUN:
-                current_clock = clock()
-                elapsed_time = (current_clock - self.__clock)*self.__time_multiplier
-                # Make sure we have at least 0.1 milliseconds,
-                # otherwise numpy complains
-                if elapsed_time < 0.0001:
-                    continue
-                self.__clock = current_clock
-                self.__time += elapsed_time
                 for robot in self._robots:
-                    robot.move_to(robot.pose_after(elapsed_time))
-                #if self.check_collisions():
-                    #print "Collision detected!"
+                    robot.move_to(robot.pose_after(time_constant))
+                self.__time += time_constant
+                if self.check_collisions():
+                    print "Collision detected!"
+                    self.__state = PAUSE
                     #self.__stop = True
-            else:
-                sleep(time_constant)
-
-            # Draw to buffer-bitmap
-            self.draw()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -177,7 +144,6 @@ class Simulator(threading.Thread):
             robot.draw(self._renderer)
             for s in robot.ir_sensors:
                 s.draw(self._renderer)
-        #end test code
 
         self.updateView()
         self._render_lock.release()
@@ -223,7 +189,6 @@ class Simulator(threading.Thread):
 
     def start_simulation(self):
         if self._robots:
-            self.__clock = clock()
             self.__state = RUN
 
     def is_running(self):
