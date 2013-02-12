@@ -162,4 +162,4 @@ class QtRenderer(Renderer):
     def draw_line(self, x1, y1, x2, y2):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
-        pass
+        self._painter.drawLine(QLineF(x1,y1,x2,y2))
