@@ -48,6 +48,7 @@ class K3Supervisor(Supervisor):
                                     
     def set_parameters(self,params):
         Supervisor.set_parameters(self,params.pid)
+	self.gtg.set_parameters(params.pid.gains)
             
     def eval_criteria(self):
         # Controller is already selected
