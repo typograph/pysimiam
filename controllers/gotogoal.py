@@ -35,4 +35,4 @@ class GoToGoal(Controller):
 
         self.e_k_1 = e_k
         
-        return [state.velocity, _w]
+        return [state.velocity.v, _w]

@@ -1,13 +1,15 @@
 class Struct:
-    pass
+    def __str__(self):
+        return "\{{}\}".format(", ".join(["{} : {}".format(k,v) for k,v in self.__dict__.items()]))
+        #return str(self.__dict__)
 
-def load_by_name(module_string,path = None):
+def load_by_name(module_string, path = None):
     try:
         filename, class_name = module_string.split(".")
     except ValueError:
         # either too many or too few dots
         # fallback to capitalization
-        filename = module_string
+        filename = module_string.lower()
         class_name = module_string.capitalize()
         
     try:

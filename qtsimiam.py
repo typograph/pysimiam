@@ -7,6 +7,7 @@ sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
+from dockwindow import ParamDock
 
 import simulator as sim
 import threading
@@ -50,7 +51,9 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__sim_timer.timeout.connect(self.__update_time)
         
         # create the simulator thread
-        self._simulator_thread = sim.Simulator(viewer.renderer,viewer.update_bitmap)
+        self._simulator_thread = sim.Simulator(viewer.renderer,
+                                               viewer.update_bitmap,
+                                               self.make_param_window)
         self._simulator_thread.start()
 
     def __create_toolbars(self):
@@ -156,6 +159,14 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread.stop()
         self._simulator_thread.join()
         super(SimulationWidget,self).closeEvent(event)
+
+    def make_param_window(self,robot_id,name,parameters):
+        # FIXME adding to the right for no reason
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea,
+                           ParamDock(self,
+                                     robot_id, name,
+                                     parameters,
+                                     self._simulator_thread.apply_parameters))
 
     # Slots
     @QtCore.pyqtSlot()

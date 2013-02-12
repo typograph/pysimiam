@@ -2,6 +2,7 @@ from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
 from math import pi, sin, cos
+from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
     
@@ -20,9 +21,10 @@ class K3Supervisor(Supervisor):
     def get_default_parameters(self):
         p = Struct()
         p.goal = Struct()
-        p.goal.x = 0.0
-        p.goal.y = 1.0
-        p.velocity = 2.0
+        p.goal.x = -1.5
+        p.goal.y = 1.5
+        p.velocity = Struct()
+        p.velocity.v = 2.0
         p.gains = Struct()
         p.gains.kp = 1.0
         p.gains.ki = 0.1
@@ -35,13 +37,17 @@ class K3Supervisor(Supervisor):
             p = self.ui_params
         
         return { ('pid','GoToGoal'):
-                      {'goal': {'x':p.goal.x, 'y':p.goal.y },
-                       'velocity': {'v':p.velocity},
-                       'gains': { ('kp','Proportional gain'): p.gains.kp,
-                                  ('ki','Integral gain'): p.gains.ki,
-                                  ('kd','Differential gain'): p.gains.kd } } }
+                   OrderedDict([
+                       ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
+                       ('velocity', {'v':p.velocity.v}),
+                       ('gains', OrderedDict([
+                           (('kp','Proportional gain'), p.gains.kp),
+                           (('ki','Integral gain'), p.gains.ki),
+                           (('kd','Differential gain'), p.gains.kd)]))])}
                                   
                                     
+    def set_parameters(self,params):
+        Supervisor.set_parameters(self,params.pid)
             
     def eval_criteria(self):
         # Controller is already selected

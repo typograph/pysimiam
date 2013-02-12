@@ -16,7 +16,7 @@ RUN = 1
 
 class Simulator(threading.Thread):
 
-    def __init__(self, renderer, update_callback):
+    def __init__(self, renderer, update_callback, param_callback):
         """
         The viewer object supplies:
             a Renderer (viewer.renderer),
@@ -30,6 +30,7 @@ class Simulator(threading.Thread):
         self.__state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
+        self.make_param_ui = param_callback
         self.__center_on_robot = False
 
         # Zoom on scene - Move to read_config later
@@ -86,7 +87,11 @@ class Simulator(threading.Thread):
                     robot_module, robot_class = helpers.load_by_name("khepera3",'robots')
                     robot = robot_class(pose.Pose(robot_pose))
                     sup_module, sup_class = helpers.load_by_name(sup_type,'supervisors')
-                    self._supervisors.append(sup_class(robot.get_pose(), robot.get_info()))
+                    supervisor = sup_class(robot.get_pose(),
+                                           robot.get_info())
+                    name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
+                    self.make_param_ui(robot, name, supervisor.get_ui_description())
+                    self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
                 except:
@@ -208,6 +213,14 @@ class Simulator(threading.Thread):
         self._render_lock.acquire()
         self._renderer.scale_zoom_level(factor)
         self._render_lock.release()
+        
+    def apply_parameters(self,robot,parameters):
+        # FIXME at the moment we could change parameters during calculation!
+        index = self._robots.index(robot)
+        if index < 0:
+            print "Robot not found"
+        else:
+            self._supervisors[index].set_parameters(parameters)
 
     # Stops the thread
     def stop(self):
