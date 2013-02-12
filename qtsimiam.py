@@ -205,7 +205,7 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot()
     def _on_open_world(self):
         if self._world_dialog.exec_():
-            for dock in self.__paramwindows.items():
+            for name, dock in self.__paramwindows.items():
                 dock.deleteLater()
             self.__paramwindows = {}
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])

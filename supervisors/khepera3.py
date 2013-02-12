@@ -21,8 +21,8 @@ class K3Supervisor(Supervisor):
     def get_default_parameters(self):
         p = Struct()
         p.goal = Struct()
-        p.goal.x = -1.5
-        p.goal.y = 1.5
+        p.goal.x = -5.0
+        p.goal.y = 5.0
         p.velocity = Struct()
         p.velocity.v = 2.0
         p.gains = Struct()

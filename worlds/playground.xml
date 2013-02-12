@@ -6,6 +6,11 @@
         <pose x="0" y="0" theta="0" />
     </robot>
     
+    <robot type="Khepera3">
+        <supervisor type="khepera3.K3Supervisor" />
+        <pose x="0" y="-10" theta="0.8" />
+    </robot>
+
     <!--
     <robot type="Khepera3">
         <supervisor type="khepera3.K3Supervisor" />
@@ -54,7 +59,7 @@
     </obstacle>
     
     <marker>
-        <pose x="-1.5" y="1.5" theta="0" />
+        <pose x="-5.0" y="5.0" theta="0" />
         <geometry>
             <point x="-0.1" y="0" />
             <point x="0" y="-0.1" />
@@ -62,6 +67,16 @@
             <point x="0" y="0.1" />
         </geometry>
     </marker>
-    
+
+    <marker>
+        <pose x="-5.0" y="5.0" theta="0" />
+        <geometry>
+            <point x="-0.1" y="0" />
+            <point x="0" y="-0.1" />
+            <point x="0.1" y="0" />
+            <point x="0" y="0.1" />
+        </geometry>
+    </marker>
+
     
 </simulation>
