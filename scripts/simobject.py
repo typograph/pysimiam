@@ -55,11 +55,15 @@ class SimObject:
             if not collision: return False
         
         # Test code - print out collisions
-        print "Object:", self, "\nObstacle:", other
-        print "Collisions:", collision
+        print "Collision between {} and {}".format(self, other)
         # end of test code
         
         return True
+        
+    def get_contact_points(self, other):
+        self_poly = pylygon.Polygon(self.get_world_envelope())
+        other_poly = pylygon.Polygon(other.get_world_envelope())
+        return self_poly.intersection_points(other_poly)
 
     def get_bounds(self):
         """Get the smallest rectangle that contains the object

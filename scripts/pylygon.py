@@ -1,7 +1,7 @@
 # Copyright (c) 2011, Chandler Armstrong (omni dot armstrong at gmail dot com)
 # see LICENSE.txt for details
 
-
+# Added collidepoints
 
 
 """
@@ -69,6 +69,33 @@ def _isbetween(o, p, q):
     b = o_y - (m * o_x)
     if fabs(p_y - ((m * p_x) + b)) < _MACHEPS: return True
 
+def _line_intersect(p1, q1, p2, q2):
+    x1, y1 = p1
+    x2, y2 = q1
+    x3, y3 = p2
+    x4, y4 = q2
+    
+    x12 = x1 - x2
+    x34 = x3 - x4
+    y12 = y1 - y2
+    y34 = y3 - y4
+
+    c = x12 * y34 - y12 * x34
+    
+    if abs(c) > 0.01:
+        # Intersection
+        a = x1 * y2 - y1 * x2
+        b = x3 * y4 - y3 * x4
+        x = (a * x34 - b * x12) / c
+        y = (a * y34 - b * y12) / c
+        
+        # check boundaries
+        if (x >= min(x1, x2) and x >= min(x3, x4) and
+            x <= max(x1, x2) and x <= max(x3, x4) and
+            y >= min(y1, y2) and y >= min(y3, y4) and
+            y <= max(y1, y2) and y <= max(y3, y4)):
+            return (x, y)
+    return None
 
 
 class _Support(object):
@@ -299,7 +326,7 @@ class Polygon(object):
 
         return intersections % 2
 
-
+    
     def collidepoly(self, other):
         """
         test if other polygon collides with self using seperating axis theorem
@@ -529,3 +556,20 @@ class Polygon(object):
         projected_points = [dot(p, axis) for p in P]
         # return the span of the projection
         return min(projected_points), max(projected_points)
+
+    def intersection_points(self, other):
+        """
+        Determine contact (intersection) points between the self
+        and other.
+
+        returns Empty list if no collisions found
+        returns List of intersection points
+        """
+        points = []
+        for i, p in enumerate(self.P):
+            q = self.P[(i + 1) % len(self.P)]
+            for j, r in enumerate(other.P):
+                s = other.P[(j + 1) % len(other.P)]
+                ipt = _line_intersect(p, q, r, s)
+                if ipt: points.append(ipt)
+        return points

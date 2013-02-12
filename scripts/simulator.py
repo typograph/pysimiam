@@ -261,7 +261,8 @@ class Simulator(threading.Thread):
                 #dist = self.
                 for obstacle in self._obstacles:
                     if sensor.has_collision(obstacle):
-                        print "Object {} in range of Sensor {}".format(
-                               obstacle, sensor)
+                        d = sensor.get_distance_to(obstacle)
+                        print "{} in range of {} ~{}".format(
+                               obstacle, sensor, d)
 
 #end class Simulator
