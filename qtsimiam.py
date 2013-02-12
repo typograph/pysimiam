@@ -46,6 +46,8 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidget(viewer)
         scrollArea.setWidgetResizable(True)
 
+        self.__paramwindows = {}
+
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
         self.__sim_timer.timeout.connect(self.__update_time)
@@ -160,13 +162,16 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread.join()
         super(SimulationWidget,self).closeEvent(event)
 
-    def make_param_window(self,robot_id,name,parameters):
-        # FIXME adding to the right for no reason
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea,
-                           ParamDock(self,
-                                     robot_id, name,
-                                     parameters,
-                                     self._simulator_thread.apply_parameters))
+    def make_param_window(self,robot_id,name,parameters):       
+        if name not in self.__paramwindows:
+            # FIXME adding to the right for no reason
+            dock = ParamDock(self, robot_id, name,
+                            parameters, self._simulator_thread.apply_parameters)
+            self.__paramwindows[name] = dock
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        else:
+            # FIXME just reload parameters in this case
+            pass
 
     # Slots
     @QtCore.pyqtSlot()
@@ -200,6 +205,9 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot()
     def _on_open_world(self):
         if self._world_dialog.exec_():
+            for dock in self.__paramwindows.items():
+                dock.deleteLater()
+            self.__paramwindows = {}
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
