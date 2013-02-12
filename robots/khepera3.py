@@ -2,8 +2,9 @@ import numpy as np
 from pose import Pose
 from sensor import IRSensor
 from robot import Robot
-from math import ceil,exp,sin,cos,tan
+from math import ceil, exp, sin, cos, tan, pi
 from scipy.integrate import ode
+from helpers import Struct
 
 class Khepera3_IRSensor(IRSensor):
     def __init__(self,pose,robot):
@@ -93,17 +94,24 @@ class Khepera3(Robot):
                            
         for pose in ir_sensor_poses:
             self.ir_sensors.append(Khepera3_IRSensor(pose,self))
-            
+                                
         # initialize motion
         self.ang_velocity = (0.0,0.0)
 
+        self.info = Struct()
+        self.info.wheels = Struct()
         # these were the original parameters
-        self.wheel_radius = 0.21
-        self.wheel_base_length = 0.885
-#       #I'm not sure we need those
-#        self.ticks_per_rev = 2765
-#        self.speed_factor = 6.2953e-6
-
+        self.info.wheels.radius = 0.21
+        self.info.wheels.base_length = 0.885
+        self.info.wheels.ticks_per_rev = 2765
+        self.info.speed_factor = 6.2953e-6
+        self.info.wheels.left_ticks = 0
+        self.info.wheels.right_ticks = 0
+        
+        self.info.ir_sensors = Struct()
+        self.info.ir_sensors.poses = ir_sensor_poses
+        self.info.ir_sensors.readings = None
+        
         self.integrator = ode(motion_f,motion_jac)
         self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
 
@@ -116,33 +124,46 @@ class Khepera3(Robot):
         
     def get_envelope(self):
         return self._p2
-        
-    def pose_after(self,dt):
+    
+    def move(self,dt):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_unicycle_speeds());
         self.integrator.set_initial_value(self.get_pose().get_list(),0)
         (v,w) = self.get_unicycle_speeds()
         self.integrator.set_f_params(v,w).set_jac_params(v,w)
         self.integrator.integrate(dt)
-        return Pose(self.integrator.y);
+        self.set_pose(Pose(self.integrator.y))
+        # FIXME hack for wheel encoders
+        ticks_per_m = self.info.wheels.ticks_per_rev/(2*pi*self.info.wheels.radius)
+        traveled = v*dt
+        dtheta = w*dt
+        self.info.wheels.left_ticks += ticks_per_m*(traveled - dtheta*self.info.wheels.base_length/2)
+        self.info.wheels.right_ticks += ticks_per_m*(traveled + dtheta*self.info.wheels.base_length/2)
+        
+    def get_info(self):
+        self.info.ir_sensors.readings = [sensor.reading() for sensor in self.ir_sensors]
+        return self.info
     
-    def __coerce_wheel_speeds(self):
-        (v,w) = self.get_unicycle_speeds();
-        v = max(min(v,0.314),-0.3148);
-        w = max(min(w,2.276),-2.2763);
-        self.ang_velocity = self.uni2diff((v,w))
+    def set_inputs(self,inputs):
+        self.set_unicycle_speeds(inputs)
+    
+    #def __coerce_wheel_speeds(self):
+        #(v,w) = self.get_unicycle_speeds();
+        #v = max(min(v,0.314),-0.3148);
+        #w = max(min(w,2.276),-2.2763);
+        #self.ang_velocity = self.uni2diff((v,w))
     
     def diff2uni(self,diff):
         (vl,vr) = diff
-        v = self.wheel_radius/2*(vl+vr);
-        w = self.wheel_radius/self.wheel_base_length*(vr-vl);
+        v = self.info.wheels.radius/2*(vl+vr);
+        w = self.info.wheels.radius/self.info.wheels.base_length*(vr-vl);
         return (v,w)
 
     def uni2diff(self,uni):
         (v,w) = uni
         # Assignment Week 2
-        vr = (self.wheel_base_length*w +2*v)/2/self.wheel_radius
-        vl = vr - self.wheel_base_length*w/self.wheel_radius
+        vr = (self.info.wheels.base_length*w +2*v)/2/self.info.wheels.radius
+        vl = vr - self.info.wheels.base_length*w/self.info.wheels.radius
         # End Assignment
         return (vl,vr)
     
@@ -157,14 +178,14 @@ class Khepera3(Robot):
             self.ang_velocity = args
         else:
             self.ang_velocity = args[0]
-        self.__coerce_wheel_speeds()
+        #self.__coerce_wheel_speeds()
 
     def set_unicycle_speeds(self,*args):
         if len(args) == 2:
             self.ang_velocity = self.uni2diff(args)
         else:
             self.ang_velocity = self.uni2diff(args[0])
-        self.__coerce_wheel_speeds()
+        #self.__coerce_wheel_speeds()
 
 if __name__ == "__main__":
     k = Khepera3(Pose(0,0,0))

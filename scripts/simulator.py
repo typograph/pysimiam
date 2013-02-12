@@ -3,6 +3,7 @@
 import threading
 from time import sleep, clock
 from xmlparser import XMLParser
+import helpers
 
 import khepera3
 import pose
@@ -69,14 +70,25 @@ class Simulator(threading.Thread):
         self._render_lock.acquire()
         self._robots = []
         self._obstacles = []
+        self._supervisors = []
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, robot_pose  = thing[1], thing[2]
-                if robot_type == 'khepera3.K3Supervisor':
-                    self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
-                else:
-                    raise Exception('[Simulator.__init__] Unknown robot type!')
+                sup_type, robot_pose = thing[1:3]
+                #FIXME uncomment the following after changes to the parser
+                #robot_type, robot_pose, sup_type  = thing[1:4]
+                try:
+                    #FIXME uncomment the following after changes to the parser
+                    #robot_module, robot_class = helpers.load_by_name(robot_type)
+                    robot_module, robot_class = helpers.load_by_name("khepera3",'robots')
+                    robot = robot_class(pose.Pose(robot_pose))
+                    sup_module, sup_class = helpers.load_by_name(sup_type,'supervisors')
+                    self._supervisors.append(sup_class(robot.get_pose(), robot.get_info()))
+                    # append robot after supervisor for the case of exceptions
+                    self._robots.append(robot)
+                except:
+                    raise
+                    #raise Exception('[Simulator.__init__] Unknown robot type!')
             elif thing_type == 'obstacle':
                 obstacle_pose, obstacle_coords = thing[1], thing[2]
                 self._obstacles.append(
@@ -89,11 +101,9 @@ class Simulator(threading.Thread):
                                 
         self._render_lock.release()
         self.__time = 0.0
-        if self._robots == None:
+        if not self._robots:
             raise Exception('[Simulator.__init__] No robot specified!')
         else:
-            for robot in self._robots:
-                robot.set_wheel_speeds(1.2,1.6)
             self.focus_on_world()
             self.draw()
 
@@ -112,9 +122,17 @@ class Simulator(threading.Thread):
             sleep(time_constant/self.__time_multiplier)
 
             if self.__state == RUN:
-                for robot in self._robots:
-                    robot.move_to(robot.pose_after(time_constant))
+
+                for i, supervisor in enumerate(self._supervisors):
+                    info = self._robots[i].get_info()
+                    inputs = supervisor.execute( info, time_constant)
+                    self._robots[i].set_inputs(inputs)
+
                 self.__time += time_constant
+
+                for robot in self._robots:
+                    robot.move(time_constant)
+
                 if self.check_collisions():
                     print "Collision detected!"
                     self.__state = PAUSE
