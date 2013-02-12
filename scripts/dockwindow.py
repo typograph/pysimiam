@@ -48,7 +48,9 @@ class Entry():
 class Group():
     def __init__(self,label_key,parameters):
         if not isinstance(parameters,dict):
-            raise ValueError("Invalid tree format in parameters")
+            raise ValueError(
+                "Invalid tree leaf class {}".format(
+                    parameters.__class__.__name__))
         self.field_id = None
         if isinstance(label_key,str):
             self.field = label_key
@@ -67,6 +69,9 @@ class Group():
             v = parameters[key]
             if isinstance(v,float):
                 self.leafs.append(Entry(key,v))
+                self.n_entries += 1
+            elif isinstance(v,int):
+                self.leafs.append(Entry(key,float(v)))
                 self.n_entries += 1
             else:
                 self.leafs.append(Group(key,v))
