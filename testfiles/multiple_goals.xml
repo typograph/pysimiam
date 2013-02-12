@@ -1,6 +1,7 @@
 <parameters>
     <goal>
         <point x="25.0" y = "25.0" />
+        <point x="10.0" y = "45.0" />
     </goal>
 
     <pid>

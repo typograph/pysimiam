@@ -88,10 +88,23 @@ class TestXMLParser(unittest.TestCase):
     # parse_parameters
     def test_parse_parameters_legal(self):
         xml_parser = XMLParser("../testfiles/parameters.xml")
-        parameters = xml_parser.parse_parameters()
-        print parameters[0]    
-        assert(parameters[0] == ('pid', 0.7854, 0.1, [5, 0.1, 0.01]))
- 
+        (goals, parameters) = xml_parser.parse_parameters()
+        assert goals[0] == (25.0, 25.0)
+        assert parameters[0] == ('pid', None, 0.7854, 0.1, [5, 0.1, 0.01])
+
+    def test_parse_parameters_multiple_pids(self):
+        xml_parser = XMLParser("../testfiles/multiple_pids.xml")
+        (goals, parameters) = xml_parser.parse_parameters()
+        assert parameters[0] == ('pid', 'hard', 0.7854, 0.1, [5, 0.1, 0.01])
+        assert parameters[1] == ('pid', 'soft', 0.1234, 0.8, [10, 0.1, 0.01])
+       
+    def test_parse_parameters_multiple_goals(self):
+        xml_parser = XMLParser("../testfiles/multiple_goals.xml")
+        (goals, parameters) = xml_parser.parse_parameters()
+        assert goals[0] == (25.0, 25.0)
+        assert goals[1] == (10.0, 45.0)
+        assert parameters[0] == ('pid', None, 0.7854, 0.1, [5, 0.1, 0.01])
+      
     def test_parse_parameters_no_theta(self):
         xml_parser = XMLParser("../testfiles/no_theta.xml")
         self.assertRaises(Exception, xml_parser.parse_parameters)
