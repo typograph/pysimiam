@@ -134,7 +134,7 @@ class Khepera3(Robot):
 #        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
 #        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_unicycle_speeds());
         self.integrator.set_initial_value(self.get_pose().get_list(),0)
-        (v,w) = self.get_unicycle_speeds()
+        (v,w) = self.diff2uni(self.get_wheel_speeds())
         self.integrator.set_f_params(v,w).set_jac_params(v,w)
         self.integrator.integrate(dt)
         self.set_pose(Pose(self.integrator.y))
@@ -150,7 +150,7 @@ class Khepera3(Robot):
         return self.info
     
     def set_inputs(self,inputs):
-        self.set_unicycle_speeds(inputs)
+        self.set_wheel_speeds(inputs)
     
     #def __coerce_wheel_speeds(self):
         #(v,w) = self.get_unicycle_speeds();
@@ -164,19 +164,16 @@ class Khepera3(Robot):
         w = self.info.wheels.radius/self.info.wheels.base_length*(vr-vl);
         return (v,w)
 
-    def uni2diff(self,uni):
-        (v,w) = uni
-        # Assignment Week 2
-        vr = (self.info.wheels.base_length*w +2*v)/2/self.info.wheels.radius
-        vl = vr - self.info.wheels.base_length*w/self.info.wheels.radius
-        # End Assignment
-        return (vl,vr)
+    #def uni2diff(self,uni):
+        #(v,w) = uni
+        ## Assignment Week 2
+        #vr = (self.info.wheels.base_length*w +2*v)/2/self.info.wheels.radius
+        #vl = vr - self.info.wheels.base_length*w/self.info.wheels.radius
+        ## End Assignment
+        #return (vl,vr)
     
     def get_wheel_speeds(self):
         return self.ang_velocity
-    
-    def get_unicycle_speeds(self):
-        return self.diff2uni(self.get_wheel_speeds())
     
     def set_wheel_speeds(self,*args):
         if len(args) == 2:
@@ -185,13 +182,24 @@ class Khepera3(Robot):
             self.ang_velocity = args[0]
         #self.__coerce_wheel_speeds()
 
-    def set_unicycle_speeds(self,*args):
-        if len(args) == 2:
-            self.ang_velocity = self.uni2diff(args)
-        else:
-            self.ang_velocity = self.uni2diff(args[0])
+    #def set_unicycle_speeds(self,*args):
+        #if len(args) == 2:
+            #self.ang_velocity = self.uni2diff(args)
+        #else:
+            #self.ang_velocity = self.uni2diff(args[0])
         #self.__coerce_wheel_speeds()
 
+    def get_external_sensors(self):
+        return self.ir_sensors
+
+    def draw_sensors(self,renderer):
+        """Draw the sensors that this robot has"""
+        for sensor in self.ir_sensors:
+            sensor.draw(renderer)
+            
+    def update_sensors(self):
+        pass
+    
 if __name__ == "__main__":
     k = Khepera3(Pose(0,0,0))
     print(k.diff2uni(k.uni2diff((1,2))))

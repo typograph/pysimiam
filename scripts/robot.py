@@ -13,3 +13,8 @@ class Robot(SimObject):
     def set_inputs(self,inputs):
         """Set drive inputs in the format needed by this robot"""
         raise NotImplementedError("Robot.set_inputs")
+
+    def draw_sensors(self,renderer):
+        """Draw the sensors that this robot has"""
+        pass
+    

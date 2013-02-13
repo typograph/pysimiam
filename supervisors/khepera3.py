@@ -53,6 +53,14 @@ class K3Supervisor(Supervisor):
     def set_parameters(self,params):
         Supervisor.set_parameters(self,params.pid)
         self.gtg.set_parameters(params.pid.gains)
+
+    def uni2diff(self,uni):
+        (v,w) = uni
+        # Assignment Week 2
+        vr = (self.robot.wheels.base_length*w +2*v)/2/self.robot.wheels.radius
+        vl = vr - self.robot.wheels.base_length*w/self.robot.wheels.radius
+        # End Assignment
+        return (vl,vr)
             
     def eval_criteria(self):
         # Controller is already selected
@@ -94,3 +102,6 @@ class K3Supervisor(Supervisor):
            
         return Pose(x_new, y_new, theta_new)
             
+    def execute(self, robot_info, dt):
+        output = Supervisor.execute(self, robot_info, dt)
+        return self.uni2diff(output)

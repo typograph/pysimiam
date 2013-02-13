@@ -5,7 +5,6 @@ from time import sleep, clock
 from xmlparser import XMLParser
 import helpers
 
-import robots.khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
@@ -81,14 +80,25 @@ class Simulator(threading.Thread):
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, supervisor_type, robot_pose  = thing[1], thing[2], thing[3]
-                if robot_type == 'Khepera3':
-                    if supervisor_type == 'khepera3.K3Supervisor':
-                        self._robots.append(robots.khepera3.Khepera3(pose.Pose(robot_pose)))
-                    else:
-                        raise Exception('[Simulator.__init__] Unknown supervisor')
-                else:
-                    raise Exception('[Simulator.__init__] Unknown robot type!')
+                robot_type, supervisor_type, robot_pose  = thing[1:4]
+                try:
+                    robot_module, robot_class = helpers.load_by_name(robot_type,'robots')
+                    robot = robot_class(pose.Pose(robot_pose))
+                    sup_module, sup_class = helpers.load_by_name(supervisor_type,'supervisors')
+                    supervisor = sup_class(robot.get_pose(),
+                                           robot.get_info())
+                    name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
+                    if self.__supervisor_param_cache is not None:
+                        supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
+                    self.make_param_ui(robot, name, supervisor.get_ui_description())
+                    self._supervisors.append(supervisor)
+                    # append robot after supervisor for the case of exceptions
+                    self._robots.append(robot)
+                    self._trackers.append(simobject.Path(robot.get_pose(),0x0000FF))
+                except:
+                    print "[Simulator.construct_world] Robot creation failed!"
+                    raise
+                    #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
                 obstacle_pose, obstacle_coords = thing[1], thing[2]
                 self._obstacles.append(
@@ -176,8 +186,7 @@ class Simulator(threading.Thread):
             tracker.draw(self._renderer)
         for robot in self._robots:
             robot.draw(self._renderer)
-            for s in robot.get_external_sensors():
-                s.draw(self._renderer)
+            robot.draw_sensors(self._renderer)
 
         self.updateView()
         self._render_lock.release()
