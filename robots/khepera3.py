@@ -1,44 +1,21 @@
 import numpy as np
 from pose import Pose
-from sensor import IRSensor
+from sensor import ProximitySensor
 from robot import Robot
 from math import ceil, exp, sin, cos, tan, pi
 from scipy.integrate import ode
 from helpers import Struct
 
-class Khepera3_IRSensor(IRSensor):
+class Khepera3_IRSensor(ProximitySensor):
     def __init__(self,pose,robot):
-        IRSensor.__init__(self,pose,robot)
-        # values copied from SimIAm
-        self.rmin = 0.02
-        self.rmax = 0.2
-        self.phi  = np.radians(20)
-        self.pts = [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
-                    (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
-                    (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2)),
-                    (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
-    
-    @staticmethod
-    def __distance_to_value(dst):
+        # values copied from SimIAm    
+        ProximitySensor.__init__(self, pose, robot, (0.02, 0.2, np.radians(20)))
+
+    def distance_to_value(self,dst):
         if dst < self.rmin :
             return 3960;
         else:
             return (3960*exp(-30*(dst-self.rmin)));
-   
-    def reading(self):
-        pass
-    
-    def get_envelope(self):
-        return self.pts
-    
-    def draw(self, r):
-        r.set_pose(self.get_pose())
-        r.set_brush(0x11FF5566)
-        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmax/2))
-        r.draw_polygon(self.pts)
-
-    def update_distance(self, sim_object = None):
-        pass
 
 def motion_f(t,y,v,w):
     """The Drive problem
@@ -198,7 +175,8 @@ class Khepera3(Robot):
             sensor.draw(renderer)
             
     def update_sensors(self):
-        pass
+        for sensor in self.ir_sensors:
+            sensor.update_distance()
     
 if __name__ == "__main__":
     k = Khepera3(Pose(0,0,0))

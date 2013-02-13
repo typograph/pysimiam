@@ -4,7 +4,7 @@ from pose import Pose
 
 class SimObject:
     def __init__(self,pose):
-        self.__pose = pose
+        self.set_pose(pose)
 
     def get_pose(self):
         """Returns the pose of the object in world coordinates
@@ -14,6 +14,7 @@ class SimObject:
     def set_pose(self,pose):
         """Returns the pose of the object in world coordinates
         """
+        self.__world_envelope = None
         self.__pose = pose
 
     def draw(self,dc):
@@ -28,9 +29,12 @@ class SimObject:
         pass
     
     def get_world_envelope(self):
-        x,y,t = self.get_pose()
-        return [(x+p[0]*cos(t)-p[1]*sin(t),y+p[0]*sin(t)+p[1]*cos(t))
-                for p in self.get_envelope()]
+        if self.__world_envelope is None:
+            x,y,t = self.get_pose()
+            self.__world_envelope = [(x+p[0]*cos(t)-p[1]*sin(t),
+                                      y+p[0]*sin(t)+p[1]*cos(t))
+                                     for p in self.get_envelope()]
+        return self.__world_envelope
     
     def get_bounding_rect(self):
         """Get the smallest rectangle that contains the object

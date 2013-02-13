@@ -19,25 +19,53 @@ class Sensor:
         """
         return random.gauss(value,sigma)
   
-class InternalSensor(SimObject):
-    def __init__(self,pose,robot):
+class MountedSensor(SimObject):
+    def __init__(self,pose,frame):
         SimObject.__init__(self,pose)
-        self.__robot = robot
+        self.__frame = frame
 
     def get_internal_pose(self):
         return SimObject.get_pose(self)
        
     def get_pose(self):
         x, y, t = SimObject.get_pose(self)
-        rx, ry, rt = self.__robot.get_pose()
+        rx, ry, rt = self.__frame.get_pose()
         return Pose(rx+x*cos(rt)-y*sin(rt),ry+x*sin(rt)+y*cos(rt),t+rt)
     
-class ProximitySensor(InternalSensor):
-    def __init__(self,pose,robot):
-        InternalSensor.__init__(self,pose,robot)
+class ProximitySensor(MountedSensor):
+    def __init__(self,pose,robot,geometry):
+        """Create a proximity sensor mounted on robot at pose. The geometry
+        is a (rmin, rmax, angle) tuple
+        """
+        MountedSensor.__init__(self,pose,robot)
+        self.rmin, self.rmax, self.phi = geometry
+        self.pts = [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
+                    (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
+                    (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2)),
+                    (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
+                    
+        self.__distance = 65536
+
+    def get_envelope(self):
+        return self.pts
+
+    def distance_to_value(self,dst):
+        raise NotImplementedError("ProximitySensor.distance_to_value")
         
     def distance(self):
+        return self.__distance
+    
+    def reading(self):
+        return self.distance_to_value(self.distance())
+
+    def update_distance(self, sim_object = None):
         pass
+
+    def draw(self, r):
+        r.set_pose(self.get_pose())
+        r.set_brush(0x11FF5566)
+        r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
+        r.draw_polygon(self.pts)
         
     def get_distance_to(self, sim_object):
         ox, oy, ot = self.get_pose()
@@ -52,6 +80,3 @@ class ProximitySensor(InternalSensor):
             print "Contact @({0},{1}) ~{2}".format(px, py, distance)
             #
         return min_distance
-
-class IRSensor(ProximitySensor):
-    pass

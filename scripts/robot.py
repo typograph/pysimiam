@@ -17,4 +17,7 @@ class Robot(SimObject):
     def draw_sensors(self,renderer):
         """Draw the sensors that this robot has"""
         pass
-    
+
+    def update_sensors(self):
+        """Update sensor values"""
+        pass
