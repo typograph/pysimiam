@@ -57,8 +57,8 @@ class Simulator(threading.Thread):
 
         print 'reading initial configuration'
         try:
-            parser = XMLParser(config)
-            self._world = parser.parse('simulation')
+            parser = XMLParser(config, 'simulation')
+            self._world = parser.parse()
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))

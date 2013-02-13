@@ -4,7 +4,6 @@ ChangeDate: 8 FEB 2013; 2300EST
 Description: This is the Controller class for PySimiam.
 """
 import math
-from xmlparser import XMLParser
 
 class Controller():
     def __init__(self,params):

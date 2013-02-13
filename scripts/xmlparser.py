@@ -13,7 +13,7 @@ class XMLParser(object):
     _file = None
     _root = None
     
-    def __init__(self, file_):
+    def __init__(self, file_, template):
         """ 
         Construct a new XMLParser instance
 
@@ -33,6 +33,7 @@ class XMLParser(object):
 
         self._root = _tree.getroot()
         self._file = file_
+        self._template = template
 
     def _parse_parameters(self):
         """ 
@@ -185,7 +186,7 @@ class XMLParser(object):
     
         return simulator_objects
  
-    def parse(self, template):
+    def parse(self):
         """ 
         Call the correct parsing function 
        
@@ -197,9 +198,9 @@ class XMLParser(object):
             The result of parsing the file (type dependent on the template)
         """
  
-        if template == "parameters":
+        if self._template == "parameters":
             return self._parse_parameters()
-        elif template == "simulation":
+        elif self._template == "simulation":
             return self._parse_simulation()
         else:
             raise Exception(
