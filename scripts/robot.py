@@ -1,23 +1,15 @@
 from simobject import SimObject
 
 class Robot(SimObject):
-    def pose_after(self,dt):
-        """
-        Returns the pose of the robot after time dt
-        """
-        pass
+    def move(self,dt):
+        """Moves the robot for time dt"""
+        raise NotImplementedError("Robot.move")
+    
+    def get_info(self):
+        """Return the information about robot, including sensor readings and
+        shape information"""
+        raise NotImplementedError("Robot.get_info")
 
-    def move_to(self,pose):
-        self.set_pose(pose)
-        
-    def get_external_sensors(self):
-        pass
-
-    def update_sensors(self, other_object = None):
-        """
-        Update robots's sensors relative to a given object
-        
-        Parameters: other_object - other SimObject, if None
-                    is passed, the sensors will be reset
-        """
-        pass
+    def set_inputs(self,inputs):
+        """Set drive inputs in the format needed by this robot"""
+        raise NotImplementedError("Robot.set_inputs")

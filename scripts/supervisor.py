@@ -4,70 +4,70 @@ ChangeDate: 8 FEB 2013; 2300EST
 Description: This is the Supervisor class for PySimiam.
 """
 
+import helpers
+
 class Supervisor:
-    def __init__(self, robot, cntrl_list, parameters):
-        self.attach_robot(robot)
+    def __init__(self, robot_pose, robot_info):
+        self.initial_pose = robot_pose
+        self.pose_est = robot_pose
+        self.ui_params = self.get_default_parameters()
         self.controller_modules = {}
-        self.controllers = {}
-        for module_name in cntrl_list:
-            # We expect a name in the form "file.Class"
-            # to load a controller Class from file controllers/file.py
-            try:
-                filename, class_name = module_name.split(".")
-            except ValueError:
-                # either too many or too few dots
-                # fallback to capitalization
-                filename = module_name
-                class_name = module_name.capitalize()
-            try:
-                module = __import__(filename)
-                controller_class = module.__dict__[class_name]
-                self.controller_modules[module_name] = (module, controller_class)
-                self.controllers[filename] = controller_class(parameters)
-            except ImportError:
-                print "Module {} failed to load".format(filename)
-            except KeyError:
-                print "No class {} in module {}".format(class_name,filename)
+        self.current = None
 
-        #self.build_dict()
+    def get_parameters(self):
+        """Get parameters of the supervisor.
+        
+        supervisor.set_parameters(supervisor.get_parameters()) should not change
+        the state
+        """
+        return self.ui_params
 
-    def attach_robot(self, robot):
-        self.robot = robot
-        self.pose_est = self.robot.get_pose #define the starting pose
+    def get_default_parameters(self):
+        """Return the default parameter set, suitable for runnig this supervisor
+        
+        To be implemented in subclasses
+        """
+        raise NotImplementedError("Supervisor.get_default_parameters")
 
-    def set_current(self, cntrl):
-        self.current = self.controllers[cntrl]
+    def get_ui_description(self, params = None):
+        """Return a dictionary, describing the parameters available for the user,
+        with the values from params
+        
+        If params are not specified, use self.ui_params
+        
+        To be implemented in subclasses
+        """
+        raise NotImplementedError("Supervisor.get_ui_description")
+        
+    def set_parameters(self,params):
+        self.ui_params = params
+
+    def add_controller(self, module_string, parameters):
+        module, controller_class = helpers.load_by_name(module_string, 'controllers')
+        self.controller_modules[module_string] = (module, controller_class)
+        return controller_class(parameters)
 
     def get_current(self):
         return self.current
 
-    #def build_dict(self,cntrl_list):
-        #for m, controller_class in self.:
-            #class_name = getattr(self.controller_modules[controller],
-                                 #capitalize(controller[0]) + controller[1:])
-            #self.controllers[controller] = class_name()
-
-    def execute(self, dt):
-        self.eval_criteria() #User-defined algorithm
-        output = self.current.execute(self,dt) #execute the current class
-        self.apply_outputs(output)
-        self.robot.move_to(self.robot.pose_after(dt))
-        self.estimate_pose()
+    def execute(self, robot_info, dt):
+        """Make decisions about robot motion based on robot_info
+        """
+        self.robot = robot_info
+        self.pose_est = self.estimate_pose()
+        params = self.eval_criteria() #User-defined algorithm
+        output = self.current.execute(params,dt) #execute the current controller
+        return output
 
     def eval_criteria(self):
-        """Evaluate the situation and select the right controller
+        """Evaluate the situation and select the right controller. Return the
+        right controller params
         
         To be implemented in subclasses"""
         raise NotImplementedError('Supervisor.eval_criteria')
-    
-    def apply_outputs(self, outputs):
-        """Apply controller outputs to the robot
         
-        To be implemented in subclasses"""
-        raise NotImplementedError('Supervisor.apply_outputs')
-    
     def estimate_pose(self):
         """Update self.pose_est
         
-        To be implemented in subclasses"""
+        To be implemented in subclasses (different robot drives)"""
         raise NotImplementedError('Supervisor.estimate_pose')

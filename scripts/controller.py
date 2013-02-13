@@ -7,24 +7,21 @@ import math
 from xmlparser import XMLParser
 
 class Controller():
-    def execute(self,supervisor,dt):
-        self.read_instruments(supervisor)
-        self.pose_est = supervisor.pose_est
-        output = self.algorithm(self.pose_est, dt)
-        return output
+    def __init__(self,params):
+        """Initialize the controller with parameters"""
+        self.set_parameters(params)
+    
+    def execute(self, state, dt):
+        """Given state and elapsed time, calculate and return robot motion parameters
+        
+        To be implemented in subclasses
+        """
+        raise NotImplementedError("Controller.execute")
 
-    def read_instruments(self,supervisor):
-        self.ir_sensors = supervisor.robot.ir_sensors
-        self.ticks = supervisor.robot
-
-    def read_config(self,config):
-        parameters = None
-        try:
-            parser = XMLParser(config)
-            parameters = parser.parse_parameters()
-        except Exception, e:
-            raise Exception(
-                '[Controller.read_config] Failed to parse ' + config \
-                + ': ' + str(e))
-
-        return parameters
+    def set_parameters(self,params):
+        """Get the internal paramters from the params structure
+        
+        To be implemented in subclasses
+        """
+        raise NotImplementedError("Controller.set_parameters")
+    

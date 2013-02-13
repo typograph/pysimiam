@@ -140,5 +140,43 @@ class XMLParser(object):
             except ValueError:
                 raise Exception(
                     '[XMLParser.parse_simulation] Invalid obstacle (bad value)!')
+                    
+        # background
+        for obstacle in self._root.findall('marker'):
+            pose = obstacle.find('pose')
+            if pose == None:
+                raise Exception(
+                    '[XMLParser.parse_simulation] No pose specified!')
+            
+            geometry = obstacle.find('geometry')
+            if geometry == None:
+                raise Exception(
+                    '[XMLParser.parse_simulation] No geometry specified!')
+            try:
+                points = []
+                for point in geometry.findall('point'):
+                    x, y = point.get('x'), point.get('y')
+                    if x == None or y == None:
+                        raise Exception(
+                            '[XMLParser.parse_simulation] Invalid point!')
+                    points.append((float(x), float(y)))
+                    
+                if len(points) < 3:
+                    raise Exception(
+                        '[XMLParser.parse_simulation] Too few points!')
+                
+                x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
+                if x == None or y == None or theta == None:
+                    raise Exception(
+                        '[XMLParser.parse_simulation] Invalid pose!')
+                
+                simulator_objects.append(('marker',
+                                          (float(x),
+                                           float(y),
+                                           float(theta)),
+                                          points))
+            except ValueError:
+                raise Exception(
+                    '[XMLParser.parse_simulation] Invalid marker (bad value)!')
     
         return simulator_objects
