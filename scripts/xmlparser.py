@@ -78,6 +78,7 @@ class XMLParser(object):
     
         # robots
         for robot in self._root.findall('robot'):
+            robot_type = robot.get('type')
             supervisor = robot.find('supervisor')
             if supervisor == None:
                 raise Exception(
@@ -94,7 +95,8 @@ class XMLParser(object):
                     raise Exception(
                         '[XMLParser.parse_simulation] Invalid pose!')
                 
-                simulator_objects.append(('robot', 
+                simulator_objects.append(('robot',
+                                          robot_type, 
                                           supervisor.attrib['type'], 
                                           (float(x), 
                                            float(y), 

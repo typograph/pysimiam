@@ -9,7 +9,8 @@ class TestXMLParser(unittest.TestCase):
         objects = xml_parser.parse_simulation()
 
         assert objects[0] == \
-            ('robot', 
+            ('robot',
+             'Khepera3', 
              'khepera3.K3Supervisor', 
              (1.0, 1.0, 1.5708))
         assert objects[1] == \
