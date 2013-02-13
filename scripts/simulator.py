@@ -3,19 +3,19 @@
 import threading
 from time import sleep, clock
 from xmlparser import XMLParser
+import helpers
 
-import khepera3
+import robots.khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
-import pylygon
 
 PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
 
-    def __init__(self, renderer, update_callback):
+    def __init__(self, renderer, update_callback, param_callback):
         """
         The viewer object supplies:
             a Renderer (viewer.renderer),
@@ -29,6 +29,7 @@ class Simulator(threading.Thread):
         self.__state = PAUSE
         self._renderer = renderer
         self.updateView = update_callback
+        self.make_param_ui = param_callback
         self.__center_on_robot = False
 
         # Zoom on scene - Move to read_config later
@@ -39,7 +40,10 @@ class Simulator(threading.Thread):
 
         # World objects
         self._robots = []
+        self._trackers = []
         self._obstacles = []
+        self._supervisors = []
+        self._background = []
 
         self._world = None
 
@@ -60,6 +64,8 @@ class Simulator(threading.Thread):
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))
         else:
+            self.__supervisor_param_cache = None
+            self.__center_on_robot = False
             self.construct_world()
 
     def construct_world(self):
@@ -69,13 +75,16 @@ class Simulator(threading.Thread):
         self._render_lock.acquire()
         self._robots = []
         self._obstacles = []
+        self._supervisors = []
+        self._background = []
+        self._trackers = []
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
                 robot_type, supervisor_type, robot_pose  = thing[1], thing[2], thing[3]
                 if robot_type == 'Khepera3':
                     if supervisor_type == 'khepera3.K3Supervisor':
-                        self._robots.append(khepera3.Khepera3(pose.Pose(robot_pose)))
+                        self._robots.append(robots.khepera3.Khepera3(pose.Pose(robot_pose)))
                     else:
                         raise Exception('[Simulator.__init__] Unknown supervisor')
                 else:
@@ -86,19 +95,31 @@ class Simulator(threading.Thread):
                     simobject.Polygon(pose.Pose(obstacle_pose),
                                       obstacle_coords,
                                       0xFF0000))
+            elif thing_type == 'marker':
+                obj_pose, obj_coords = thing[1], thing[2]
+                self._background.append(
+                    simobject.Polygon(pose.Pose(obj_pose),
+                                      obj_coords,
+                                      0x00FF00))
             else:
-                raise Exception('[Simulator.__init__] Unknown object: '
+                raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing_type))
                                 
         self._render_lock.release()
         self.__time = 0.0
-        if self._robots == None:
-            raise Exception('[Simulator.__init__] No robot specified!')
+        if not self._robots:
+            raise Exception('[Simulator.construct_world] No robot specified!')
         else:
-            for robot in self._robots:
-                robot.set_wheel_speeds(1.2,1.6)
-            self.focus_on_world()
+            if not self.__center_on_robot:
+                self.focus_on_world()
             self.draw()
+            self.__supervisor_param_cache = None
+
+    def reset_world(self):
+        if self._world is None:
+            return
+        self.__supervisor_param_cache = [sv.get_parameters() for sv in self._supervisors ]
+        self.construct_world()
 
     def run(self):
         print 'starting simulator thread'
@@ -115,17 +136,26 @@ class Simulator(threading.Thread):
             sleep(time_constant/self.__time_multiplier)
 
             if self.__state == RUN:
-                for robot in self._robots:
-                    robot.move_to(robot.pose_after(time_constant))
+
+                for i, supervisor in enumerate(self._supervisors):
+                    info = self._robots[i].get_info()
+                    inputs = supervisor.execute( info, time_constant)
+                    self._robots[i].set_inputs(inputs)
+
                 self.__time += time_constant
+
+                for i, robot in enumerate(self._robots):
+                    robot.move(time_constant)
+                    self._trackers[i].add_point(robot.get_pose())
+
                 if self.check_collisions():
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
+                self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
-
 
     def draw(self):
         self._render_lock.acquire()
@@ -136,13 +166,17 @@ class Simulator(threading.Thread):
 
         self._renderer.clear_screen()
 
+        for bg_object in self._background:
+            bg_object.draw(self._renderer)
         for obstacle in self._obstacles:
             obstacle.draw(self._renderer)
 
-        # Draw the robots and sensors after obstacles
+        # Draw the robots, trackers and sensors after obstacles
+        for tracker in self._trackers:
+            tracker.draw(self._renderer)
         for robot in self._robots:
             robot.draw(self._renderer)
-            for s in robot.ir_sensors:
+            for s in robot.get_external_sensors():
                 s.draw(self._renderer)
 
         self.updateView()
@@ -181,6 +215,14 @@ class Simulator(threading.Thread):
         self._render_lock.acquire()
         self._renderer.scale_zoom_level(factor)
         self._render_lock.release()
+        
+    def apply_parameters(self,robot,parameters):
+        # FIXME at the moment we could change parameters during calculation!
+        index = self._robots.index(robot)
+        if index < 0:
+            print "Robot not found"
+        else:
+            self._supervisors[index].set_parameters(parameters)
 
     # Stops the thread
     def stop(self):
@@ -199,7 +241,7 @@ class Simulator(threading.Thread):
 
     def reset_simulation(self):
         self.pause_simulation()
-        self.construct_world()
+        self.reset_world()
 
     def set_time_multiplier(self,multiplier):
         self.__time_multiplier = multiplier
@@ -209,49 +251,63 @@ class Simulator(threading.Thread):
 
     def check_collisions(self):
         ''' Detect collisions between objects '''
-        scaling_factor = 1.
-        poly_obstacles = []
-        # prepare polygons for obstacles
-        for obstacle in self._obstacles:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in obstacle.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_obstacles.append(poly)
-
-        poly_robots = []
-        # prepare polygons for robots
-        for robot in self._robots:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in robot.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_robots.append(poly)
-
+        
+        collisions = []
         checked_robots = []
-
-        # check each robot's polygon
-        for robot in poly_robots:
+        
+        # check each robot
+        for robot in self._robots:
+            # reset sensors
+            robot.update_sensors()
+            
             # against obstacles
-            for obstacle in poly_obstacles:
-                collisions = robot.collidepoly(obstacle)
-                # collidepoly returns False value or
-                # an array of projections if found
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot:", robot, "\nObstacle:", obstacle
-                return True
-
+            for obstacle in self._obstacles:
+                #robot.update_sensors(obstacle)
+                if robot.has_collision(obstacle):
+                    collisions.append((robot, obstacle))
+            
             # against other robots
-            for other in poly_robots:
-                if other == robot: continue
+            for other in self._robots: 
+                if other is robot: continue
+                #robot.update_sensors(other)
                 if other in checked_robots: continue
-                collisions = robot.collidepoly(other)
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot1:", robot, "\nRobot2:", other
-                return True
+                if robot.has_collision(other):
+                    collisions.append((robot, other))
+
             checked_robots.append(robot)
+            
+        if len(collisions) > 0:
+            # Test code - print out collisions
+            for (robot, obstacle) in collisions:
+                print "Collision wetween:\n", robot, "\n", obstacle
+            # end of test code
+            return True
+                
         return False
+
+    def update_sensors(self):
+        ''' Update robot's sensors '''
+        
+        for robot in self._robots:
+            # reset sensors
+            #robot.update_sensors()
+            
+            # against obstacles
+            #for obstacle in self._obstacles:
+            #    robot.update_sensors(obstacle)
+                
+            # against other robots
+            #for other in self._robots: 
+            #    if other is robot: continue
+            #    robot.update_sensors(other)
+            
+            for sensor in robot.get_external_sensors():
+                # reset dist to max here
+                #dist = self.
+                for obstacle in self._obstacles:
+                    if sensor.has_collision(obstacle):
+                        d = sensor.get_distance_to(obstacle)
+                        print "{} in range of {} ~{}".format(
+                               obstacle, sensor, d)
 
 #end class Simulator

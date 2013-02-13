@@ -84,18 +84,18 @@ class XMLParser(object):
             supervisor = robot.find('supervisor')
             if supervisor == None:
                 raise Exception(
-                    '[XMLParser.parse_simulation] No supervisor specified!')
+                    '[XMLParser._parse_simulation] No supervisor specified!')
 
             pose = robot.find('pose')
             if pose == None:
                 raise Exception(
-                    '[XMLParser.parse_simulation] No pose specified!')
+                    '[XMLParser._parse_simulation] No pose specified!')
 
             try:
                 x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
                 if x == None or y == None or theta == None:
                     raise Exception(
-                        '[XMLParser.parse_simulation] Invalid pose!')
+                        '[XMLParser._parse_simulation] Invalid pose!')
 
                 simulator_objects.append(('robot',
                                           robot_type,
@@ -105,36 +105,36 @@ class XMLParser(object):
                                            float(theta))))
             except ValueError:
                 raise Exception(
-                    '[XMLParser.parse_simulation] Invalid robot (bad value)!') 
+                    '[XMLParser._parse_simulation] Invalid robot (bad value)!') 
 
         # obstacles
         for obstacle in self._root.findall('obstacle'):
             pose = obstacle.find('pose')
             if pose == None:
                 raise Exception(
-                    '[XMLParser.parse_simulation] No pose specified!')
+                    '[XMLParser._parse_simulation] No pose specified!')
 
             geometry = obstacle.find('geometry')
             if geometry == None:
                 raise Exception(
-                    '[XMLParser.parse_simulation] No geometry specified!')
+                    '[XMLParser._parse_simulation] No geometry specified!')
             try:
                 points = []
                 for point in geometry.findall('point'):
                     x, y = point.get('x'), point.get('y')
                     if x == None or y == None:
                         raise Exception(
-                            '[XMLParser.parse_simulation] Invalid point!')
+                            '[XMLParser._parse_simulation] Invalid point!')
                     points.append((float(x), float(y)))
 
                 if len(points) < 3:
                     raise Exception(
-                        '[XMLParser.parse_simulation] Too few points!')
+                        '[XMLParser._parse_simulation] Too few points!')
 
                 x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
                 if x == None or y == None or theta == None:
                     raise Exception(
-                        '[XMLParser.parse_simulation] Invalid pose!')
+                        '[XMLParser._parse_simulation] Invalid pose!')
 
                 simulator_objects.append(('obstacle',
                                           (float(x),
@@ -143,9 +143,47 @@ class XMLParser(object):
                                           points))
             except ValueError:
                 raise Exception(
-                    '[XMLParser.parse_simulation] Invalid obstacle (bad value)!')
-
-        return simulator_objects 
+                    '[XMLParser._parse_simulation] Invalid obstacle (bad value)!')
+        
+        # background
+        for marker in self._root.findall('marker'):
+            pose = marker.find('pose')
+            if pose == None:
+                raise Exception(
+                    '[XMLParser._parse_simulation] No pose specified!')
+            
+            geometry = marker.find('geometry')
+            if geometry == None:
+                raise Exception(
+                    '[XMLParser._parse_simulation] No geometry specified!')
+            try:
+                points = []
+                for point in geometry.findall('point'):
+                    x, y = point.get('x'), point.get('y')
+                    if x == None or y == None:
+                        raise Exception(
+                            '[XMLParser._parse_simulation] Invalid point!')
+                    points.append((float(x), float(y)))
+                    
+                if len(points) < 3:
+                    raise Exception(
+                        '[XMLParser._parse_simulation] Too few points!')
+                
+                x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
+                if x == None or y == None or theta == None:
+                    raise Exception(
+                        '[XMLParser._parse_simulation] Invalid pose!')
+                
+                simulator_objects.append(('marker',
+                                          (float(x),
+                                           float(y),
+                                           float(theta)),
+                                          points))
+            except ValueError:
+                raise Exception(
+                    '[XMLParser._parse_simulation] Invalid marker (bad value)!')
+    
+        return simulator_objects
  
     def parse(self, template):
         """ 

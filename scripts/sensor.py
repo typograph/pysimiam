@@ -8,7 +8,7 @@
 import random
 from simobject import SimObject
 from pose import Pose
-from math import sin, cos
+from math import sin, cos, sqrt
 
 class Sensor:
     @classmethod
@@ -38,6 +38,20 @@ class ProximitySensor(InternalSensor):
         
     def distance(self):
         pass
+        
+    def get_distance_to(self, sim_object):
+        ox, oy, ot = self.get_pose()
+        min_distance = None
+        for px, py in self.get_contact_points(sim_object):
+            distance = sqrt((px-ox)*(px-ox)+(py-oy)*(py-oy))
+            if min_distance:
+                if distance < min_distance:
+                    min_distance = distance
+            else: min_distance = distance
+            # Test code - return contact point info
+            print "Contact @({0},{1}) ~{2}".format(px, py, distance)
+            #
+        return min_distance
 
 class IRSensor(ProximitySensor):
     pass

@@ -7,6 +7,7 @@ sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
+from dockwindow import ParamDock
 
 import simulator as sim
 import threading
@@ -45,12 +46,16 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidget(viewer)
         scrollArea.setWidgetResizable(True)
 
+        self.__paramwindows = {}
+
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
         self.__sim_timer.timeout.connect(self.__update_time)
         
         # create the simulator thread
-        self._simulator_thread = sim.Simulator(viewer.renderer,viewer.update_bitmap)
+        self._simulator_thread = sim.Simulator(viewer.renderer,
+                                               viewer.update_bitmap,
+                                               self.make_param_window)
         self._simulator_thread.start()
 
     def __create_toolbars(self):
@@ -136,10 +141,6 @@ class SimulationWidget(QtGui.QMainWindow):
         file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
                             "Open XML &World",
                             self._on_open_world,
-                            QtGui.QKeySequence("Ctrl+W"))
-        file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
-                            "&Open Supervisor",
-                            self._on_open,
                             QtGui.QKeySequence(QtGui.QKeySequence.Open))
                             
         file_menu.addSeparator()
@@ -157,15 +158,18 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread.join()
         super(SimulationWidget,self).closeEvent(event)
 
-    # Slots
-    @QtCore.pyqtSlot()
-    def _on_open(self):
-        # Load new definition
-        if self._supervisor_dialog.exec_():
-            QtGui.QMessageBox.information(self,
-                                          "Opening supervisor...",
-                                          "Not implemented yet")
+    def make_param_window(self,robot_id,name,parameters):       
+        if name in self.__paramwindows:
+            self.__paramwindows[name].deleteLater()
+            del self.__paramwindows[name]
 
+        # FIXME adding to the right for no reason
+        dock = ParamDock(self, robot_id, name,
+                         parameters, self._simulator_thread.apply_parameters)
+        self.__paramwindows[name] = dock
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+
+    # Slots
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
         self.__sim_timer.stop()
@@ -188,7 +192,11 @@ class SimulationWidget(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot()
     def _on_open_world(self):
+        self._on_pause()
         if self._world_dialog.exec_():
+            for name, dock in self.__paramwindows.items():
+                dock.deleteLater()
+            self.__paramwindows = {}
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
