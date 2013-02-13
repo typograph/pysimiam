@@ -8,7 +8,6 @@ import khepera3
 import pose
 import simobject
 from xmlparser import XMLParser
-import pylygon
 
 PAUSE = 0
 RUN = 1
@@ -115,14 +114,15 @@ class Simulator(threading.Thread):
                 for robot in self._robots:
                     robot.move_to(robot.pose_after(time_constant))
                 self.__time += time_constant
+                
                 if self.check_collisions():
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
+                self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
-
 
     def draw(self):
         self._render_lock.acquire()
@@ -139,7 +139,7 @@ class Simulator(threading.Thread):
         # Draw the robots and sensors after obstacles
         for robot in self._robots:
             robot.draw(self._renderer)
-            for s in robot.ir_sensors:
+            for s in robot.get_external_sensors():
                 s.draw(self._renderer)
 
         self.updateView()
@@ -206,49 +206,63 @@ class Simulator(threading.Thread):
 
     def check_collisions(self):
         ''' Detect collisions between objects '''
-        scaling_factor = 1.
-        poly_obstacles = []
-        # prepare polygons for obstacles
-        for obstacle in self._obstacles:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in obstacle.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_obstacles.append(poly)
-
-        poly_robots = []
-        # prepare polygons for robots
-        for robot in self._robots:
-            points = [(x*scaling_factor, y*scaling_factor)
-                      for x,y in robot.get_world_envelope()]
-            poly = pylygon.Polygon(points)
-            poly_robots.append(poly)
-
+        
+        collisions = []
         checked_robots = []
-
-        # check each robot's polygon
-        for robot in poly_robots:
+        
+        # check each robot
+        for robot in self._robots:
+            # reset sensors
+            robot.update_sensors()
+            
             # against obstacles
-            for obstacle in poly_obstacles:
-                collisions = robot.collidepoly(obstacle)
-                # collidepoly returns False value or
-                # an array of projections if found
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot:", robot, "\nObstacle:", obstacle
-                return True
-
+            for obstacle in self._obstacles:
+                #robot.update_sensors(obstacle)
+                if robot.has_collision(obstacle):
+                    collisions.append((robot, obstacle))
+            
             # against other robots
-            for other in poly_robots:
-                if other == robot: continue
+            for other in self._robots: 
+                if other is robot: continue
+                #robot.update_sensors(other)
                 if other in checked_robots: continue
-                collisions = robot.collidepoly(other)
-                if isinstance(collisions, bool):
-                    if collisions == False: continue
-                print "Collisions:", collisions
-                print "Robot1:", robot, "\nRobot2:", other
-                return True
+                if robot.has_collision(other):
+                    collisions.append((robot, other))
+
             checked_robots.append(robot)
+            
+        if len(collisions) > 0:
+            # Test code - print out collisions
+            for (robot, obstacle) in collisions:
+                print "Collision wetween:\n", robot, "\n", obstacle
+            # end of test code
+            return True
+                
         return False
+
+    def update_sensors(self):
+        ''' Update robot's sensors '''
+        
+        for robot in self._robots:
+            # reset sensors
+            #robot.update_sensors()
+            
+            # against obstacles
+            #for obstacle in self._obstacles:
+            #    robot.update_sensors(obstacle)
+                
+            # against other robots
+            #for other in self._robots: 
+            #    if other is robot: continue
+            #    robot.update_sensors(other)
+            
+            for sensor in robot.get_external_sensors():
+                # reset dist to max here
+                #dist = self.
+                for obstacle in self._obstacles:
+                    if sensor.has_collision(obstacle):
+                        d = sensor.get_distance_to(obstacle)
+                        print "{} in range of {} ~{}".format(
+                               obstacle, sensor, d)
 
 #end class Simulator
