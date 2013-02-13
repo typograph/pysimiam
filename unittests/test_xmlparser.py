@@ -6,7 +6,7 @@ class TestXMLParser(unittest.TestCase):
     # parse_simulation
     def test_parse_simulation_legal(self):
         xml_parser = XMLParser("../testfiles/settings.xml")
-        objects = xml_parser.parse_simulation()
+        objects = xml_parser.parse('simulation')
 
         assert objects[0] == \
             ('robot',
@@ -55,68 +55,49 @@ class TestXMLParser(unittest.TestCase):
         
     def test_parse_simulation_no_robot_supervisor(self):
         xml_parser = XMLParser("../testfiles/no_robot_supervisor.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
     
     def test_parse_simulation_no_robot_pose(self):
         xml_parser = XMLParser("../testfiles/no_robot_pose.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
 
     def test_parse_simulation_bad_robot_coordinate(self):
         xml_parser = XMLParser("../testfiles/bad_robot_coord.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
                 
     def test_parse_simulation_no_obstacle_pose(self):
         xml_parser = XMLParser("../testfiles/no_obstacle_pose.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
         
     def test_parse_simulation_no_obstacle_geometry(self):
         xml_parser = XMLParser("../testfiles/no_obstacle_geometry.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
         
     def test_parse_simulation_bad_obstacle_coordinate(self):
         xml_parser = XMLParser("../testfiles/bad_obstacle_coord.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)    
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')    
         
     def test_parse_simulation_missing_obstacle_coordinate(self):
         xml_parser = XMLParser("../testfiles/missing_obstacle_coord.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
         
     def test_parse_simulation_too_few_obstacle_points(self):
         xml_parser = XMLParser("../testfiles/too_few_points.xml")
-        self.assertRaises(Exception, xml_parser.parse_simulation)
+        self.assertRaises(Exception, xml_parser.parse, 'simulation')
 
 
     # parse_parameters
     def test_parse_parameters_legal(self):
         xml_parser = XMLParser("../testfiles/parameters.xml")
-        (goals, parameters) = xml_parser.parse_parameters()
-        assert goals[0] == (25.0, 25.0)
-        assert parameters[0] == ('pid', None, 0.7854, 0.1, [5, 0.1, 0.01])
+        parameters = xml_parser.parse('parameters')
+        assert parameters == {'pid': {
+                                     'goal': {'y': 10.0, 'x': 11.0}, 
+                                     'angle': {'theta': 0.7854}, 
+                                     'velocity': {'v': 0.1}, 
+                                     ('gains', 'soft'): {'ki': 0.1, 'kp': 5.0, 'kd': 0.01}, 
+                                     ('gains', 'hard'): {'ki': 0.1, 'kp': 5.0, 'kd': 0.01}
+                                     }
+                             }
 
-    def test_parse_parameters_multiple_pids(self):
-        xml_parser = XMLParser("../testfiles/multiple_pids.xml")
-        (goals, parameters) = xml_parser.parse_parameters()
-        assert parameters[0] == ('pid', 'hard', 0.7854, 0.1, [5, 0.1, 0.01])
-        assert parameters[1] == ('pid', 'soft', 0.1234, 0.8, [10, 0.1, 0.01])
-       
-    def test_parse_parameters_multiple_goals(self):
-        xml_parser = XMLParser("../testfiles/multiple_goals.xml")
-        (goals, parameters) = xml_parser.parse_parameters()
-        assert goals[0] == (25.0, 25.0)
-        assert goals[1] == (10.0, 45.0)
-        assert parameters[0] == ('pid', None, 0.7854, 0.1, [5, 0.1, 0.01])
-      
-    def test_parse_parameters_no_theta(self):
-        xml_parser = XMLParser("../testfiles/no_theta.xml")
-        self.assertRaises(Exception, xml_parser.parse_parameters)
-
-    def test_parse_parameters_no_v(self):
-        xml_parser = XMLParser("../testfiles/no_v.xml")
-        self.assertRaises(Exception, xml_parser.parse_parameters)
-    
-    def test_parse_parameters_no_gains(self):
-        xml_parser = XMLParser("../testfiles/no_gains.xml")
-        self.assertRaises(Exception, xml_parser.parse_parameters)
- 
 if __name__ == "__main__":
     unittest.main()

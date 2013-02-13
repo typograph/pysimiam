@@ -1,81 +1,83 @@
 import xml.etree.ElementTree as ET
 
 class XMLParser(object):
-    _tree = None
+    """
+    A class to handle parsing of XML files for the simulator and parameters
+    configuration files.
+
+    Public API:
+        parse(self, template) ----> the parsing function
+        validate(self, schema) ---> validates the XML    
+    """
+
+    _file = None
     _root = None
     
     def __init__(self, file_):
+        """ 
+        Construct a new XMLParser instance
+
+        Scope:
+            Public
+        Parameters:
+            file_ ---> path to the file containing the XML
+        Return:
+            A new XMLParser instance  
+        """
+
+        _tree = None
         try:
-            self._tree = ET.parse(file_)
-            self._root = self._tree.getroot()
+            _tree = ET.parse(file_)
         except IOError:
             raise Exception('[XMLParser.__init__] Could not open ' + file_)
-       
-    def parse_parameters(self):
-        goals = []
-        for goal in self._root.findall('goal'):
-            try:
-                points = goal.findall('point')
-                if points == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No goal point specified')
-                for point in points:
-                    x, y = point.get('x'), point.get('y')
-                    if x == None or y == None:
-                        raise Exception(
-                            '[XMLParser.parse_parameters] Invalid goal point!')
-                    goals.append((float(x), float(y))) 
-            except ValueError:
-                raise Exception(
-                    '[XMLParser.parse_parameters] Invalid goal (bad value)!')
 
-        parameters = []
-        for parameter in self._root.findall('pid'):
-            try:
-                identifier = parameter.get('id')
-                
-                angle = parameter.find('angle')
-                if angle == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No angle specified!')
-                theta = angle.get('theta')
-                if theta == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No theta specified!')
- 
-                velocity = parameter.find('velocity')
-                if velocity == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No velocity specified!')
-                v = velocity.get('v')
-                if v == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No v specified!')
+        self._root = _tree.getroot()
+        self._file = file_
 
-                gains = parameter.find('gains')
-                if gains == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] No gains specified!')
-                kp, ki, kd = gains.get('kp'), gains.get('ki'), gains.get('kd')
-                if kp == None or ki == None or kd == None:
-                    raise Exception(
-                        '[XMLParser.parse_parameters] Must specify all gains!')
-
-                parameters.append(
-                    ('pid',
-                     identifier, 
-                     float(theta), 
-                     float(v), 
-                     [float(kp), float(ki), float(kd)]))
-            except ValueError:
-                raise Exception(
-                    '[XMLParser.parse_parameters] Invalid pid (bad value)!')
-
-        return (goals, parameters)
+    def _parse_parameters(self):
+        """ 
+        Parse a parameters configuration file
      
-    def parse_simulation(self):
+        Scope:
+            Private 
+        Parameters:
+            None
+        Return:
+            A dictionary encapsulating the parameters. 
+        """
+
+        result = {}
+        for sub in self._root:
+            sub_dict = {}
+            try:
+                if not sub.get('id') == None:
+                    for attr in sub.items():
+                        if not attr[0] == 'id': sub_dict[attr[0]] = float(attr[1])
+                    result[(sub.tag, sub.get('id'))] = sub_dict
+                else:
+                    for attr in sub.items():
+                        sub_dict[attr[0]] = float(attr[1])
+                    result[sub.tag] = sub_dict
+            except:
+                raise Exception(
+                    '[XMLParser._parse_parameters] Bad value in XML!')
+
+        return {self._root.tag : result} 
+ 
+    def _parse_simulation(self):
+        """ 
+        Parse a simulation configuration file
+       
+        Scope: 
+            Private 
+        Parameters:
+            None
+        Return:
+            A list of the objects in the simulation. 
+        """
+
         simulator_objects = []
-    
+
         # robots
         for robot in self._root.findall('robot'):
             robot_type = robot.get('type')
@@ -83,35 +85,35 @@ class XMLParser(object):
             if supervisor == None:
                 raise Exception(
                     '[XMLParser.parse_simulation] No supervisor specified!')
-            
+
             pose = robot.find('pose')
             if pose == None:
                 raise Exception(
                     '[XMLParser.parse_simulation] No pose specified!')
-            
+
             try:
                 x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
                 if x == None or y == None or theta == None:
                     raise Exception(
                         '[XMLParser.parse_simulation] Invalid pose!')
-                
+
                 simulator_objects.append(('robot',
-                                          robot_type, 
-                                          supervisor.attrib['type'], 
-                                          (float(x), 
-                                           float(y), 
+                                          robot_type,
+                                          supervisor.attrib['type'],
+                                          (float(x),
+                                           float(y),
                                            float(theta))))
             except ValueError:
                 raise Exception(
-                    '[XMLParser.parse_simulation] Invalid robot (bad value)!')
-        
+                    '[XMLParser.parse_simulation] Invalid robot (bad value)!') 
+
         # obstacles
         for obstacle in self._root.findall('obstacle'):
             pose = obstacle.find('pose')
             if pose == None:
                 raise Exception(
                     '[XMLParser.parse_simulation] No pose specified!')
-            
+
             geometry = obstacle.find('geometry')
             if geometry == None:
                 raise Exception(
@@ -124,16 +126,16 @@ class XMLParser(object):
                         raise Exception(
                             '[XMLParser.parse_simulation] Invalid point!')
                     points.append((float(x), float(y)))
-                    
+
                 if len(points) < 3:
                     raise Exception(
                         '[XMLParser.parse_simulation] Too few points!')
-                
+
                 x, y, theta = pose.get('x'), pose.get('y'), pose.get('theta')
                 if x == None or y == None or theta == None:
                     raise Exception(
                         '[XMLParser.parse_simulation] Invalid pose!')
-                
+
                 simulator_objects.append(('obstacle',
                                           (float(x),
                                            float(y),
@@ -142,5 +144,41 @@ class XMLParser(object):
             except ValueError:
                 raise Exception(
                     '[XMLParser.parse_simulation] Invalid obstacle (bad value)!')
-    
-        return simulator_objects
+
+        return simulator_objects 
+ 
+    def parse(self, template):
+        """ 
+        Call the correct parsing function 
+       
+        Scope:
+            Public 
+        Parameters:
+            template ---> 'simulator' or 'parameters'
+        Return:
+            The result of parsing the file (type dependent on the template)
+        """
+ 
+        if template == "parameters":
+            return self._parse_parameters()
+        elif template == "simulation":
+            return self._parse_simulation()
+        else:
+            raise Exception(
+                '[XMLParser.parse] Unknown template!')
+
+    def validate(self, schema):
+        """ 
+        Validate the xml against a given schema.
+
+        Scope:
+            Public
+        Parameters:
+            schema ---> path to the schema (.xsd) file
+        Return:
+            True if schema validates successfully, False otherwise 
+        """
+
+        # TODO
+        return True
+

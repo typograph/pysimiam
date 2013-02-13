@@ -21,7 +21,7 @@ class Controller():
         parameters = None
         try:
             parser = XMLParser(config)
-            parameters = parser.parse_parameters()
+            parameters = parser.parse('parameters')
         except Exception, e:
             raise Exception(
                 '[Controller.read_config] Failed to parse ' + config \
