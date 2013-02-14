@@ -12,7 +12,7 @@ class XMLReader(XMLObject):
 
     _file = None
     _root = None
-    
+
     def __init__(self, file_, template):
         """ 
         Construct a new XMLReader instance
@@ -68,6 +68,34 @@ class XMLReader(XMLObject):
 
         return {self._root.tag : result} 
  
+    def _parse_color(self, color):
+        """
+        Convert a color attribute value to int
+        
+        None will yield None, '#FFACDD' will yield 0xFFACDD
+        
+        Scope:
+            Private
+        Parameters:
+            color ----> the color to be converted
+        Return:
+            An integer value in the (AA)RRGGBB format
+        """
+        if color is None:
+            return color
+        if color[0] == "#":
+            return int(color[1:],16)
+        color = color.lower()
+        if color == 'black':
+            return 0x000000
+        if color == 'red':
+            return 0xFF0000
+        if color == 'green':
+            return 0x00FF00
+        if color == 'blue':
+            return 0x0000FF        
+        raise Exception('[XMLReader._parse_color] Bad color value in XML!')
+ 
     def _parse_simulation(self):
         """ 
         Parse a simulation configuration file
@@ -101,12 +129,15 @@ class XMLReader(XMLObject):
                     raise Exception(
                         '[XMLReader._parse_simulation] Invalid pose!')
 
+                robot_color = self._parse_color(robot.get('color'))
+
                 simulator_objects.append(('robot',
                                           robot_type,
                                           supervisor.attrib['type'],
                                           (float(x),
                                            float(y),
-                                           float(theta))))
+                                           float(theta)),
+                                          robot_color))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid robot (bad value)!') 
@@ -140,11 +171,13 @@ class XMLReader(XMLObject):
                     raise Exception(
                         '[XMLReader._parse_simulation] Invalid pose!')
 
+                color = self._parse_color(obstacle.get('color'))
                 simulator_objects.append(('obstacle',
                                           (float(x),
                                            float(y),
                                            float(theta)),
-                                          points))
+                                          points,
+                                          color))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid obstacle (bad value)!')
@@ -178,11 +211,13 @@ class XMLReader(XMLObject):
                     raise Exception(
                         '[XMLReader._parse_simulation] Invalid pose!')
                 
+                color = self._parse_color(marker.get('color'))
                 simulator_objects.append(('marker',
                                           (float(x),
                                            float(y),
                                            float(theta)),
-                                          points))
+                                          points,
+                                          color))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid marker (bad value)!')
