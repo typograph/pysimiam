@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot
+from PyQt4.QtCore import pyqtSlot, Qt, QObject
 from helpers import Struct
 
 # Constructing UI from parameters:
@@ -160,7 +160,9 @@ class ParamWidget(QtGui.QWidget):
 
         verticalLayout.addLayout(horizontalLayout)
         
-        verticalLayout.addStretch()
+        #verticalLayout.addStretch()
+        
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred,QtGui.QSizePolicy.Maximum)
         
         
     def set_parameters(self,parameters):
@@ -199,5 +201,154 @@ class ParamDock(QtGui.QDockWidget):
                 text-align: left;
                 padding-left: 5px;
                 }}""".format(color=window_color))
-        self.setWidget(ParamWidget(self,window_id, parameters, callback))
+        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.__widget = ParamWidget(self,window_id, parameters, callback)
+        self.__widget.show()
+        self.__panel = QtGui.QWidget(self)
+        self.__panel.hide()
+        self.__panel.setFixedHeight(1)
+        self.setWidget(self.__widget)
+
+    def expand(self, bool_expand = True):
+        if bool_expand:
+            self.setWidget(self.__widget)
+            self.__widget.show()
+            self.__panel.hide()
+        else:
+            self.setWidget(self.__panel)
+            self.__panel.show()
+            self.__widget.hide()
     
+    def is_collapsed(self):
+        return self.widget() == self.__panel
+        
+class DockManager(QObject):
+    def __init__(self, parent):
+        QObject.__init__(self, parent)
+        self.docks = {}
+        self.clear()
+
+    def dock_to_name(self,dock):
+        for k, vdock in self.docks.items():
+            if vdock == dock:
+                return k
+        return "Unknown dock"
+
+    def remove_by_name(self, name):
+        if name in self.docks:
+            old_dock = self.docks.pop(name)
+            old_dock.disconnect(this)
+            old_dock.deleteLater()
+            if old_dock in seld.docks_left:
+                self.docks_left.remove(old_dock)
+                return 'left'
+            elif old_dock in seld.docks_right:
+                self.docks_right.remove(old_dock)
+                return 'right'
+            return 'float'
+        return 'none'
+
+    def remove_by_obj(self, dock):
+        #self.remove_dock(dock)
+        dock.deleteLater()
+    
+    def clear(self):
+        for k, dock in self.docks.items():
+            dock.deleteLater()
+        self.docks_left = []
+        self.active_left = None
+        self.docks_right = []
+        self.active_right = None
+        self.docks = {}
+    
+    def add_dock(self, dock, name, side):
+        result = self.remove_by_name(name)
+
+        self.docks[name] = dock
+
+        if result == 'none':
+            result = side
+            
+        if result == 'left':
+            dlist = self.docks_left
+            self.parent().addDockWidget(Qt.LeftDockWidgetArea, dock)
+            if not dlist:
+                self.active_left = dock
+        elif result == 'right':
+            dlist = self.docks_right
+            self.parent().addDockWidget(Qt.RightDockWidgetArea, dock)
+            if not dlist:
+                self.active_right = dock
+        
+        if result == 'float':
+            self.parent().addDockWidget(Qt.RightDockWidgetArea, dock)
+            dock.setFloating(True)
+            dock.expand()
+        else:
+            dlist.append(dock)
+            dock.expand(len(dlist) == 1)
+
+        dock.destroyed[QObject].connect(self.remove_dock)
+        dock.dockLocationChanged.connect(self.dock_location_changed)
+        dock.topLevelChanged.connect(self.dock_level_changed)
+           
+    def add_dock_left(self, dock, name):
+        self.add_dock(dock, name, 'left')
+        
+    def add_dock_right(self, dock, name):
+        self.add_dock(dock, name, 'right')
+        
+    @pyqtSlot(QObject)
+    def remove_dock(self, dock):
+        if dock in self.docks_left:
+            self.docks_left.remove(old_dock)
+        elif dock in self.docks_right:
+            self.docks_right.remove(old_dock)
+        for k,v in self.docks.items():
+            if v == dock:
+                del self.docks[k]
+                break
+
+    @pyqtSlot(bool)
+    def dock_level_changed(self, tl):
+        dock = self.sender()
+        if tl:
+            dock.expand()
+            
+            if dock in self.docks_left:
+                self.docks_left.remove(dock)
+            elif dock in self.docks_right:
+                self.docks_right.remove(dock)
+            else:
+                raise ValueError("Dock not found")
+            
+            if self.active_left == dock: # show some other widget
+                if self.docks_left:
+                    self.active_left = self.docks_left[0]
+                    self.active_left.expand()
+                else:
+                    self.active_left = None
+            elif self.active_right == dock: # show some other widget
+                if self.docks_right:
+                    self.active_right = self.docks_right[0]
+                    self.active_right.expand()
+                else:
+                    self.active_right = None
+        # otherwise already shown. Wait for location change
+
+    @pyqtSlot(Qt.DockWidgetArea)
+    def dock_location_changed(self,loc):
+        dock = self.sender()
+        if loc == Qt.LeftDockWidgetArea:
+            self.docks_left.append(dock)
+            if self.active_left is not None:
+                self.active_left.expand(False)
+            self.active_left = dock
+        elif loc == Qt.RightDockWidgetArea:
+            self.docks_right.append(dock)
+            if self.active_right is not None:
+                self.active_right.expand(False)
+            self.active_right = dock
+        else:
+            raise ValueError("Undefined dock location")
+        

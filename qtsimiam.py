@@ -7,7 +7,7 @@ sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
-from dockwindow import ParamDock
+from dockwindow import ParamDock, DockManager
 
 import simulator as sim
 import threading
@@ -46,8 +46,10 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidget(viewer)
         scrollArea.setWidgetResizable(True)
 
-        self.__paramwindows = {}
-        self.__lastdock = None
+        #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
+        self.setDockOptions(QtGui.QMainWindow.DockOptions())
+
+        self.__dockmanager = DockManager(self)
 
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
@@ -160,19 +162,10 @@ class SimulationWidget(QtGui.QMainWindow):
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
-        if name in self.__paramwindows:
-            self.__paramwindows[name].deleteLater()
-            del self.__paramwindows[name]
-            
-
         # FIXME adding to the right for no reason
         dock = ParamDock(self, robot_id, name, robot_id.get_color(), 
                          parameters, self._simulator_thread.apply_parameters)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-        if self.__lastdock is not None: # there are docks already
-            self.tabifyDockWidget(self.__lastdock, dock)
-        self.__paramwindows[name] = dock
-        self.__lastdock = dock
+        self.__dockmanager.add_dock_right(dock, name)
 
     # Slots
     @QtCore.pyqtSlot()
@@ -199,10 +192,7 @@ class SimulationWidget(QtGui.QMainWindow):
     def _on_open_world(self):
         self._on_pause()
         if self._world_dialog.exec_():
-            for name, dock in self.__paramwindows.items():
-                dock.deleteLater()
-            self.__paramwindows = {}
-            self.__lastdock = None
+            self.__dockmanager.clear()
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
