@@ -2,12 +2,11 @@
 """
 import threading
 from time import sleep, clock
-from xmlparser import XMLParser
+from xmlreader import XMLReader
 import helpers
 
 import pose
 import simobject
-from xmlparser import XMLParser
 
 PAUSE = 0
 RUN = 1
@@ -57,8 +56,7 @@ class Simulator(threading.Thread):
 
         print 'reading initial configuration'
         try:
-            parser = XMLParser(config, 'simulation')
-            self._world = parser.parse()
+            self._world = XMLReader(config, 'simulation').read()
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))

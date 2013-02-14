@@ -1,12 +1,11 @@
 import unittest
-from xmlparser import XMLParser
+from xmlreader import XMLReader
 
-class TestXMLParser(unittest.TestCase):
+class TestXMLReader(unittest.TestCase):
 
-    # parse_simulation
+    # parse simulation
     def test_parse_simulation_legal(self):
-        xml_parser = XMLParser("../testfiles/settings.xml", "simulation")
-        objects = xml_parser.parse()
+        objects = XMLReader("../testfiles/settings.xml", "simulation").read()
 
         assert objects[0] == \
             ('robot',
@@ -51,45 +50,45 @@ class TestXMLParser(unittest.TestCase):
              [(0.0, 0.0), (3.0, 0.0), (3.0, 0.1), (0.0, 0.1)])
             
     def test_parse_simulation_bad_filename(self):
-        self.assertRaises(Exception, XMLParser, "pysimiam_rules", "simulation")
+        self.assertRaises(Exception, XMLReader, "pysimiam_rules", "simulation")
         
     def test_parse_simulation_no_robot_supervisor(self):
-        xml_parser = XMLParser("../testfiles/no_robot_supervisor.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/no_robot_supervisor.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
     
     def test_parse_simulation_no_robot_pose(self):
-        xml_parser = XMLParser("../testfiles/no_robot_pose.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/no_robot_pose.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
 
     def test_parse_simulation_bad_robot_coordinate(self):
-        xml_parser = XMLParser("../testfiles/bad_robot_coord.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/bad_robot_coord.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
                 
     def test_parse_simulation_no_obstacle_pose(self):
-        xml_parser = XMLParser("../testfiles/no_obstacle_pose.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/no_obstacle_pose.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
         
     def test_parse_simulation_no_obstacle_geometry(self):
-        xml_parser = XMLParser("../testfiles/no_obstacle_geometry.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/no_obstacle_geometry.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
         
     def test_parse_simulation_bad_obstacle_coordinate(self):
-        xml_parser = XMLParser("../testfiles/bad_obstacle_coord.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/bad_obstacle_coord.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
         
     def test_parse_simulation_missing_obstacle_coordinate(self):
-        xml_parser = XMLParser("../testfiles/missing_obstacle_coord.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/missing_obstacle_coord.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
         
     def test_parse_simulation_too_few_obstacle_points(self):
-        xml_parser = XMLParser("../testfiles/too_few_points.xml", "simulation")
-        self.assertRaises(Exception, xml_parser.parse)
+        parser = XMLReader("../testfiles/too_few_points.xml", "simulation")
+        self.assertRaises(Exception, parser.read)
 
 
-    # parse_parameters
+    # parse parameters
     def test_parse_parameters_legal(self):
-        xml_parser = XMLParser("../testfiles/parameters.xml", "parameters")
-        parameters = xml_parser.parse()
+        parameters = XMLReader("../testfiles/parameters.xml", "parameters").read()
+        
         assert parameters == {'pid': {
                                      'goal': {'y': 10.0, 'x': 11.0}, 
                                      'angle': {'theta': 0.7854}, 
@@ -99,5 +98,6 @@ class TestXMLParser(unittest.TestCase):
                                      }
                              }
 
+        
 if __name__ == "__main__":
     unittest.main()
