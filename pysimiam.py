@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, './scripts')
 import wx
 import os
+import trace
 import wx.lib.newevent
 from wxrenderer import wxGCRenderer
 
@@ -63,7 +64,8 @@ class PySimiamFrame(wx.Frame):
         self._viewer = SimulatorViewerPanel(self)
         # create the simulator thread
         self._simulator_thread = sim.Simulator(self._viewer.renderer,
-                                               self._viewer.update_bitmap)
+                                               self._viewer.update_bitmap,
+                                               self.make_param_window)
         
         # start simulator thread
         self._simulator_thread.start()
@@ -111,7 +113,7 @@ class PySimiamFrame(wx.Frame):
         self._menu_bar = wx.MenuBar()
         self._filem = wx.Menu()
         self._filem.Append(ID_OPEN_XML, "Open XML World\tCtrl+W")
-        self._filem.Append(wx.ID_OPEN, "Open Supervisor\tCtrl+O")
+        #self._filem.Append(wx.ID_OPEN, "Open Supervisor\tCtrl+O")
         self._filem.AppendSeparator()
 
         self._filem.Append(wx.ID_CLOSE, "Exit", "Quit the Program" )
@@ -128,7 +130,9 @@ class PySimiamFrame(wx.Frame):
         #self.Bind(sim.EVT_VIEWER_EVENT, self._update_viewer)
 
     # Methods
-
+    def make_param_window(self,robot_id,name,parameters):
+        pass
+    
     # Event Handlers
     def _update_viewer(self, event):
         #paint bitmap to panel
@@ -246,5 +250,18 @@ class SimulatorViewerPanel(wx.Panel):
 if __name__ == "__main__":
     #provider = wx.SimpleHelpProvider()
     #wx.HelpProvider_Set(provider)
+
     app = PySimiamApp(False)
-    app.MainLoop()
+
+    tracer = trace.Trace(
+     ignoredirs=[sys.prefix, sys.exec_prefix],
+     trace=1,
+     count=0)
+
+# run the new command using the given tracer
+    tracer.run('app.MainLoop()')
+
+# make a report, placing output in /tmp
+    r = tracer.results()
+    r.write_results(show_missing=True, coverdir="/tmp")
+
