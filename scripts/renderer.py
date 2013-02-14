@@ -189,6 +189,17 @@ class Renderer:
         self._zoom = zoom
         self._zoom_c = False
         self._update_default_state()
+
+    def set_clip_rect(self, x, y, width, height):
+        """Limit the drawing operation to the specified rectangle
+        
+        To be implemented in subclasses
+        """
+        raise NotImplementedError("Renderer.set_clip_rect")
+
+    def clear_clip_rect(self):
+        """Remove the clipping"""
+        self.set_clip_rect(0,0,self.size[0],self.size[1])
        
     def reset_pose(self):
         """Resets the renderer to default pose

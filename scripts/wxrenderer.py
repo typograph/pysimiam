@@ -177,3 +177,8 @@ class wxGCRenderer(Renderer):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
         self._gc.DrawLines([(x1,y1),(x2,y2)])
+
+    def set_clip_rect(self, x, y, width, height):
+        """Limit the drawing operation to the specified rectangle"""
+        self._gc.ResetClip()
+        self._gc.Clip(x,y,width,height)

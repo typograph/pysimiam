@@ -163,3 +163,10 @@ class QtRenderer(Renderer):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)
         """
         self._painter.drawLine(QLineF(x1,y1,x2,y2))
+
+    def set_clip_rect(self, x, y, width, height):
+        """Limit the drawing operation to the specified rectangle
+        
+        To be implemented in subclasses
+        """
+        self._painter.setClipRect(x,y,width,height)
