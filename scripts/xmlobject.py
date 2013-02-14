@@ -38,6 +38,20 @@ class XMLObject(object):
             True if schema validates successfully, False otherwise 
         """
 
-        # TODO
-        return True
+        try:
+            from lxml import etree
+            from lxml.etree import XMLSchema
+        except ImportError:
+            raise Exception(
+                '[XMLObject.validate] Need lxml to validate xml!')
+
+        try:
+            xmlschema_doc = etree.parse(schema)
+            xmlschema = XMLSchema(xmlschema_doc)
+            xml_doc = etree.parse(self._file)
+        except etree.XMLSyntaxError, e:
+            raise Exception(
+                '[XMLObject.validate] Cannot validate xml: ' + str(e)) 
+        
+        return xmlschema.validate(xml_doc)
 

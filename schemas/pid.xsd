@@ -1,22 +1,35 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-
-<xs:element name="pid">
-  <xs:complexType>
-    <xs:sequence>
-      <xs:element name="goal" use="required"/>
-        <xs:attribute="x" type="xs:float" use="required"/>
-        <xs:attribute="y" type="xs:float" use="required"/>
-      </xs:element>
-      <xs:element name="velocity" use="required"/>
-        <xs:attribute="v" type="xs:float" use="required"/>
-      </xs:element>
-      <xs:element name="gains" minOccurs="1" maxOccurs="unbounded" use="required"/>
-        <xs:attribute="id" type="xs:string" use="required"/>
-        <xs:attribute="kp" type="xs:float" use="required"/> 
-        <xs:attribute="kd" type="xs:float" use="required"/> 
-        <xs:attribute="ki" type="xs:float" use="required"/> 
-      </xs:element>
-    </xs:sequence> 
-  </xs:complexType>
-</xs:element>
+  <xs:element name="pid">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="4" maxOccurs="unbounded">
+          <xs:element name="goal">
+            <xs:complexType>
+              <xs:attribute name="x" type="xs:float" use="required"/>
+              <xs:attribute name="y" type="xs:float" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="velocity">
+            <xs:complexType>
+              <xs:attribute name="v" type="xs:float" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="angle">
+            <xs:complexType>
+              <xs:attribute name="theta" type="xs:float" use="required"/>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="gains" minOccurs="1" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:attribute name="id" type="xs:string" use="required"/>
+              <xs:attribute name="kp" type="xs:float" use="required"/> 
+              <xs:attribute name="kd" type="xs:float" use="required"/> 
+              <xs:attribute name="ki" type="xs:float" use="required"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:sequence> 
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
