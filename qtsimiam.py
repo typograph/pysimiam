@@ -47,6 +47,7 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidgetResizable(True)
 
         self.__paramwindows = {}
+        self.__lastdock = None
 
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
@@ -162,12 +163,16 @@ class SimulationWidget(QtGui.QMainWindow):
         if name in self.__paramwindows:
             self.__paramwindows[name].deleteLater()
             del self.__paramwindows[name]
+            
 
         # FIXME adding to the right for no reason
         dock = ParamDock(self, robot_id, name, robot_id.get_color(), 
                          parameters, self._simulator_thread.apply_parameters)
-        self.__paramwindows[name] = dock
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        if self.__lastdock is not None: # there are docks already
+            self.tabifyDockWidget(self.__lastdock, dock)
+        self.__paramwindows[name] = dock
+        self.__lastdock = dock
 
     # Slots
     @QtCore.pyqtSlot()
@@ -197,6 +202,7 @@ class SimulationWidget(QtGui.QMainWindow):
             for name, dock in self.__paramwindows.items():
                 dock.deleteLater()
             self.__paramwindows = {}
+            self.__lastdock = None
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
