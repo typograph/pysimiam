@@ -1,20 +1,25 @@
 <simulation>
     <app type="ControlApp" />
     
-    <robot type="Khepera3" color="#0022cc">
+    <robot type="Khepera3" color="#55AAFF">
         <supervisor type="khepera3.K3Supervisor" />
         <pose x="0" y="0" theta="0" />
     </robot>
     
-    <robot type="Khepera3" color="#00cc22">
+    <robot type="Khepera3">
         <supervisor type="khepera3.K3Supervisor" />
         <pose x="0" y="-10" theta="0.8" />
     </robot>
 
     <!--
+    <robot type="Khepera3" color="#FFCC00">
+        <supervisor type="khepera3.K3Supervisor" />
+        <pose x="10" y="0" theta="1" />
+    </robot>
+
     <robot type="Khepera3">
         <supervisor type="khepera3.K3Supervisor" />
-        <pose x="0.5" y="0.5" theta="1.5708" />
+        <pose x="5" y="5" theta="1.5708" />
     </robot>
     -->
     

@@ -12,6 +12,9 @@ PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
+    
+    nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
+                   0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
 
     def __init__(self, renderer, update_callback, param_callback):
         """
@@ -84,6 +87,8 @@ class Simulator(threading.Thread):
                     robot = robot_class(pose.Pose(robot_pose))
                     if robot_color is not None:
                         robot.set_color(robot_color)
+                    elif len(self._robots) < 8:
+                        robot.set_color(self.nice_colors[len(self._robots)])
                     sup_module, sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     supervisor = sup_class(robot.get_pose(),
                                            robot.get_info())
@@ -95,6 +100,7 @@ class Simulator(threading.Thread):
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
                     self._trackers.append(simobject.Path(robot.get_pose(),robot))
+                    self._trackers[-1].set_color(robot.get_color())
                 except:
                     print "[Simulator.construct_world] Robot creation failed!"
                     raise

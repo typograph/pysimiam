@@ -164,7 +164,7 @@ class SimulationWidget(QtGui.QMainWindow):
             del self.__paramwindows[name]
 
         # FIXME adding to the right for no reason
-        dock = ParamDock(self, robot_id, name,
+        dock = ParamDock(self, robot_id, name, robot_id.get_color(), 
                          parameters, self._simulator_thread.apply_parameters)
         self.__paramwindows[name] = dock
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)

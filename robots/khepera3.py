@@ -35,7 +35,7 @@ def motion_jac(t,y,v,w):
 
 class Khepera3(Robot):
     
-    def __init__(self, pose, color = 0):
+    def __init__(self, pose, color = 0xFFFFFF):
         Robot.__init__(self, pose, color)
         
         # create shape

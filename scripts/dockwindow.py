@@ -117,15 +117,17 @@ class Contents(Group):
         return p
 
 class ParamWidget(QtGui.QWidget):
-    def __init__(self, window_id, parameters, callback):
+    def __init__(self, parent, window_id, parameters, callback):
         """Construct a new dockwindow following the parameters dict.
         """
         self.id_ = window_id
         self.apply_callback = callback
         
-        QtGui.QWidget.__init__(self)
-        
+        QtGui.QWidget.__init__(self, parent)
+
         verticalLayout = QtGui.QVBoxLayout(self)
+        verticalLayout.setContentsMargins(10,10,10,10)
+        verticalLayout.setSpacing(10)
         
         # Big Label
         #robot_label = QtGui.QLabel(window_name,self)
@@ -183,9 +185,19 @@ class ParamWidget(QtGui.QWidget):
         pass
 
 class ParamDock(QtGui.QDockWidget):
-    def __init__(self, parent, window_id, window_name, parameters, callback):
+    def __init__(self, parent, window_id, window_name, window_color, parameters, callback):
         """Construct a new dockwindow following the parameters dict.
         """
         QtGui.QDockWidget.__init__(self, window_name, parent)
-        self.setWidget(ParamWidget(window_id, parameters, callback))
+        self.setStyleSheet(
+        """ QDockWidget {{
+                border: 1px solid #{color:06x};
+                }}
+           
+            QDockWidget::title {{
+                background: #{color:06x};
+                text-align: left;
+                padding-left: 5px;
+                }}""".format(color=window_color))
+        self.setWidget(ParamWidget(self,window_id, parameters, callback))
     
