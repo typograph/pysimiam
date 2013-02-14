@@ -45,6 +45,7 @@ class ProximitySensor(MountedSensor):
                     (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
                     
         self.__distance = 65536
+        self.set_color(0x11FF5566)
 
     def get_envelope(self):
         return self.pts
@@ -63,7 +64,7 @@ class ProximitySensor(MountedSensor):
 
     def draw(self, r):
         r.set_pose(self.get_pose())
-        r.set_brush(0x11FF5566)
+        r.set_brush(self.get_color())
         r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
         r.draw_polygon(self.pts)
         

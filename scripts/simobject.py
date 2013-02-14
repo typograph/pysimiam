@@ -3,8 +3,15 @@ import pylygon
 from pose import Pose
 
 class SimObject:
-    def __init__(self,pose):
+    def __init__(self, pose, color = 0):
+        self.set_color(color)
         self.set_pose(pose)
+
+    def get_color(self):
+        return self.__color
+    
+    def set_color(self, color):
+        self.__color = color
 
     def get_pose(self):
         """Returns the pose of the object in world coordinates
@@ -79,23 +86,21 @@ class SimObject:
             
 
 class Polygon(SimObject):
-    def __init__(self,pose,shape,color):
-        SimObject.__init__(self,pose)
+    def __init__(self, pose, shape, color):
+        SimObject.__init__(self,pose, color)
         self.__shape = shape
-        self.__color = color
 
     def get_envelope(self):
         return self.__shape
 
     def draw(self,r):
         r.set_pose(self.get_pose())
-        r.set_brush(self.__color)
+        r.set_brush(self.get_color())
         r.draw_polygon(self.get_envelope())
 
 class Path(SimObject):
     def __init__(self,start,color):
-        SimObject.__init__(self,Pose())
-        self.color = color
+        SimObject.__init__(self, Pose(), color)
         self.points = [(start.x,start.y)]
 
     def reset(self,start):
@@ -106,7 +111,7 @@ class Path(SimObject):
         
     def draw(self,r):
         r.set_pose(self.get_pose()) # Reset everything
-        r.set_pen(self.color)
+        r.set_pen(self.get_color())
         for i in range(1,len(self.points)):
             x1,y1 = self.points[i-1]
             x2,y2 = self.points[i]
