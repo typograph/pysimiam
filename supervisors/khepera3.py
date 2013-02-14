@@ -9,6 +9,7 @@ class K3Supervisor(Supervisor):
     def __init__(self, robot_pose, robot_info):
         Supervisor.__init__(self, robot_pose, robot_info)
 
+        #Create conrollers
         self.gtg = self.add_controller('gotogoal.GoToGoal',self.ui_params.gains)
         
         # Default and only controller

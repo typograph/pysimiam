@@ -17,14 +17,16 @@ class AvoidObstacles(Controller):
         self.E_k = 0
         self.e_k_1 = 0
 
+    def set_parameters(self, params):
+        """Set PID values
+        @param: (float) kp, ki, kd
+        """
+        self.kp = params.kp
+        self.ki = params.ki
+        self.kd = params.kd
 
-    def execute(self,pose_est,dt):
-        #Modify Below Here
-        _theta=pose_est().theta
-        _destination=[pose_est().x,pose_est().y]
-
-        #Don't care about a goal bc we care about avoiding object
-
-        
-        #Modify Above Here
+    def execute(self, state, dt):
+        #Select a goal, ccw obstacle avoidance
+        #Get distances from sensors 
+        distances = state. 
         return [_w,_v]
