@@ -35,8 +35,8 @@ def motion_jac(t,y,v,w):
 
 class Khepera3(Robot):
     
-    def __init__(self, pose):
-        Robot.__init__(self,pose)
+    def __init__(self, pose, color = 0xFFFFFF):
+        Robot.__init__(self, pose, color)
         
         # create shape
         self._p1 = np.array([[-0.031,  0.043, 1],
@@ -101,7 +101,7 @@ class Khepera3(Robot):
         r.set_pose(self.get_pose())
         r.set_brush(0xCCCCCC)
         r.draw_polygon(self._p2)
-        r.set_brush(0x000000)
+        r.set_brush(self.get_color())
         r.draw_polygon(self._p1)
         
     def get_envelope(self):

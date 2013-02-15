@@ -98,6 +98,22 @@ class TestXMLReader(unittest.TestCase):
                                      }
                              }
 
-        
+    # validate parameters
+    def test_validate_parameters_default(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/parameters.xml", "parameters").validate("../schemas/pid.xsd") == True   
+    
+    def test_validate_parameters_saved(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/parameters_saved.xml", "parameters").validate("../schemas/pid.xsd") == True   
+    
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,9 @@ PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
+    
+    nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
+                   0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
 
     def __init__(self, renderer, update_callback, param_callback):
         """
@@ -84,10 +87,14 @@ class Simulator(threading.Thread):
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, supervisor_type, robot_pose  = thing[1:4]
+                robot_type, supervisor_type, robot_pose, robot_color  = thing[1:5]
                 try:
                     robot_module, robot_class = helpers.load_by_name(robot_type,'robots')
                     robot = robot_class(pose.Pose(robot_pose))
+                    if robot_color is not None:
+                        robot.set_color(robot_color)
+                    elif len(self._robots) < 8:
+                        robot.set_color(self.nice_colors[len(self._robots)])
                     sup_module, sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     supervisor = sup_class(robot.get_pose(),
                                            robot.get_info())
@@ -98,23 +105,28 @@ class Simulator(threading.Thread):
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
-                    self._trackers.append(simobject.Path(robot.get_pose(),0x0000FF))
+                    self._trackers.append(simobject.Path(robot.get_pose(),robot))
+                    self._trackers[-1].set_color(robot.get_color())
                 except:
                     print "[Simulator.construct_world] Robot creation failed!"
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
-                obstacle_pose, obstacle_coords = thing[1], thing[2]
+                obstacle_pose, obstacle_coords, obstacle_color = thing[1:4]
+                if obstacle_color is None:
+                    obstacle_color = 0xFF0000
                 self._obstacles.append(
                     simobject.Polygon(pose.Pose(obstacle_pose),
                                       obstacle_coords,
-                                      0xFF0000))
+                                      obstacle_color))
             elif thing_type == 'marker':
-                obj_pose, obj_coords = thing[1], thing[2]
+                obj_pose, obj_coords, obj_color = thing[1:4]
+                if obj_color is None:
+                    obj_color = 0x00FF00
                 self._background.append(
                     simobject.Polygon(pose.Pose(obj_pose),
                                       obj_coords,
-                                      0x00FF00))
+                                      obj_color))
             else:
                 raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing_type))

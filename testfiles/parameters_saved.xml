@@ -1,0 +1,7 @@
+<pid>
+    <velocity v="0.1" />
+    <gains id="soft" ki="0.1" kp="5.0" kd="0.01" />
+    <angle theta="0.7854" />
+    <goal y="10.0" x="11.0" />
+    <gains id="hard" ki="0.1" kp="5.0" kd="0.01" />
+</pid>
