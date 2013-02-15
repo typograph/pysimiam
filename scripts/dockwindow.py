@@ -193,6 +193,20 @@ class ParamDock(QtGui.QDockWidget):
         """Construct a new dockwindow following the parameters dict.
         """
         QtGui.QDockWidget.__init__(self, window_name, parent)
+        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        
+        self.__panel = QtGui.QWidget(self)
+        self.__panel.hide()
+        self.__panel.setFixedHeight(1)
+
+        self.apply_callback = callback
+
+        self.__click = False
+
+        self.__widget = None
+        self.reset(window_id, window_color, parameters)
+
+    def set_color(self, window_color):
         self.setStyleSheet(
         """ QDockWidget {{
                 border: 1px solid #{color:06x};
@@ -203,14 +217,15 @@ class ParamDock(QtGui.QDockWidget):
                 text-align: left;
                 padding-left: 5px;
                 }}""".format(color=window_color))
-        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.__widget = ParamWidget(self,window_id, parameters, callback)
-        self.__widget.show()
-        self.__panel = QtGui.QWidget(self)
-        self.__panel.hide()
-        self.__panel.setFixedHeight(1)
-        self.setWidget(self.__widget)
-        self.__click = False
+
+    def reset(self,window_id, window_color, parameters):
+        self.set_color(window_color)    
+        if self.__widget is not None:
+            self.__widget.hide()
+            self.__widget.deleteLater()
+        self.__widget = ParamWidget(self, window_id, parameters, self.apply_callback)
+        if not self.is_collapsed():
+            self.setWidget(self.__widget)
 
     def event(self, event):
         if event.type() == QEvent.MouseButtonPress:
@@ -241,9 +256,10 @@ class ParamDock(QtGui.QDockWidget):
         return self.widget() == self.__panel
         
 class DockManager(QObject):
-    def __init__(self, parent):
+    def __init__(self, parent, apply_callback):
         QObject.__init__(self, parent)
         self.docks = {}
+        self.apply_callback = apply_callback
         self.clear()
 
     def dock_to_name(self,dock):
@@ -255,12 +271,15 @@ class DockManager(QObject):
     def remove_by_name(self, name):
         if name in self.docks:
             old_dock = self.docks.pop(name)
-            old_dock.disconnect(this)
+            old_dock.destroyed[QObject].disconnect()
+            old_dock.dockLocationChanged.disconnect()
+            old_dock.topLevelChanged.disconnect()
+            old_dock.title_click.disconnect()
             old_dock.deleteLater()
-            if old_dock in seld.docks_left:
+            if old_dock in self.docks_left:
                 self.docks_left.remove(old_dock)
                 return 'left'
-            elif old_dock in seld.docks_right:
+            elif old_dock in self.docks_right:
                 self.docks_right.remove(old_dock)
                 return 'right'
             return 'float'
@@ -279,43 +298,40 @@ class DockManager(QObject):
         self.active_right = None
         self.docks = {}
     
-    def add_dock(self, dock, name, side):
-        result = self.remove_by_name(name)
-
+    def add_dock(self, robot_id, name, parameters, side):
+        if name in self.docks:
+            self.docks[name].reset(robot_id, robot_id.get_color(), parameters)
+            return
+        
+        dock = ParamDock(self.parent(),
+                         robot_id, name, robot_id.get_color(),
+                         parameters, self.apply_callback)
         self.docks[name] = dock
-
-        if result == 'none':
-            result = side
-            
-        if result == 'left':
+        
+        if side == 'left':
             dlist = self.docks_left
             self.parent().addDockWidget(Qt.LeftDockWidgetArea, dock)
             if not dlist:
                 self.active_left = dock
-        elif result == 'right':
+        elif side == 'right':
             dlist = self.docks_right
             self.parent().addDockWidget(Qt.RightDockWidgetArea, dock)
             if not dlist:
                 self.active_right = dock
         
-        if result == 'float':
-            self.parent().addDockWidget(Qt.RightDockWidgetArea, dock)
-            dock.setFloating(True)
-            dock.expand()
-        else:
-            dlist.append(dock)
-            dock.expand(len(dlist) == 1)
+        dlist.append(dock)
+        dock.expand(len(dlist) == 1)
 
         dock.destroyed[QObject].connect(self.remove_dock)
         dock.dockLocationChanged.connect(self.dock_location_changed)
         dock.topLevelChanged.connect(self.dock_level_changed)
         dock.title_click.connect(self.dock_user_expanded)
            
-    def add_dock_left(self, dock, name):
-        self.add_dock(dock, name, 'left')
+    def add_dock_left(self, robot_id, name, parameters):
+        self.add_dock(robot_id, name, parameters, 'left')
         
-    def add_dock_right(self, dock, name):
-        self.add_dock(dock, name, 'right')
+    def add_dock_right(self, robot_id, name, parameters):
+        self.add_dock(robot_id, name, parameters, 'right')
         
     @pyqtSlot(QObject)
     def remove_dock(self, dock):

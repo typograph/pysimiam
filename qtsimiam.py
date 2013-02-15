@@ -49,8 +49,6 @@ class SimulationWidget(QtGui.QMainWindow):
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
 
-        self.__dockmanager = DockManager(self)
-
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
         self.__sim_timer.timeout.connect(self.__update_time)
@@ -59,6 +57,9 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread = sim.Simulator(viewer.renderer,
                                                viewer.update_bitmap,
                                                self.make_param_window)
+
+        self.__dockmanager = DockManager(self, self._simulator_thread.apply_parameters)
+
         self._simulator_thread.start()
 
     def __create_toolbars(self):
@@ -163,9 +164,7 @@ class SimulationWidget(QtGui.QMainWindow):
 
     def make_param_window(self,robot_id,name,parameters):       
         # FIXME adding to the right for no reason
-        dock = ParamDock(self, robot_id, name, robot_id.get_color(), 
-                         parameters, self._simulator_thread.apply_parameters)
-        self.__dockmanager.add_dock_right(dock, name)
+        self.__dockmanager.add_dock_right(robot_id, name, parameters)
 
     # Slots
     @QtCore.pyqtSlot()
