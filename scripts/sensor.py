@@ -59,7 +59,17 @@ class ProximitySensor(MountedSensor):
         return self.distance_to_value(self.distance())
 
     def update_distance(self, sim_object = None):
-        pass
+        if sim_object is None:
+            # reset distance to max
+            self.__distance = 65536
+            return True
+        else:
+            distance_to_obj = self.get_distance_to(sim_object)
+            if distance_to_obj:
+                if self.__distance > distance_to_obj:
+                    self.__distance = distance_to_obj
+                    return True
+        return False
 
     def draw(self, r):
         r.set_pose(self.get_pose())
@@ -77,6 +87,6 @@ class ProximitySensor(MountedSensor):
                     min_distance = distance
             else: min_distance = distance
             # Test code - return contact point info
-            print "Contact @({0},{1}) ~{2}".format(px, py, distance)
+            #print "Contact @({0},{1}) ~{2}".format(px, py, distance)
             #
         return min_distance

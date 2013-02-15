@@ -28,8 +28,8 @@ class SimObject:
         ## At the moment the proposed format is a list of points
         pass
     
-    def get_world_envelope(self):
-        if self.__world_envelope is None:
+    def get_world_envelope(self, recalculate=False):
+        if self.__world_envelope is None or recalculate:
             x,y,t = self.get_pose()
             self.__world_envelope = [(x+p[0]*cos(t)-p[1]*sin(t),
                                       y+p[0]*sin(t)+p[1]*cos(t))
@@ -60,11 +60,15 @@ class SimObject:
             if not collision: return False
         
         # Test code - print out collisions
-        print "Collision between {} and {}".format(self, other)
+        #print "Collision between {} and {}".format(self, other)
         # end of test code
         
         return True
-        
+    
+    def get_contact_points(self, other):
+        """Get a list of contact points with other object
+        Retrun a list of (x, y)
+        """
         self_poly = pylygon.Polygon(self.get_world_envelope())
         other_poly = pylygon.Polygon(other.get_world_envelope())
         return self_poly.intersection_points(other_poly)

@@ -8,6 +8,7 @@ import helpers
 import pose
 import simobject
 from xmlparser import XMLParser
+from quadtree import QuadTree, Rect
 
 PAUSE = 0
 RUN = 1
@@ -45,6 +46,9 @@ class Simulator(threading.Thread):
         self._background = []
 
         self._world = None
+        
+        # Internal objects
+        self.__qtree = None
 
     #def __delete__(self):
         #self.__state = PAUSE
@@ -77,6 +81,8 @@ class Simulator(threading.Thread):
         self._supervisors = []
         self._background = []
         self._trackers = []
+        self.__qtree = None
+        
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
@@ -264,14 +270,27 @@ class Simulator(threading.Thread):
         collisions = []
         checked_robots = []
         
+        if self.__qtree is None:
+            self.__qtree = QuadTree(self._obstacles)
+        
         # check each robot
         for robot in self._robots:
-            # reset sensors
-            robot.update_sensors()
+                
+            # update proximity sensors
+            for sensor in robot.get_external_sensors():
+                sensor.get_world_envelope(True)
+                rect = Rect(sensor.get_bounding_rect())
+                sensor.update_distance()
+                for obstacle in self.__qtree.find_items(rect):
+                    if (sensor.update_distance(obstacle)):
+                        print "{0} -> {1} Distance:{2}".format(
+                                sensor, obstacle, sensor.distance())
             
-            # against obstacles
-            for obstacle in self._obstacles:
-                #robot.update_sensors(obstacle)
+            rect = Rect(robot.get_bounding_rect())
+            
+            # against nearest obstacles
+            for obstacle in self.__qtree.find_items(rect):
+                print "In proximity to:", obstacle
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
@@ -288,16 +307,22 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                print "Collision wetween:\n", robot, "\n", obstacle
+                print "Collision between:\n", robot, "\n", obstacle
             # end of test code
             return True
                 
         return False
 
+    
     def update_sensors(self):
         ''' Update robot's sensors '''
-        
+        return
         for robot in self._robots:
+            #qtree.insert(robot, robot.get_bounding_rect())
+            items = self.__qtree.find_items(robot.get_bounding_rect())
+            if items:
+                print "Itersections:", items
+            
             # reset sensors
             #robot.update_sensors()
             
@@ -313,7 +338,9 @@ class Simulator(threading.Thread):
             for sensor in robot.get_external_sensors():
                 # reset dist to max here
                 #dist = self.
+                #print sensor, sensor.get_world_envelope(True)
                 for obstacle in self._obstacles:
+                    sensor.get_world_envelope(True)
                     if sensor.has_collision(obstacle):
                         d = sensor.get_distance_to(obstacle)
                         print "{} in range of {} ~{}".format(
