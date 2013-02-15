@@ -168,7 +168,7 @@ class Simulator(threading.Thread):
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
-                self.update_sensors()
+                #self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -290,14 +290,14 @@ class Simulator(threading.Thread):
             
             # against nearest obstacles
             for obstacle in self.__qtree.find_items(rect):
-                print "In proximity to:", obstacle
+                # Test Code: print "In proximity to:", obstacle
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
             # against other robots
             for other in self._robots: 
                 if other is robot: continue
-                #robot.update_sensors(other)
+                #TODO: robot.update_sensors(other)
                 if other in checked_robots: continue
                 if robot.has_collision(other):
                     collisions.append((robot, other))
@@ -316,34 +316,7 @@ class Simulator(threading.Thread):
     
     def update_sensors(self):
         ''' Update robot's sensors '''
+        # Depricated 
         return
-        for robot in self._robots:
-            #qtree.insert(robot, robot.get_bounding_rect())
-            items = self.__qtree.find_items(robot.get_bounding_rect())
-            if items:
-                print "Itersections:", items
-            
-            # reset sensors
-            #robot.update_sensors()
-            
-            # against obstacles
-            #for obstacle in self._obstacles:
-            #    robot.update_sensors(obstacle)
-                
-            # against other robots
-            #for other in self._robots: 
-            #    if other is robot: continue
-            #    robot.update_sensors(other)
-            
-            for sensor in robot.get_external_sensors():
-                # reset dist to max here
-                #dist = self.
-                #print sensor, sensor.get_world_envelope(True)
-                for obstacle in self._obstacles:
-                    sensor.get_world_envelope(True)
-                    if sensor.has_collision(obstacle):
-                        d = sensor.get_distance_to(obstacle)
-                        print "{} in range of {} ~{}".format(
-                               obstacle, sensor, d)
-
+        
 #end class Simulator
