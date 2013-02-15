@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, Qt, QObject
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
 from helpers import Struct
 
 # Constructing UI from parameters:
@@ -187,6 +187,8 @@ class ParamWidget(QtGui.QWidget):
         pass
 
 class ParamDock(QtGui.QDockWidget):
+    title_click = pyqtSignal()
+
     def __init__(self, parent, window_id, window_name, window_color, parameters, callback):
         """Construct a new dockwindow following the parameters dict.
         """
@@ -208,7 +210,23 @@ class ParamDock(QtGui.QDockWidget):
         self.__panel.hide()
         self.__panel.setFixedHeight(1)
         self.setWidget(self.__widget)
+        self.__click = False
 
+    def event(self, event):
+        if event.type() == QEvent.MouseButtonPress:
+            if event.y() < self.widget().geometry().top():
+                self.__click = True
+        elif event.type() == QEvent.MouseMove:
+            self.__click = False
+        elif event.type() == QEvent.MouseButtonRelease:
+            if self.__click:
+                self.title_click.emit()
+                self.__click = False
+        return QtGui.QDockWidget.event(self,event)
+
+    def collapse(self, bool_collapse = True):
+        self.expand(not bool_collapse)
+    
     def expand(self, bool_expand = True):
         if bool_expand:
             self.setWidget(self.__widget)
@@ -291,6 +309,7 @@ class DockManager(QObject):
         dock.destroyed[QObject].connect(self.remove_dock)
         dock.dockLocationChanged.connect(self.dock_location_changed)
         dock.topLevelChanged.connect(self.dock_level_changed)
+        dock.title_click.connect(self.dock_user_expanded)
            
     def add_dock_left(self, dock, name):
         self.add_dock(dock, name, 'left')
@@ -351,4 +370,17 @@ class DockManager(QObject):
             self.active_right = dock
         else:
             raise ValueError("Undefined dock location")
-        
+    
+    @pyqtSlot()
+    def dock_user_expanded(self):
+        dock = self.sender()
+        if dock.is_collapsed():
+            if dock in self.docks_left:
+                self.active_left.collapse()
+                dock.expand()
+                self.active_left = dock
+            elif dock in self.docks_right:
+                self.active_right.collapse()
+                dock.expand()
+                self.active_right = dock
+            
