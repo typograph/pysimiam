@@ -7,6 +7,7 @@ import helpers
 
 import pose
 import simobject
+from quadtree import QuadTree, Rect
 
 PAUSE = 0
 RUN = 1
@@ -44,6 +45,9 @@ class Simulator(threading.Thread):
         self._background = []
 
         self._world = None
+        
+        # Internal objects
+        self.__qtree = None
 
     #def __delete__(self):
         #self.__state = PAUSE
@@ -75,6 +79,8 @@ class Simulator(threading.Thread):
         self._supervisors = []
         self._background = []
         self._trackers = []
+        self.__qtree = None
+        
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
@@ -160,7 +166,7 @@ class Simulator(threading.Thread):
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
-                self.update_sensors()
+                #self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -262,21 +268,34 @@ class Simulator(threading.Thread):
         collisions = []
         checked_robots = []
         
+        if self.__qtree is None:
+            self.__qtree = QuadTree(self._obstacles)
+        
         # check each robot
         for robot in self._robots:
-            # reset sensors
-            robot.update_sensors()
+                
+            # update proximity sensors
+            for sensor in robot.get_external_sensors():
+                sensor.get_world_envelope(True)
+                rect = Rect(sensor.get_bounding_rect())
+                sensor.update_distance()
+                for obstacle in self.__qtree.find_items(rect):
+                    if (sensor.update_distance(obstacle)):
+                        print "{0} -> {1} Distance:{2}".format(
+                                sensor, obstacle, sensor.distance())
             
-            # against obstacles
-            for obstacle in self._obstacles:
-                #robot.update_sensors(obstacle)
+            rect = Rect(robot.get_bounding_rect())
+            
+            # against nearest obstacles
+            for obstacle in self.__qtree.find_items(rect):
+                # Test Code: print "In proximity to:", obstacle
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
             # against other robots
             for other in self._robots: 
                 if other is robot: continue
-                #robot.update_sensors(other)
+                #TODO: robot.update_sensors(other)
                 if other in checked_robots: continue
                 if robot.has_collision(other):
                     collisions.append((robot, other))
@@ -286,35 +305,16 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                print "Collision wetween:\n", robot, "\n", obstacle
+                print "Collision between:\n", robot, "\n", obstacle
             # end of test code
             return True
                 
         return False
 
+    
     def update_sensors(self):
         ''' Update robot's sensors '''
+        # Depricated 
+        return
         
-        for robot in self._robots:
-            # reset sensors
-            #robot.update_sensors()
-            
-            # against obstacles
-            #for obstacle in self._obstacles:
-            #    robot.update_sensors(obstacle)
-                
-            # against other robots
-            #for other in self._robots: 
-            #    if other is robot: continue
-            #    robot.update_sensors(other)
-            
-            for sensor in robot.get_external_sensors():
-                # reset dist to max here
-                #dist = self.
-                for obstacle in self._obstacles:
-                    if sensor.has_collision(obstacle):
-                        d = sensor.get_distance_to(obstacle)
-                        print "{} in range of {} ~{}".format(
-                               obstacle, sensor, d)
-
 #end class Simulator
