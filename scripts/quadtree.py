@@ -2,7 +2,7 @@ from rect import Rect
 
 
 class QuadTree(object):
-    """ QuadTree of simulated objects
+    """ QuadTree data structure of simulated objects
     """
     
     #def __init__(self, xywh):
@@ -19,8 +19,9 @@ class QuadTree(object):
             The maximum recursion depth.
             
         @param bounding_rect:
-            The bounding rectangle of all of the items in the quad-tree. For
-            internal use only.
+            The bounding rectangle of all of the items in the quad-tree.
+            Type of Rect or (x,y,w,h) of the rectangle
+            For internal use only.
         """
  
         # The sub-quadrants are empty to start with.
@@ -41,15 +42,18 @@ class QuadTree(object):
         
         # Insert items
         self.insert_items(items)
-        #print "QD:", self, self.items
+        #print "QuadTree:", self, self.items
         
     def insert_items(self, items):
-        """ Insert list of SimObject items
+        """ Insert a list of SimObject items
         """
+        rect_items = [(item, Rect(item.get_bounding_rect()))
+                      for item in items]
+        
         # If we've reached the maximum depth then insert all items into
         # this quadrant.
         if self.depth <= 0 or not items:
-            self.items += items
+            self.items += rect_items
             return
             
         cx, cy = self.rect.center
@@ -58,8 +62,7 @@ class QuadTree(object):
         se_items = []
         sw_items = []
         
-        for item in items:
-            item_rect = Rect(item.get_bounding_rect())
+        for item, item_rect in rect_items:
             # Which of the sub-quadrants does the item overlap?
             in_nw = item_rect.left <= cx and item_rect.top >= cy
             in_sw = item_rect.left <= cx and item_rect.bottom <= cy
@@ -70,7 +73,7 @@ class QuadTree(object):
             # depth, otherwise append it to a list to be inserted under every
             # quadrant that it overlaps.
             if in_nw and in_ne and in_se and in_sw:
-                self.items.append(item)
+                self.items.append((item, item_rect))
             else:
                 if in_nw: nw_items.append(item)
                 if in_ne: ne_items.append(item)
@@ -106,13 +109,13 @@ class QuadTree(object):
         """
         rect = Rect(xywh)
         
-        def overlaps(item):
-            other = Rect(item.get_bounding_rect())
+        def overlaps(other):
             return rect.right >= other.left and rect.left <= other.right and \
                    rect.bottom <= other.top and rect.top >= other.bottom
         
         # Find the hits at the current level.
-        hits = [item for item in self.items if overlaps(item)]
+        hits = [item for item, item_rect in self.items
+                if overlaps(item_rect)]
         
         # Recursively check the lower quadrants.
         cx, cy = self.rect.center
