@@ -42,7 +42,7 @@ class AvoidObstacles(Controller):
     def execute(self, state, dt):
         #Select a goal, ccw obstacle avoidance
         #Get distances from sensors 
-        ir_distances = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] 
+        ir_distances = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  #placeholder
 
         robotx, roboty, robottheta = state.pose
         goalx, goaly = state.goalx, state.goaly
@@ -50,19 +50,21 @@ class AvoidObstacles(Controller):
         goal = self.calculate_new_goal(ir_distances) #user defined function
         v_ = self.calculate_new_velocity(ir_distances) #user defined function
 
-        #Calculate simple proportional error
+        #1. Calculate simple proportional error
         error = math.atan2(goaly - roboty, goalx - robotx) - robottheta 
+
+        #2. Correct for angles (angle may be greater than PI)
         error = math.atan2(math.sin(error), math.cos(error))
 
-        #Calculate integral error
+        #3. Calculate integral error
         self.E += error*dt
 
-        #Calculate differential error
+        #4. Calculate differential error
         dE = error - self.error_1
         self.error_1 = error #updates the error_1 var
 
-        #Calculate desired omega
+        #5. Calculate desired omega
         w_ = self.kp*error + self.ki*self.E + self.kd*dE
 
-        #Return solution
+        #6. Return solution
         return [v_, w_]
