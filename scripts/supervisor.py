@@ -16,7 +16,6 @@ class Supervisor:
 
     def get_parameters(self):
         """Get parameters of the supervisor.
-        
         supervisor.set_parameters(supervisor.get_parameters()) should not change
         the state
         """
@@ -24,7 +23,6 @@ class Supervisor:
 
     def get_default_parameters(self):
         """Return the default parameter set, suitable for runnig this supervisor
-        
         To be implemented in subclasses
         """
         raise NotImplementedError("Supervisor.get_default_parameters")
@@ -32,9 +30,7 @@ class Supervisor:
     def get_ui_description(self, params = None):
         """Return a dictionary, describing the parameters available for the user,
         with the values from params
-        
         If params are not specified, use self.ui_params
-        
         To be implemented in subclasses
         """
         raise NotImplementedError("Supervisor.get_ui_description")
@@ -48,10 +44,19 @@ class Supervisor:
         return controller_class(parameters)
 
     def get_current(self):
+        """Get current controller
+        @return controller object
+        """
         return self.current
 
     def execute(self, robot_info, dt):
-        """Make decisions about robot motion based on robot_info
+        """Default execution procedures
+        1. Get robot information
+        2. Estimate pose with odometry
+        3. Update paramaters with the supervisor process (also select controller)
+        4. Execute currently selected controller behavior
+        5. Return unicycle model as an output (velocity, omega)
+        Make decisions about robot motion based on robot_info
         """
         self.robot = robot_info
         self.pose_est = self.estimate_pose()
@@ -60,13 +65,15 @@ class Supervisor:
         return output
 
     def process(self):
-        """Evaluate the situation and select the right controller. Return the
-        right controller params
-        to be implemented in subclasses"""
+        """Evaluate the sensors and select a controller
+        Update parameters to by passed to the controller
+        Must be implemented in subclasses
+        """
         raise NotImplementedError('Supervisor.process')
         
     def estimate_pose(self):
-        """Update self.pose_est
-        
-        To be implemented in subclasses (different robot drives)"""
+        """Updates the pose using odometry calculations
+        Update self.pose_est variable
+        Must bed implemented in subclasses (different robot drives)
+        """
         raise NotImplementedError('Supervisor.estimate_pose')
