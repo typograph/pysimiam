@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<grammar ns="" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+    <start>
+        <choice>
+            <notAllowed/>
+            <element name="pid">
+                <interleave>
+                    <element name="goal">
+                        <attribute name="y">
+                            <data type="float"/>
+                        </attribute>
+                        <attribute name="x">
+                            <data type="float"/>
+                        </attribute>
+                    </element>
+                    <element name="velocity">
+                        <attribute name="v">
+                            <data type="float"/>
+                        </attribute>
+                    </element>
+                    <element name="angle">
+                        <attribute name="theta">
+                            <data type="float"/>
+                        </attribute>
+                    </element>
+                    <oneOrMore>
+                        <element name="gains">
+                            <attribute name="ki">
+                                <data type="float"/>
+                            </attribute>
+                            <attribute name="kd">
+                                <data type="float"/>
+                            </attribute>
+                            <attribute name="kp">
+                                <data type="float"/>
+                            </attribute>
+                            <attribute name="id">
+                                <data type="string"/>
+                            </attribute>
+                        </element>
+                    </oneOrMore>
+                </interleave>
+            </element>
+        </choice>
+    </start>
+</grammar>

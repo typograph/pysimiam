@@ -98,6 +98,79 @@ class TestXMLReader(unittest.TestCase):
                                      }
                              }
 
+    # validate simulation
+    def test_validate_simulation_default(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/settings.xml", "simulation").validate("../schemas/simulation.rng") == True   
+       
+    def test_validate_simulation_no_robot_supervisor(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_robot_supervisor.xml", "simulation").validate("../schemas/simulation.rng") == False
+ 
+    def test_validate_simulation_no_robot_pose(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_robot_pose.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_bad_robot_coordinate(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/bad_robot_coord.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_no_obstacle_pose(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_obstacle_pose.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_no_obstacle_geometry(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_obstacle_geometry.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_bad_obstacle_coordinate(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/bad_obstacle_coord.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_missing_obstacle_coordinate(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/missing_obstacle_coord.xml", "simulation").validate("../schemas/simulation.rng") == False
+
+    def test_validate_simulation_too_few_obstacle_points(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/too_few_points.xml", "simulation").validate("../schemas/simulation.rng") == False
+
     # validate parameters
     def test_validate_parameters_default(self):
         try:
@@ -105,7 +178,7 @@ class TestXMLReader(unittest.TestCase):
         except ImportError:
             return True
 
-        assert XMLReader("../testfiles/parameters.xml", "parameters").validate("../schemas/pid.xsd") == True   
+        assert XMLReader("../testfiles/parameters.xml", "parameters").validate("../schemas/pid.rng") == True   
     
     def test_validate_parameters_saved(self):
         try:
@@ -113,7 +186,55 @@ class TestXMLReader(unittest.TestCase):
         except ImportError:
             return True
 
-        assert XMLReader("../testfiles/parameters_saved.xml", "parameters").validate("../schemas/pid.xsd") == True   
-    
+        assert XMLReader("../testfiles/parameters_saved.xml", "parameters").validate("../schemas/pid.rng") == True   
+   
+    def test_validate_parameters_no_pid_kp(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_kp.xml", "parameters").validate("../schemas/pid.rng") == False
+
+    def test_validate_parameters_no_pid_ki(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_ki.xml", "parameters").validate("../schemas/pid.rng") == False
+
+    def test_validate_parameters_no_pid_kd(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_kd.xml", "parameters").validate("../schemas/pid.rng") == False
+
+    def test_validate_parameters_no_pid_velocity(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_velocity.xml", "parameters").validate("../schemas/pid.rng") == False
+
+    def test_validate_parameters_no_pid_angle(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_angle.xml", "parameters").validate("../schemas/pid.rng") == False
+
+    def test_validate_parameters_no_pid_goal(self):
+        try:
+            import lxml
+        except ImportError:
+            return True
+
+        assert XMLReader("../testfiles/no_pid_goal.xml", "parameters").validate("../schemas/pid.rng") == False
+ 
 if __name__ == "__main__":
     unittest.main()

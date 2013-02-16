@@ -8,7 +8,7 @@
     
     <robot type="Khepera3">
         <supervisor type="khepera3.K3Supervisor" />
-        <pose x="1" y="1" theta="1.5708" />
+        <pose x="1" y="1" />
     </robot>
     
     <obstacle>
