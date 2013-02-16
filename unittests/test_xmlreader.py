@@ -12,7 +12,7 @@ class TestXMLReader(unittest.TestCase):
              'Khepera3', 
              'khepera3.K3Supervisor', 
              (1.0, 1.0, 1.5708),
-             None)
+             0xFFAACC)
         assert objects[1] == \
             ('obstacle', 
              (1.0, 1.2, 0.0), 
