@@ -27,8 +27,26 @@ class AvoidObstacles(Controller):
 
     #User-defined function
     def calculate_new_goal(ir_distances):
-        # 
-        pass
+        #Normalize the angle values
+        max_dist = 3960 #where does this number come from?
+        ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
+        
+        #travel orthogonally unless more then one point detected
+        objlist = []
+        for i in range(0, len(ir_distances)):
+            if ir_distances < max_dist:
+                objlist.append(i)
+            
+        numobjects = len(objlist)
+        if numobjects == 0:
+            return self.goalx, goaly
+        elif numobjects > 1: # simple go 90 degrees from object
+            angle = ir_angles(objlist[0]) + 90
+            angle = math.radians(angle)
+            angle = math.atan2(math.sin(angle), math.cos(angle))
+            goalx = self.robotx + 100*math.cos(self.robottheta + angle)
+            goaly = self.robotx + 100*math.sin(self.robottheta + angle)
+            return goalx, goaly
 
     def calculate_new_velocity(ir_distances):
         #Compare values to range
@@ -44,10 +62,11 @@ class AvoidObstacles(Controller):
         #Get distances from sensors 
         ir_distances = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  #placeholder
 
-        robotx, roboty, robottheta = state.pose
-        goalx, goaly = state.goalx, state.goaly
+        self.robotx, self.roboty, self.robottheta = state.pose
+        self.goalx, self.goaly = state.goalx, state.goaly
     
-        goal = self.calculate_new_goal(ir_distances) #user defined function
+        #Non-global goal
+        goalx, goaly = self.calculate_new_goal(ir_distances) #user defined function
         v_ = self.calculate_new_velocity(ir_distances) #user defined function
 
         #1. Calculate simple proportional error
