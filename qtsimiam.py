@@ -124,7 +124,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
         self.__zoom_slider.setToolTip("Adjust zoom")
         self.__zoom_slider.setMaximumWidth(300)
-        self.__zoom_slider.setRange(-100,100)
+        self.__zoom_slider.setRange(-100,300)
         self.__zoom_slider.setValue(0)
         self.__zoom_slider.setEnabled(False)
         self.__zoom_slider.valueChanged[int].connect(self._scale_zoom)
