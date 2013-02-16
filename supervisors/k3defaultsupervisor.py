@@ -9,11 +9,18 @@ class K3DefaultSupervisor(K3Supervisor):
         self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params.gains)
         self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
 
-        self.current = self.avoidobstacles
+        self.current = self.gtg
 
     def process(self):
         self.ui_params.pose = self.pose_est
         self.ui_params.ir_distances = self.robot.ir_sensors.readings
+        self.current = self.gtg # default selection
+        for reading in self.robot.ir_sensors.readings:
+            if reading > 10.0:
+                self.current = self.avoidobstacles
+                break
+                
+
         return self.ui_params
 
     def execute(self, robot_info, dt):
