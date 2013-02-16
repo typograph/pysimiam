@@ -10,7 +10,11 @@ from qtrenderer import QtRenderer
 from dockwindow import ParamDock, DockManager
 
 import simulator as sim
-import threading
+import queue
+
+class SimulatorEvent(QtCore.QEvent):
+    def type(self):
+        return QtCore.QEvent.User
 
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
@@ -42,8 +46,8 @@ class SimulationWidget(QtGui.QMainWindow):
         
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
-        viewer = SimulatorViewer()
-        scrollArea.setWidget(viewer)
+        self.__viewer = SimulatorViewer()
+        scrollArea.setWidget(self.__viewer)
         scrollArea.setWidgetResizable(True)
 
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
@@ -53,14 +57,19 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__sim_timer.setInterval(100)
         self.__sim_timer.timeout.connect(self.__update_time)
         
+        self.__sim_queue = queue.Queue()
+        
         # create the simulator thread
-        self._simulator_thread = sim.Simulator(viewer.renderer,
-                                               viewer.update_bitmap,
-                                               self.make_param_window)
+        self._simulator_thread = sim.Simulator(self.__viewer.renderer,
+                                               self.__sim_queue)
 
-        self.__dockmanager = DockManager(self, self._simulator_thread.apply_parameters)
+        self.__in_queue = self._simulator_thread._out_queue
+                                               
+        self.__dockmanager = DockManager(self)
 
         self._simulator_thread.start()
+        
+        QtCore.QApplication.postEvent(self, SimulatorEvent())
 
     def __create_toolbars(self):
         
@@ -171,55 +180,49 @@ class SimulationWidget(QtGui.QMainWindow):
     def _on_rewind(self): # Start from the beginning
         self.__sim_timer.stop()
         self.__time_label.setText("00:00.0")
-        self._simulator_thread.reset_simulation()
+        self.__sim_queue.put(('reset_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_run(self): # Run/unpause
-        self._simulator_thread.start_simulation()
-        if self._simulator_thread.is_running():
-            self.__sim_timer.start()
-            self.__speed_slider.setEnabled(True)
+        #self._simulator_thread.start_simulation()
+        self.__sim_queue.put(('start_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_pause(self): # Pause
-        self._simulator_thread.pause_simulation()
-        if not self._simulator_thread.is_running():
-            self.__sim_timer.stop()
-            self.__speed_slider.setEnabled(False)
+        self.__sim_queue.put(('pause_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_open_world(self):
         self._on_pause()
         if self._world_dialog.exec_():
             self.__dockmanager.clear()
-            self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
+            self.__sim_queue('read_config',(self._world_dialog.selectedFiles()[0]))
             
     @QtCore.pyqtSlot(bool)
     def _show_grid(self,show):
-        self._simulator_thread.show_grid(show)
+        self.__sim_queue.put(('show_grid',(show)))
             
     @QtCore.pyqtSlot()
     def _zoom_scene(self):
-        self._simulator_thread.focus_on_world()
         self.__zoom_slider.setEnabled(False)
+        self.__sim_queue.put(('focus_on_world',()))
 
     @QtCore.pyqtSlot()
     def _zoom_robot(self):
-        self._simulator_thread.focus_on_robot()
         self.__zoom_slider.setEnabled(True)
-        self._simulator_thread.adjust_zoom(
-            5.0**(self.__zoom_factor/100.0))        
+        self.__sim_queue.put(('focus_on_robot',()))
+        self.__sim_queue.put(('adjust_zoom',(5.0**(self.__zoom_slider.value()/100.0))))
             
     @QtCore.pyqtSlot(int)
     def _scale_zoom(self,value):
-        self._simulator_thread.adjust_zoom(5.0**((value-self.__zoom_factor)/100.0))
-        self.__zoom_factor = value
-        self.__zoom_label.setText(" Zoom: %.1fx"%(5.0**(value/100.0)))
+        zoom = 5.0**(value/100.0)
+        self.__sim_queue.put(('adjust_zoom',(zoom)))
+        self.__zoom_label.setText(" Zoom: %.1fx"%(zoom))
 
     @QtCore.pyqtSlot(int)
     def _scale_time(self,value):
         m = 10.0**((value-self.__zoom_factor)/100.0)
-        self._simulator_thread.set_time_multiplier(m)
+        self.__sim_queue.put(('set_time_multiplier',(m)))
         self.__speed_label.setText(" Speed: %.1fx"%m)
 
     @QtCore.pyqtSlot()
@@ -227,8 +230,36 @@ class SimulationWidget(QtGui.QMainWindow):
         t = self._simulator_thread.get_time()
         minutes = t//60
         self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+    
+    def event(self, event):
+        if event.type() == QtCore.QEvent.User:
+            # Process again
+            QtCore.QApplication.postEvent(self, SimulatorEvent())
+            if not self.__in_queue.empty():
+                name, args = self.__in_queue.get()
+                if name in self.__dict__:
+                    self.__dict__[name](*args)
+                else:
+                    print "Unknown event {}".format(name)
+                self.__in_queue.task_done()
+            return True
+        else:
+            return QMainWindow.event(self,event)
+
+### Queue processing
+        
+    def simulator_running(self):
+        self.__sim_timer.start()
+        self.__speed_slider.setEnabled(True)
+
+    def simulator_stopped(self):
+        self.__sim_timer.stop()
+        self.__speed_slider.setEnabled(False)
+        
+    def update_view(self):
+        self.__viewer.update_bitmap()
             
-#end PySimiamFrame class
+#end QtSimiamFrame class
 
 class SimulatorViewer(QtGui.QFrame):
     def __init__(self, parent = None):
@@ -236,14 +267,12 @@ class SimulatorViewer(QtGui.QFrame):
         self.__bitmap = QtGui.QPixmap()
         self.__blt_bitmap = QtGui.QImage(self.size(), QtGui.QImage.Format_ARGB32)
         self.renderer = QtRenderer(self.__blt_bitmap)
-        self.lock = threading.Lock()
         self.__resize_on_paint = False
         # code for async calling of update
         self.update_ = self.metaObject().method(self.metaObject().indexOfMethod('update()'))
 
     def paintEvent(self, event):
         super(SimulatorViewer, self).paintEvent(event)
-        self.lock.acquire()
         painter = QtGui.QPainter(self)
         painter.fillRect(self.rect(),QtCore.Qt.white)
         s = self.__bitmap.rect().size()
@@ -251,10 +280,8 @@ class SimulatorViewer(QtGui.QFrame):
         dx = (self.width() - s.width())/2
         dy = (self.height() - s.height())/2
         painter.drawPixmap(QtCore.QRect(QtCore.QPoint(dx,dy),s),self.__bitmap,self.__bitmap.rect())
-        self.lock.release()
         
     def update_bitmap(self):
-        self.lock.acquire()
         self.__bitmap = QtGui.QPixmap.fromImage(self.__blt_bitmap)
         # resize the canvas - at this point nothing is being drawn
         if self.__resize_on_paint:
@@ -263,8 +290,7 @@ class SimulatorViewer(QtGui.QFrame):
                                             QtGui.QImage.Format_ARGB32)
             self.renderer.set_canvas(self.__blt_bitmap)          
             self.__resize_on_paint = False
-        self.lock.release()
-        self.update_.invoke(self,QtCore.Qt.QueuedConnection)
+        self.update()
 
     def resizeEvent(self,event):
         """Resize panel and canvas"""
