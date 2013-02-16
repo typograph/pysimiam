@@ -7,7 +7,7 @@ sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
-from dockwindow import ParamDock
+from dockwindow import ParamDock, DockManager
 
 import simulator as sim
 import threading
@@ -46,7 +46,8 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea.setWidget(viewer)
         scrollArea.setWidgetResizable(True)
 
-        self.__paramwindows = {}
+        #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
+        self.setDockOptions(QtGui.QMainWindow.DockOptions())
 
         self.__sim_timer = QtCore.QTimer(self)
         self.__sim_timer.setInterval(100)
@@ -56,6 +57,9 @@ class SimulationWidget(QtGui.QMainWindow):
         self._simulator_thread = sim.Simulator(viewer.renderer,
                                                viewer.update_bitmap,
                                                self.make_param_window)
+
+        self.__dockmanager = DockManager(self, self._simulator_thread.apply_parameters)
+
         self._simulator_thread.start()
 
     def __create_toolbars(self):
@@ -159,15 +163,8 @@ class SimulationWidget(QtGui.QMainWindow):
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
-        if name in self.__paramwindows:
-            self.__paramwindows[name].deleteLater()
-            del self.__paramwindows[name]
-
         # FIXME adding to the right for no reason
-        dock = ParamDock(self, robot_id, name,
-                         parameters, self._simulator_thread.apply_parameters)
-        self.__paramwindows[name] = dock
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self.__dockmanager.add_dock_right(robot_id, name, parameters)
 
     # Slots
     @QtCore.pyqtSlot()
@@ -194,9 +191,7 @@ class SimulationWidget(QtGui.QMainWindow):
     def _on_open_world(self):
         self._on_pause()
         if self._world_dialog.exec_():
-            for name, dock in self.__paramwindows.items():
-                dock.deleteLater()
-            self.__paramwindows = {}
+            self.__dockmanager.clear()
             self._simulator_thread.read_config(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)

@@ -2,17 +2,20 @@
 """
 import threading
 from time import sleep, clock
-from xmlparser import XMLParser
+from xmlreader import XMLReader
 import helpers
 
 import pose
 import simobject
-from xmlparser import XMLParser
+from quadtree import QuadTree, Rect
 
 PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
+    
+    nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
+                   0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
 
     def __init__(self, renderer, update_callback, param_callback):
         """
@@ -45,6 +48,9 @@ class Simulator(threading.Thread):
         self._background = []
 
         self._world = None
+        
+        # Internal objects
+        self.__qtree = None
 
     #def __delete__(self):
         #self.__state = PAUSE
@@ -57,8 +63,7 @@ class Simulator(threading.Thread):
 
         print 'reading initial configuration'
         try:
-            parser = XMLParser(config, 'simulation')
-            self._world = parser.parse()
+            self._world = XMLReader(config, 'simulation').read()
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))
@@ -77,13 +82,19 @@ class Simulator(threading.Thread):
         self._supervisors = []
         self._background = []
         self._trackers = []
+        self.__qtree = None
+        
         for thing in self._world:
             thing_type = thing[0]
             if thing_type == 'robot':
-                robot_type, supervisor_type, robot_pose  = thing[1:4]
+                robot_type, supervisor_type, robot_pose, robot_color  = thing[1:5]
                 try:
                     robot_module, robot_class = helpers.load_by_name(robot_type,'robots')
                     robot = robot_class(pose.Pose(robot_pose))
+                    if robot_color is not None:
+                        robot.set_color(robot_color)
+                    elif len(self._robots) < 8:
+                        robot.set_color(self.nice_colors[len(self._robots)])
                     sup_module, sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     supervisor = sup_class(robot.get_pose(),
                                            robot.get_info())
@@ -94,23 +105,28 @@ class Simulator(threading.Thread):
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
-                    self._trackers.append(simobject.Path(robot.get_pose(),0x0000FF))
+                    self._trackers.append(simobject.Path(robot.get_pose(),robot))
+                    self._trackers[-1].set_color(robot.get_color())
                 except:
                     print "[Simulator.construct_world] Robot creation failed!"
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
-                obstacle_pose, obstacle_coords = thing[1], thing[2]
+                obstacle_pose, obstacle_coords, obstacle_color = thing[1:4]
+                if obstacle_color is None:
+                    obstacle_color = 0xFF0000
                 self._obstacles.append(
                     simobject.Polygon(pose.Pose(obstacle_pose),
                                       obstacle_coords,
-                                      0xFF0000))
+                                      obstacle_color))
             elif thing_type == 'marker':
-                obj_pose, obj_coords = thing[1], thing[2]
+                obj_pose, obj_coords, obj_color = thing[1:4]
+                if obj_color is None:
+                    obj_color = 0x00FF00
                 self._background.append(
                     simobject.Polygon(pose.Pose(obj_pose),
                                       obj_coords,
-                                      0x00FF00))
+                                      obj_color))
             else:
                 raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing_type))
@@ -162,7 +178,7 @@ class Simulator(threading.Thread):
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
-                self.update_sensors()
+                #self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -264,21 +280,34 @@ class Simulator(threading.Thread):
         collisions = []
         checked_robots = []
         
+        if self.__qtree is None:
+            self.__qtree = QuadTree(self._obstacles)
+        
         # check each robot
         for robot in self._robots:
-            # reset sensors
-            robot.update_sensors()
+                
+            # update proximity sensors
+            for sensor in robot.get_external_sensors():
+                sensor.get_world_envelope(True)
+                rect = Rect(sensor.get_bounding_rect())
+                sensor.update_distance()
+                for obstacle in self.__qtree.find_items(rect):
+                    if (sensor.update_distance(obstacle)):
+                        print "{0} -> {1} Distance:{2}".format(
+                                sensor, obstacle, sensor.distance())
             
-            # against obstacles
-            for obstacle in self._obstacles:
-                #robot.update_sensors(obstacle)
+            rect = Rect(robot.get_bounding_rect())
+            
+            # against nearest obstacles
+            for obstacle in self.__qtree.find_items(rect):
+                # Test Code: print "In proximity to:", obstacle
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
             # against other robots
             for other in self._robots: 
                 if other is robot: continue
-                #robot.update_sensors(other)
+                #TODO: robot.update_sensors(other)
                 if other in checked_robots: continue
                 if robot.has_collision(other):
                     collisions.append((robot, other))
@@ -288,35 +317,16 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                print "Collision wetween:\n", robot, "\n", obstacle
+                print "Collision between:\n", robot, "\n", obstacle
             # end of test code
             return True
                 
         return False
 
+    
     def update_sensors(self):
         ''' Update robot's sensors '''
+        # Depricated 
+        return
         
-        for robot in self._robots:
-            # reset sensors
-            #robot.update_sensors()
-            
-            # against obstacles
-            #for obstacle in self._obstacles:
-            #    robot.update_sensors(obstacle)
-                
-            # against other robots
-            #for other in self._robots: 
-            #    if other is robot: continue
-            #    robot.update_sensors(other)
-            
-            for sensor in robot.get_external_sensors():
-                # reset dist to max here
-                #dist = self.
-                for obstacle in self._obstacles:
-                    if sensor.has_collision(obstacle):
-                        d = sensor.get_distance_to(obstacle)
-                        print "{} in range of {} ~{}".format(
-                               obstacle, sensor, d)
-
 #end class Simulator

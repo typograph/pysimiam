@@ -45,6 +45,7 @@ class ProximitySensor(MountedSensor):
                     (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
                     
         self.__distance = 65536
+        self.set_color(0x11FF5566)
 
     def get_envelope(self):
         return self.pts
@@ -59,11 +60,21 @@ class ProximitySensor(MountedSensor):
         return self.distance_to_value(self.distance())
 
     def update_distance(self, sim_object = None):
-        pass
+        if sim_object is None:
+            # reset distance to max
+            self.__distance = 65536
+            return True
+        else:
+            distance_to_obj = self.get_distance_to(sim_object)
+            if distance_to_obj:
+                if self.__distance > distance_to_obj:
+                    self.__distance = distance_to_obj
+                    return True
+        return False
 
     def draw(self, r):
         r.set_pose(self.get_pose())
-        r.set_brush(0x11FF5566)
+        r.set_brush(self.get_color())
         r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
         r.draw_polygon(self.pts)
         
@@ -77,6 +88,6 @@ class ProximitySensor(MountedSensor):
                     min_distance = distance
             else: min_distance = distance
             # Test code - return contact point info
-            print "Contact @({0},{1}) ~{2}".format(px, py, distance)
+            #print "Contact @({0},{1}) ~{2}".format(px, py, distance)
             #
         return min_distance
