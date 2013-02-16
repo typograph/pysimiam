@@ -77,7 +77,7 @@ class AvoidObstacles(Controller):
         self.E += error*dt
 
         #4. Calculate differential error
-        dE = error - self.error_1
+        dE = (error - self.error_1)/dt
         self.error_1 = error #updates the error_1 var
 
         #5. Calculate desired omega

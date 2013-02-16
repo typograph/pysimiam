@@ -8,6 +8,10 @@ import helpers
 
 class Supervisor:
     def __init__(self, robot_pose, robot_info):
+        """
+        @param:     robot_pose - Pose object
+                    robot_info - Info structure
+        """
         self.initial_pose = robot_pose
         self.pose_est = robot_pose
         self.ui_params = self.get_default_parameters()
