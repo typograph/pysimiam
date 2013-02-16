@@ -37,7 +37,6 @@ class AvoidObstacles(Controller):
                 objlist.append(i)
             
         numobjects = len(objlist)
-        print numobjects 
         if numobjects > 1: # simple go 90 degrees from object
             index = objlist[0]
             angle = ir_angles[index] + 90
