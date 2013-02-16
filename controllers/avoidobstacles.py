@@ -34,18 +34,19 @@ class AvoidObstacles(Controller):
         #travel orthogonally unless more then one point detected
         objlist = []
         for i in range(0, len(ir_distances)):
-            if ir_distances < max_dist:
+            if ir_distances[i] < max_dist:
                 objlist.append(i)
             
         numobjects = len(objlist)
         if numobjects == 0:
             return self.goalx, self.goaly
         elif numobjects > 1: # simple go 90 degrees from object
-            angle = ir_angles(objlist[0]) + 90
+            print ir_distances
+            angle = ir_angles[objlist[0]] + 90
             angle = math.radians(angle)
             angle = math.atan2(math.sin(angle), math.cos(angle))
-            goalx = self.robotx + 10*math.cos(self.robottheta + angle)
-            goaly = self.robotx + 10*math.sin(self.robottheta + angle)
+            goalx = self.robotx + 100*math.cos(self.robottheta + angle)
+            goaly = self.robotx + 100*math.sin(self.robottheta + angle)
             return goalx, goaly
 
     def calculate_new_velocity(self, ir_distances):
