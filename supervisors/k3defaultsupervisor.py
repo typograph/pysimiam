@@ -16,7 +16,6 @@ class K3DefaultSupervisor(K3Supervisor):
         self.ui_params.ir_distances = self.robot.ir_sensors.readings
         return self.ui_params
 
-
     def execute(self, robot_info, dt):
         output = Supervisor.execute(self, robot_info, dt)
         vl, vr = self.uni2diff(output)

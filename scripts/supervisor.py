@@ -62,8 +62,7 @@ class Supervisor:
     def process(self):
         """Evaluate the situation and select the right controller. Return the
         right controller params
-        
-        To be implemented in subclasses"""
+        to be implemented in subclasses"""
         raise NotImplementedError('Supervisor.process')
         
     def estimate_pose(self):
