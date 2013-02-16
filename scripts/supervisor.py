@@ -55,16 +55,16 @@ class Supervisor:
         """
         self.robot = robot_info
         self.pose_est = self.estimate_pose()
-        params = self.eval_criteria() #User-defined algorithm
+        params = self.process() #User-defined algorithm
         output = self.current.execute(params,dt) #execute the current controller
         return output
 
-    def eval_criteria(self):
+    def process(self):
         """Evaluate the situation and select the right controller. Return the
         right controller params
         
         To be implemented in subclasses"""
-        raise NotImplementedError('Supervisor.eval_criteria')
+        raise NotImplementedError('Supervisor.process')
         
     def estimate_pose(self):
         """Update self.pose_est

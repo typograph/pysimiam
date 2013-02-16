@@ -10,10 +10,6 @@ class K3Supervisor(Supervisor):
         Supervisor.__init__(self, robot_pose, robot_info)
 
         #Create conrollers
-        self.gtg = self.add_controller('gotogoal.GoToGoal',self.ui_params.gains)
-        
-        # Default and only controller
-        self.current = self.gtg
         
         # initialize memory registers
         self.left_ticks  = robot_info.wheels.left_ticks
@@ -63,11 +59,10 @@ class K3Supervisor(Supervisor):
         # End Assignment
         return (vl,vr)
             
-    def eval_criteria(self):
+    def process(self):
         # Controller is already selected
         # Parameters are nearly in the right format for go-to-goal
-        self.ui_params.pose = self.pose_est
-        return self.ui_params
+        raise NotImplementedError('Supervisor.process') 
     
     def estimate_pose(self):
         """Update self.pose_est"""

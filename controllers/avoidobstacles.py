@@ -8,7 +8,7 @@ import math
 import numpy
 
 class AvoidObstacles(Controller):
-    def __init__(self):
+    def __init__(self, params):
         '''read another .xml for PID parameters?'''
         self.kp=10
         self.ki=0
@@ -26,7 +26,7 @@ class AvoidObstacles(Controller):
         self.kd = params.kd
 
     #User-defined function
-    def calculate_new_goal(ir_distances):
+    def calculate_new_goal(self, ir_distances):
         #Normalize the angle values
         max_dist = 3960 #where does this number come from?
         ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
@@ -39,38 +39,38 @@ class AvoidObstacles(Controller):
             
         numobjects = len(objlist)
         if numobjects == 0:
-            return self.goalx, goaly
+            return self.goalx, self.goaly
         elif numobjects > 1: # simple go 90 degrees from object
             angle = ir_angles(objlist[0]) + 90
             angle = math.radians(angle)
             angle = math.atan2(math.sin(angle), math.cos(angle))
-            goalx = self.robotx + 100*math.cos(self.robottheta + angle)
-            goaly = self.robotx + 100*math.sin(self.robottheta + angle)
+            goalx = self.robotx + 10*math.cos(self.robottheta + angle)
+            goaly = self.robotx + 10*math.sin(self.robottheta + angle)
             return goalx, goaly
 
-    def calculate_new_velocity(ir_distances):
+    def calculate_new_velocity(self, ir_distances):
         #Compare values to range
         for dist in ir_distances:
             if dist < 100:
-                return 10
+                return 0.5 
 
         #if nothing found
-        return 100
+        return 1 
 
     def execute(self, state, dt):
         #Select a goal, ccw obstacle avoidance
         #Get distances from sensors 
-        ir_distances = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  #placeholder
+        ir_distances = state.ir_distances  #placeholder
 
         self.robotx, self.roboty, self.robottheta = state.pose
-        self.goalx, self.goaly = state.goalx, state.goaly
+        self.goalx, self.goaly = state.goal.x, state.goal.y
     
         #Non-global goal
         goalx, goaly = self.calculate_new_goal(ir_distances) #user defined function
         v_ = self.calculate_new_velocity(ir_distances) #user defined function
 
         #1. Calculate simple proportional error
-        error = math.atan2(goaly - roboty, goalx - robotx) - robottheta 
+        error = math.atan2(goaly - self.roboty, goalx - self.robotx) - self.robottheta 
 
         #2. Correct for angles (angle may be greater than PI)
         error = math.atan2(math.sin(error), math.cos(error))
