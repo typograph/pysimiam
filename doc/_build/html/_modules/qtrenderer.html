@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>qtrenderer &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for qtrenderer</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Renderer class for PyQt4</span>
+<span class="sd"> A glue layer between SimObject and UI</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">degrees</span>
+<span class="kn">from</span> <span class="nn">pose</span> <span class="kn">import</span> <span class="n">Pose</span>
+<span class="kn">from</span> <span class="nn">renderer</span> <span class="kn">import</span> <span class="n">Renderer</span>
+<span class="kn">from</span> <span class="nn">PyQt4.QtGui</span> <span class="kn">import</span> <span class="n">QPainter</span><span class="p">,</span><span class="n">QColor</span><span class="p">,</span><span class="n">QPolygonF</span><span class="p">,</span><span class="n">QPen</span>
+<span class="kn">from</span> <span class="nn">PyQt4.QtCore</span> <span class="kn">import</span> <span class="n">QPointF</span><span class="p">,</span><span class="n">QLineF</span><span class="p">,</span><span class="n">Qt</span>
+
+<div class="viewcode-block" id="QtRenderer"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer">[docs]</a><span class="k">class</span> <span class="nc">QtRenderer</span><span class="p">(</span><span class="n">Renderer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pd</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new renderer based on a QPaintDevice pd&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_pen</span> <span class="o">=</span> <span class="n">QPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="mh">0x808080</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_pen</span><span class="o">.</span><span class="n">setStyle</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">DashLine</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">Renderer</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pd</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QtRenderer.set_canvas"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.set_canvas">[docs]</a>    <span class="k">def</span> <span class="nf">set_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canvas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tell the renderer to draw on canvas</span>
+<span class="sd">        The type of canvas is implementation-dependent&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">restore</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">restore</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paintdevice</span> <span class="o">=</span> <span class="n">canvas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="n">canvas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setRenderHint</span><span class="p">(</span><span class="n">QPainter</span><span class="o">.</span><span class="n">Antialiasing</span><span class="p">)</span>
+
+        <span class="c"># invert the y axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="n">canvas</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+
+        <span class="n">Renderer</span><span class="o">.</span><span class="n">set_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">canvas</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_get_canvas_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pd</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the canvas size tuple (width,height)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">width</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+
+<div class="viewcode-block" id="QtRenderer.push_state"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.push_state">[docs]</a>    <span class="k">def</span> <span class="nf">push_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store the current state on the stack.</span>
+<span class="sd">        Current state includes default pose, pen and brush&quot;&quot;&quot;</span>
+        <span class="c">### FIXME store things</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.pop_state"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.pop_state">[docs]</a>    <span class="k">def</span> <span class="nf">pop_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore the last saved state from the stack</span>
+<span class="sd">        The state includes default pose, pen and brush&quot;&quot;&quot;</span>
+        <span class="c">### FIXME store things</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">restore</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_calculate_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">worldTransform</span><span class="p">()</span><span class="o">.</span><span class="n">inverted</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">xs</span><span class="p">,</span><span class="n">ys</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">transform</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span>
+                    <span class="n">transform</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                    <span class="n">transform</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                    <span class="n">transform</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="mf">0.0</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span> <span class="o">=</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">ys</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">ys</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_draw_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_pose</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_pen</span><span class="p">)</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span>
+
+        <span class="c"># Determine min/max x &amp; y line indices:</span>
+        <span class="n">x_ticks</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xmin</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">xmax</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">y_ticks</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ymin</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ymax</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawLines</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">QLineF</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">,</span>
+                    <span class="n">xmax</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">y_ticks</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawLines</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">QLineF</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span>
+                    <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">x_ticks</span><span class="p">)])</span>
+
+<div class="viewcode-block" id="QtRenderer.scale"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.scale">[docs]</a>    <span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale drawing operations by factor</span>
+<span class="sd">        To be implemented in subclasses.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span><span class="n">factor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.rotate"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.rotate">[docs]</a>    <span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate canvas by angle (in radians)</span>
+<span class="sd">        To be implemented in subclasses.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">degrees</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.translate"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate canvas by dx, dy</span>
+<span class="sd">        To be implemented in subclasses.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">clear_screen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">resetTransform</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_pen</span><span class="p">(</span><span class="mh">0xFFFFFF</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_brush</span><span class="p">(</span><span class="mh">0xFFFFFF</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_rectangle</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">restore</span><span class="p">()</span>
+        <span class="n">Renderer</span><span class="o">.</span><span class="n">clear_screen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__qcolor</span><span class="p">(</span><span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns qcolor for a given ARGB color&quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">QColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="o">&gt;</span> <span class="mh">0xFFFFFF</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">setAlpha</span><span class="p">((</span><span class="n">color</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+<div class="viewcode-block" id="QtRenderer.set_pen"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.set_pen">[docs]</a>    <span class="k">def</span> <span class="nf">set_pen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the line color.</span>
+<span class="sd">        Color is interpreted as 0xAARRGGBB.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">NoPen</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__qcolor</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.set_brush"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.set_brush">[docs]</a>    <span class="k">def</span> <span class="nf">set_brush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the fill color.</span>
+<span class="sd">        Color is interpreted as 0xAARRGGBB.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">NoBrush</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__qcolor</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.draw_polygon"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.draw_polygon">[docs]</a>    <span class="k">def</span> <span class="nf">draw_polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">points</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a polygon.</span>
+<span class="sd">        Expects a list of points as a list of tuples or as a numpy array.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawPolygon</span><span class="p">(</span><span class="n">QPolygonF</span><span class="p">([</span><span class="n">QPointF</span><span class="p">(</span><span class="o">*</span><span class="n">point</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]))</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.draw_ellipse"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.draw_ellipse">[docs]</a>    <span class="k">def</span> <span class="nf">draw_ellipse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an ellipse.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawEllipse</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">h</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.draw_rectangle"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.draw_rectangle">[docs]</a>    <span class="k">def</span> <span class="nf">draw_rectangle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a rectangle.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawRect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">h</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.draw_text"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.draw_text">[docs]</a>    <span class="k">def</span> <span class="nf">draw_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">bgcolor</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a text string at the defined position.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="QtRenderer.draw_line"><a class="viewcode-back" href="../code.html#qtrenderer.QtRenderer.draw_line">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a line using the current pen from (x1,y1) to (x2,y2)&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_painter</span><span class="o">.</span><span class="n">drawLine</span><span class="p">(</span><span class="n">QLineF</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">y1</span><span class="p">,</span><span class="n">x2</span><span class="p">,</span><span class="n">y2</span><span class="p">))</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

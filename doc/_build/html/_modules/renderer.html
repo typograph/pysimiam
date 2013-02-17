@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>renderer &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for renderer</h1><div class="highlight"><pre>
+<span class="c">#</span>
+<span class="c"># Renderer class</span>
+<span class="c">#</span>
+<span class="c"># A glue layer between SimObject and UI</span>
+<span class="kn">from</span> <span class="nn">pose</span> <span class="kn">import</span> <span class="n">Pose</span>
+
+<div class="viewcode-block" id="Renderer"><a class="viewcode-back" href="../code.html#renderer.Renderer">[docs]</a><span class="k">class</span> <span class="nc">Renderer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canvas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a Renderer on canvas of size _size_.</span>
+<span class="sd">        </span>
+<span class="sd">        The default pen and brush are transparent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span> <span class="o">=</span> <span class="n">Pose</span><span class="p">()</span> <span class="c"># The pose in the bottom-left corner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c"># The zooming factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_c</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># Whether the scaling is done from center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_show_grid</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># Show the grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">=</span> <span class="mf">40.0</span> <span class="c"># default for unscaled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># The rect to keep in view</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_canvas</span><span class="p">(</span><span class="n">canvas</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__delete__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_state</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="Renderer.show_grid"><a class="viewcode-back" href="../code.html#renderer.Renderer.show_grid">[docs]</a>    <span class="k">def</span> <span class="nf">show_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw the grid on the canvas background.</span>
+<span class="sd">        </span>
+<span class="sd">        The grid is adaptive, with minimum interline distance of 20 px,</span>
+<span class="sd">        and a maximum of 80 px.</span>
+<span class="sd">        This method will clear the canvas</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_show_grid</span> <span class="o">=</span> <span class="n">show</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_screen</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="Renderer.set_canvas"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_canvas">[docs]</a>    <span class="k">def</span> <span class="nf">set_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canvas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tell the renderer to draw on canvas</span>
+<span class="sd">        </span>
+<span class="sd">        The type of canvas is implementation-dependent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_pen</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_brush</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push_state</span><span class="p">()</span> <span class="c"># The first pushed state is the default blank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push_state</span><span class="p">()</span> <span class="c"># The second pushed state is the scaled one (zoom=1) with default pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_canvas_size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_canvas_size</span><span class="p">(</span><span class="n">canvas</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_default_state</span><span class="p">()</span>
+   </div>
+<div class="viewcode-block" id="Renderer.reset_canvas_size"><a class="viewcode-back" href="../code.html#renderer.Renderer.reset_canvas_size">[docs]</a>    <span class="k">def</span> <span class="nf">reset_canvas_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change canvas size</span>
+<span class="sd">        </span>
+<span class="sd">        On canvas rescale the zoom factor will be recalculated:</span>
+<span class="sd">        </span>
+<span class="sd">        If the view rect was set, the view will be rescaled to fit the rect.</span>
+<span class="sd">        If the view rect was not set, the zoom factor and default pose will</span>
+<span class="sd">        be kept.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_view_rect</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_get_canvas_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">canvas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the canvas size tuple (width,height)</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer._get_canvas_size&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Renderer.push_state"><a class="viewcode-back" href="../code.html#renderer.Renderer.push_state">[docs]</a>    <span class="k">def</span> <span class="nf">push_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store the current state on the stack.</span>
+<span class="sd">        </span>
+<span class="sd">        Current state includes default pose, pen and brush.</span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.push_state&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Renderer.pop_state"><a class="viewcode-back" href="../code.html#renderer.Renderer.pop_state">[docs]</a>    <span class="k">def</span> <span class="nf">pop_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore the last saved state from the stack</span>
+
+<span class="sd">        The state includes default pose, pen and brush.</span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.pop_state&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Renderer.scale"><a class="viewcode-back" href="../code.html#renderer.Renderer.scale">[docs]</a>    <span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale drawing operations by factor</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.scale&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Renderer.rotate"><a class="viewcode-back" href="../code.html#renderer.Renderer.rotate">[docs]</a>    <span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate canvas by angle (in radians)</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.rotate&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Renderer.translate"><a class="viewcode-back" href="../code.html#renderer.Renderer.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate canvas by dx, dy</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.translate&quot;</span><span class="p">)</span>
+
+   </div>
+    <span class="k">def</span> <span class="nf">_calculate_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store the bounds of the smallest rectangle containing the view \</span>
+<span class="sd">        in self._bounds.</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer._calculate_bounds&quot;</span><span class="p">)</span>
+   
+    <span class="k">def</span> <span class="nf">_draw_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw the grid on screen</span>
+<span class="sd">        </span>
+<span class="sd">        To be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer._draw_grid&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Renderer.set_screen_pose"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_screen_pose">[docs]</a>    <span class="k">def</span> <span class="nf">set_screen_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Set the pose of lower-left corner of the canvas</span>
+<span class="sd">        </span>
+<span class="sd">        Will automatically switch zoom center to said corner.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_c</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span> <span class="o">=</span> <span class="n">pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_default_state</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Renderer.set_screen_center_pose"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_screen_center_pose">[docs]</a>    <span class="k">def</span> <span class="nf">set_screen_center_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Set the pose of center of the canvas</span>
+<span class="sd">        </span>
+<span class="sd">        Will automatically switch zoom center to canvas center.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_c</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span> <span class="o">=</span> <span class="n">pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_default_state</span><span class="p">()</span>
+   </div>
+<div class="viewcode-block" id="Renderer.set_zoom_level"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_zoom_level">[docs]</a>    <span class="k">def</span> <span class="nf">set_zoom_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom_level</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Zoom up the drawing by a factor of zoom_level</span>
+<span class="sd">        </span>
+<span class="sd">        The zoom center is at the last set screen pose.</span>
+<span class="sd">        This method will clear the canvas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">*=</span> <span class="n">zoom_level</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">&gt;</span> <span class="mi">80</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">/=</span> <span class="mi">2</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_spacing</span> <span class="o">/=</span> <span class="n">zoom_level</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">zoom_level</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_default_state</span><span class="p">()</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_update_default_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_state</span><span class="p">()</span> <span class="c"># Reset state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_state</span><span class="p">()</span> <span class="c"># Set zoom to 1     </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push_state</span><span class="p">()</span> <span class="c"># Re-save the zoom-1</span>
+        <span class="c">#print self._zoom_c, self._defpose</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_c</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zoom</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push_state</span><span class="p">()</span> <span class="c"># Save the zoomed state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_bounds</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_screen</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Renderer.scale_zoom_level"><a class="viewcode-back" href="../code.html#renderer.Renderer.scale_zoom_level">[docs]</a>    <span class="k">def</span> <span class="nf">scale_zoom_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Zoom up the drawing by a factor of zoom_level</span>
+<span class="sd">        </span>
+<span class="sd">        The zoom center is at the last set screen pose.</span>
+<span class="sd">        This method will clear the canvas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_zoom_level</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zoom</span><span class="o">*</span><span class="n">factor</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Renderer.set_view_rect"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_view_rect">[docs]</a>    <span class="k">def</span> <span class="nf">set_view_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Zoom on the rectangle to fit it into the view</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__view_rect</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">width</span><span class="p">,</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">zoom</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">width</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
+        <span class="n">xtra_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">zoom</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
+        <span class="n">xtra_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">zoom</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defpose</span> <span class="o">=</span> <span class="n">Pose</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">xtra_width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="n">xtra_height</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom</span> <span class="o">=</span> <span class="n">zoom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_c</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_default_state</span><span class="p">()</span>
+       </div>
+<div class="viewcode-block" id="Renderer.reset_pose"><a class="viewcode-back" href="../code.html#renderer.Renderer.reset_pose">[docs]</a>    <span class="k">def</span> <span class="nf">reset_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Resets the renderer to default pose</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push_state</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="Renderer.set_pose"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_pose">[docs]</a>    <span class="k">def</span> <span class="nf">set_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a coordinate transformation based on the pose</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_pose</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_pose</span><span class="p">(</span><span class="n">pose</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.add_pose"><a class="viewcode-back" href="../code.html#renderer.Renderer.add_pose">[docs]</a>    <span class="k">def</span> <span class="nf">add_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a pose transformation to the current transformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">pose</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">pose</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pose</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.set_pen"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_pen">[docs]</a>    <span class="k">def</span> <span class="nf">set_pen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the line color.</span>
+<span class="sd">        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color</span>
+<span class="sd">        is considered fully opaque.</span>
+<span class="sd">        Use None to unset a pen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.set_pen&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.set_brush"><a class="viewcode-back" href="../code.html#renderer.Renderer.set_brush">[docs]</a>    <span class="k">def</span> <span class="nf">set_brush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the fill color.</span>
+
+<span class="sd">        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color</span>
+<span class="sd">        is considered fully opaque.</span>
+<span class="sd">        Use None to unset a brush</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.set_brush&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.clear_screen"><a class="viewcode-back" href="../code.html#renderer.Renderer.clear_screen">[docs]</a>    <span class="k">def</span> <span class="nf">clear_screen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clears the canvas using the current brush</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_grid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_grid</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Renderer.draw_line"><a class="viewcode-back" href="../code.html#renderer.Renderer.draw_line">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw a line using the current pen from (x1,y1) to (x2, y2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.draw_line&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.draw_ellipse"><a class="viewcode-back" href="../code.html#renderer.Renderer.draw_ellipse">[docs]</a>    <span class="k">def</span> <span class="nf">draw_ellipse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an ellipse with current pen and fills it with current brush.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.draw_ellipse&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.draw_rectangle"><a class="viewcode-back" href="../code.html#renderer.Renderer.draw_rectangle">[docs]</a>    <span class="k">def</span> <span class="nf">draw_rectangle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a rectangle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.draw_rectangle&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.fill_rectangle"><a class="viewcode-back" href="../code.html#renderer.Renderer.fill_rectangle">[docs]</a>    <span class="k">def</span> <span class="nf">fill_rectangle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a rectangle with current pen and fills it with current brush</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.fill_rectangle&quot;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Renderer.draw_polygon"><a class="viewcode-back" href="../code.html#renderer.Renderer.draw_polygon">[docs]</a>    <span class="k">def</span> <span class="nf">draw_polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a polygon with current pen and fills it with current brush</span>
+<span class="sd">        Expects a list of points as a list of tuples or as a numpy array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.draw_polygon&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.draw_text"><a class="viewcode-back" href="../code.html#renderer.Renderer.draw_text">[docs]</a>    <span class="k">def</span> <span class="nf">draw_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">bgcolor</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a text string at the defined position.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Renderer.draw_text&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
