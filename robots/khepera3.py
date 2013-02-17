@@ -3,7 +3,6 @@ from pose import Pose
 from sensor import ProximitySensor
 from robot import Robot
 from math import ceil, exp, sin, cos, tan, pi
-from scipy.integrate import ode
 from helpers import Struct
 
 class Khepera3_IRSensor(ProximitySensor):
@@ -16,22 +15,6 @@ class Khepera3_IRSensor(ProximitySensor):
             return 3960;
         else:
             return (3960*exp(-30*(dst-self.rmin)));
-
-def motion_f(t,y,v,w):
-    """The Drive problem
-    """
-    theta = y[2]
-    return [v*cos(theta),v*sin(theta),w]
-
-def motion_jac(t,y,v,w):
-    """The Jacobian of the drive problem
-    """
-    theta = y[2]
-    
-    j = np.zeros((3,3))
-    j[0][2] = -v*sin(theta) # d(v*cos(theta))/dtheta
-    j[1][2] = v*cos(theta) # d(v*sin(theta))/dtheta
-    return j
 
 class Khepera3(Robot):
     
@@ -94,8 +77,8 @@ class Khepera3(Robot):
         self.info.ir_sensors.poses = ir_sensor_poses
         self.info.ir_sensors.readings = None
         
-        self.integrator = ode(motion_f,motion_jac)
-        self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
+        #self.integrator = ode(motion_f,motion_jac)
+        #self.integrator.set_integrator('dopri5',atol=1e-8,rtol=1e-8)
 
     def draw(self,r):
         r.set_pose(self.get_pose())
@@ -108,13 +91,21 @@ class Khepera3(Robot):
         return self._p2
     
     def move(self,dt):
-#        print('(vel_r,vel_l) = (%0.6g,%0.6g)\n' % self.ang_velocity);
-#        print('Calculated velocities (v,w): (%0.3g,%0.3g)\n' % self.get_unicycle_speeds());
-        self.integrator.set_initial_value(self.get_pose().get_list(),0)
+
+        # There's no need to use the integrator - these equations have a solution        
         (v,w) = self.diff2uni(self.get_wheel_speeds())
-        self.integrator.set_f_params(v,w).set_jac_params(v,w)
-        self.integrator.integrate(dt)
-        self.set_pose(Pose(self.integrator.y))
+        x, y, theta = self.get_pose()
+        if w == 0:
+            x += v*cos(theta)*dt
+            y += v*sin(theta)*dt
+        else:
+            dtheta = w*dt
+            x += v/w*cos(theta + dtheta/2)*sin(dtheta/2)
+            y += v/w*sin(theta + dtheta/2)*sin(dtheta/2)
+            theta += dtheta
+        
+        self.set_pose(Pose(x, y, theta))
+        
         # FIXME hack for wheel encoders
         ticks_per_m = self.info.wheels.ticks_per_rev/(2*pi*self.info.wheels.radius)
         traveled = v*dt
