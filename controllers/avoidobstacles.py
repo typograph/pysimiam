@@ -26,14 +26,14 @@ class AvoidObstacles(Controller):
         self.kd = params.kd
 
     #User-defined function
-    def calculate_new_goal(self, ir_distances):
+    def calculate_new_goal(self, ir_readings):
         #Normalize the angle values
         ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
 
         #travel orthogonally unless more then one point detected
         objlist = []
-        for i in range(0, len(ir_distances)):
-            if ir_distances[i] > 100:
+        for i in range(0, len(ir_readings)):
+            if ir_readings[i] > 100:
                 objlist.append(i)
             
         numobjects = len(objlist)
