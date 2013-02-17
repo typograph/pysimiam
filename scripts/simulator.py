@@ -163,7 +163,7 @@ class Simulator(threading.Thread):
     def run(self):
         print 'starting simulator thread'
 
-        time_constant = 0.02  # 20 milliseconds
+        time_constant = 0.02 # 20 milliseconds
         
         self._renderer.clear_screen() #create a white screen
         self.update_view()
@@ -193,9 +193,6 @@ class Simulator(threading.Thread):
 
             # Draw to buffer-bitmap
             self.draw()
-            # Block until drawn
-            self.update_view()
-            self.process_queue()
 
     def draw(self):
         if self._robots and self.__center_on_robot:
@@ -219,10 +216,11 @@ class Simulator(threading.Thread):
 
         # update view
         self.update_view()
+        self.process_queue()
 
     def update_view(self):
         self._out_queue.put(('update_view',()))
-        self._out_queue.join()
+        self._out_queue.join() # wait until drawn
         
     def focus_on_world(self):
         self.__center_on_robot = False

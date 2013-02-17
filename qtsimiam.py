@@ -168,8 +168,10 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setStatusBar(QtGui.QStatusBar())
 
     def closeEvent(self,event):
-        self._simulator_thread.stop()
-        self._simulator_thread.join()
+        self.__sim_queue.put(('stop',()))
+        while self._simulator_thread.isAlive():
+            self.process_events(True)
+            self._simulator_thread.join(0.1)
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
@@ -232,25 +234,31 @@ class SimulationWidget(QtGui.QMainWindow):
         minutes = t//60
         self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
     
+    def process_events(self, process_all = False):
+        while not self.__in_queue.empty():
+            tpl = self.__in_queue.get()
+            if isinstance(tpl,tuple) and len(tpl) == 2:
+                name, args = tpl
+                if name in self.__class__.__dict__:
+                    try:
+                        self.__class__.__dict__[name](self,*args)
+                    except TypeError:
+                        print "Wrong UI event parameters {}{}".format(name,args)
+                        raise
+                else:
+                    print "Unknown UI event '{}'".format(name)
+            else:
+                print "Wrong UI event format '{}'".format(tpl)
+            self.__in_queue.task_done()
+            if not process_all:
+                return
+        
+    
     def event(self, event):
         if event.type() == QtCore.QEvent.User:
             # Process again
             QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
-            if not self.__in_queue.empty():
-                tpl = self.__in_queue.get()
-                if isinstance(tpl,tuple) and len(tpl) == 2:
-                    name, args = tpl
-                    if name in self.__class__.__dict__:
-                        try:
-                            self.__class__.__dict__[name](self,*args)
-                        except TypeError:
-                            print "Wrong UI event parameters {}{}".format(name,args)
-                            raise
-                    else:
-                        print "Unknown UI event '{}'".format(name)
-                else:
-                    print "Wrong UI event format '{}'".format(tpl)
-                self.__in_queue.task_done()
+            self.process_events(True)
             return True
         else:
             return QtGui.QMainWindow.event(self,event)
