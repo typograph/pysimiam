@@ -1,18 +1,21 @@
-"""The base class for creating drawn objects in teh simulator. 
-Posses both a Pose object and a color"""
 from math import sin, cos
 import pylygon
 from pose import Pose
 
 class SimObject:
+    """The base class for creating drawn objects in the simulator. 
+Posses both a Pose object and a color"""
+
     def __init__(self, pose, color = 0):
         self.set_color(color)
         self.set_pose(pose)
 
     def get_color(self):
+        """gets the color"""
         return self.__color
     
     def set_color(self, color):
+        """sets the color"""
         self.__color = color
 
     def get_pose(self):
@@ -38,6 +41,7 @@ class SimObject:
         pass
     
     def get_world_envelope(self, recalculate=False):
+        """gets the envelop for checking collision"""
         if self.__world_envelope is None or recalculate:
             x,y,t = self.get_pose()
             self.__world_envelope = [(x+p[0]*cos(t)-p[1]*sin(t),
@@ -47,7 +51,6 @@ class SimObject:
     
     def get_bounding_rect(self):
         """Get the smallest rectangle that contains the object
-        
         Returns a tuple (x,y,width,height)
         """
         xmin, ymin, xmax, ymax = self.get_bounds()
@@ -87,6 +90,7 @@ class SimObject:
             
 
 class Polygon(SimObject):
+    """The polygon simobject is used to draw objects in the world"""
     def __init__(self, pose, shape, color):
         SimObject.__init__(self,pose, color)
         self.__shape = shape
@@ -100,17 +104,21 @@ class Polygon(SimObject):
         r.draw_polygon(self.get_envelope())
 
 class Path(SimObject):
+    """The path is used to track the history of robot motion"""
     def __init__(self,start,color):
         SimObject.__init__(self, Pose(), color)
         self.points = [(start.x,start.y)]
 
     def reset(self,start):
+        """sets teh start point to start.x and start.y"""
         self.points = [(start.x,start.y)]
         
     def add_point(self,pose):
+        """adds a point to the chain of lines"""
         self.points.append((pose.x,pose.y))
         
     def draw(self,r):
+        """draw the polyline from the line list"""
         r.set_pose(self.get_pose()) # Reset everything
         r.set_pen(self.get_color())
         for i in range(1,len(self.points)):

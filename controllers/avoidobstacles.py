@@ -27,6 +27,7 @@ class AvoidObstacles(Controller):
 
     #User-defined function
     def calculate_new_goal(self, ir_readings):
+        """Determines a new goal for the robot based on which sensors are active"""
         #Normalize the angle values
         ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
 
@@ -49,6 +50,7 @@ class AvoidObstacles(Controller):
         return (self.goalx, self.goaly)
 
     def calculate_new_velocity(self, ir_distances):
+        """Adjusts robot velocity based on distance to object"""
         #Compare values to range
         for dist in ir_distances:
             if dist > 100:
@@ -58,6 +60,12 @@ class AvoidObstacles(Controller):
         return 0.4 
 
     def execute(self, state, dt):
+        """Executes avoidance behavior based on state and dt. 
+        state --> supevisor set ui_params
+
+        dt --> supervisor set timestep
+
+        return --> unicycle model list [velocity, omega]"""
         #Select a goal, ccw obstacle avoidance
 
         self.robotx, self.roboty, self.robottheta = state.pose

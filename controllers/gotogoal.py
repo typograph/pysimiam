@@ -1,13 +1,13 @@
-"""PySimiam
-Author: John Alexander
-ChangeDate: 8 FEB 2013; 2300EST
-Description: Example PID implementation for goal-seek (incomplete)
-"""
+#PySimiam
+#Author: John Alexander
+#ChangeDate: 8 FEB 2013; 2300EST
+#Description: Example PID implementation for goal-seek (incomplete)
 from controller import Controller
 import math
 import numpy
 
 class GoToGoal(Controller):
+    """Example of PID implementation for goal-seek"""
     def __init__(self, params):
         """init
         @params: 
@@ -28,6 +28,7 @@ class GoToGoal(Controller):
 
     def execute(self,state,dt):
         """Executes the controller behavior
+        @return --> unicycle model list [velocity, omega]
         """
         #Calculate the goal position
         x_g, y_g = state.goal.x, state.goal.y
