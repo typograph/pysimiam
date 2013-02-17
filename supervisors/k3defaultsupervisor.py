@@ -2,6 +2,7 @@ from khepera3 import K3Supervisor
 from supervisor import Supervisor
 
 class K3DefaultSupervisor(K3Supervisor):
+    """K3Default supervisor creates two default supervisors: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
     def __init__(self, robot_pose, robot_info):
         """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
@@ -27,6 +28,7 @@ class K3DefaultSupervisor(K3Supervisor):
         return self.ui_params
 
     def execute(self, robot_info, dt):
+        """Peforms K3Supervisor procedures and converts unicycle output into differential drive output for the Khepera3"""
         output = Supervisor.execute(self, robot_info, dt)
         vl, vr = self.uni2diff(output)
         return (vl, vr) 

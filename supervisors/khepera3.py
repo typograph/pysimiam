@@ -5,6 +5,11 @@ from math import pi, sin, cos
 from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
+    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the k3defaultsupervisor.K3DefaultSupervisor class in which this class is used to reduce noisy code interactions.
+
+Most importantly, the K3Supervisor object implements the system functions necessary to operate a Khepera3, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.
+
+The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors."""
     def __init__(self, robot_pose, robot_info):
         Supervisor.__init__(self, robot_pose, robot_info)
 

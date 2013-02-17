@@ -119,6 +119,8 @@ Khepera3 Specific Modules
 
 .. automodule:: supervisors.khepera3
     :members:
+.. autoclass:: K3Supervisor
+    :members:
 
 .. automodule:: supervisors.k3defaultsupervisor
     :members:

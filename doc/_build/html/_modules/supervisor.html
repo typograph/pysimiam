@@ -1,0 +1,178 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>supervisor &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for supervisor</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;PySimiam</span>
+<span class="sd">Author: John Alexander</span>
+<span class="sd">ChangeDate: 8 FEB 2013; 2300EST</span>
+<span class="sd">Description: This is the Supervisor class for PySimiam.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">helpers</span>
+
+<div class="viewcode-block" id="Supervisor"><a class="viewcode-back" href="../code.html#supervisor.Supervisor">[docs]</a><span class="k">class</span> <span class="nc">Supervisor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_pose</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @param:     robot_pose - Pose object</span>
+<span class="sd">                    robot_info - Info structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_pose</span> <span class="o">=</span> <span class="n">robot_pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pose_est</span> <span class="o">=</span> <span class="n">robot_pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_parameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller_modules</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="Supervisor.get_parameters"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get parameters of the supervisor.</span>
+<span class="sd">        supervisor.set_parameters(supervisor.get_parameters()) should not change</span>
+<span class="sd">        the state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span>
+</div>
+<div class="viewcode-block" id="Supervisor.get_default_parameters"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_default_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the default parameter set, suitable for runnig this supervisor</span>
+<span class="sd">        To be implemented in subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Supervisor.get_default_parameters&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Supervisor.get_ui_description"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_ui_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_ui_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a dictionary, describing the parameters available for the user,</span>
+<span class="sd">        with the values from params</span>
+<span class="sd">        If params are not specified, use self.ui_params</span>
+<span class="sd">        To be implemented in subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Supervisor.get_ui_description&quot;</span><span class="p">)</span>
+        </div>
+    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span> <span class="o">=</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">add_controller</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_string</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="n">module</span><span class="p">,</span> <span class="n">controller_class</span> <span class="o">=</span> <span class="n">helpers</span><span class="o">.</span><span class="n">load_by_name</span><span class="p">(</span><span class="n">module_string</span><span class="p">,</span> <span class="s">&#39;controllers&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller_modules</span><span class="p">[</span><span class="n">module_string</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">controller_class</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">controller_class</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Supervisor.get_current"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_current">[docs]</a>    <span class="k">def</span> <span class="nf">get_current</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get current controller</span>
+<span class="sd">        @return controller object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span>
+</div>
+<div class="viewcode-block" id="Supervisor.execute"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Default execution procedures</span>
+<span class="sd">        1. Get robot information</span>
+<span class="sd">        2. Estimate pose with odometry</span>
+<span class="sd">        3. Update paramaters with the supervisor process (also select controller)</span>
+<span class="sd">        4. Execute currently selected controller behavior</span>
+<span class="sd">        5. Return unicycle model as an output (velocity, omega)</span>
+<span class="sd">        Make decisions about robot motion based on robot_info</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">robot</span> <span class="o">=</span> <span class="n">robot_info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pose_est</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_pose</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">()</span> <span class="c">#User-defined algorithm</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">dt</span><span class="p">)</span> <span class="c">#execute the current controller</span>
+        <span class="k">return</span> <span class="n">output</span>
+</div>
+<div class="viewcode-block" id="Supervisor.process"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate the sensors and select a controller</span>
+<span class="sd">        Update parameters to by passed to the controller</span>
+<span class="sd">        Must be implemented in subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;Supervisor.process&#39;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Supervisor.estimate_pose"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.estimate_pose">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the pose using odometry calculations</span>
+<span class="sd">        Update self.pose_est variable</span>
+<span class="sd">        Must bed implemented in subclasses (different robot drives)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;Supervisor.estimate_pose&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>qtsimiam &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for qtsimiam</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;QtSimiam</span>
+<span class="sd">Author: Tim Fuchs</span>
+<span class="sd">Description: This is the top-level application for QtSimiam.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;./scripts&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">qtrenderer</span> <span class="kn">import</span> <span class="n">QtRenderer</span>
+<span class="kn">from</span> <span class="nn">dockwindow</span> <span class="kn">import</span> <span class="n">ParamDock</span><span class="p">,</span> <span class="n">DockManager</span>
+
+<span class="kn">import</span> <span class="nn">simulator</span> <span class="kn">as</span> <span class="nn">sim</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<div class="viewcode-block" id="SimulationWidget"><a class="viewcode-back" href="../code.html#qtsimiam.SimulationWidget">[docs]</a><span class="k">class</span> <span class="nc">SimulationWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s">&quot;QtSimiam&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span><span class="mi">700</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__create_toolbars</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__create_menu</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__create_statusbar</span><span class="p">()</span>
+        <span class="c"># Set intro message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusBar</span><span class="p">()</span><span class="o">.</span><span class="n">showMessage</span><span class="p">(</span><span class="s">&quot;Welcome to QtSimiam&quot;</span><span class="p">)</span> 
+        
+        <span class="c"># create XML file dialog</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world_dialog</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                <span class="s">&quot;Select World.xml File&quot;</span><span class="p">,</span>
+                                <span class="s">&quot;worlds&quot;</span><span class="p">,</span> 
+                                <span class="s">&quot;WorldFile (*.xml)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world_dialog</span><span class="o">.</span><span class="n">setAcceptMode</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">AcceptOpen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world_dialog</span><span class="o">.</span><span class="n">setFileMode</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">ExistingFile</span><span class="p">)</span>     
+
+        <span class="c"># create supervisor file dialog</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_supervisor_dialog</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                     <span class="s">&quot;Select Supervisor File&quot;</span><span class="p">,</span>
+                                     <span class="s">&quot;supervisors&quot;</span><span class="p">,</span> 
+                                     <span class="s">&quot;Supervisor (*.py)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_supervisor_dialog</span><span class="o">.</span><span class="n">setAcceptMode</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">AcceptOpen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_supervisor_dialog</span><span class="o">.</span><span class="n">setFileMode</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">ExistingFile</span><span class="p">)</span>     
+        
+        <span class="n">scrollArea</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QScrollArea</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">scrollArea</span><span class="p">)</span>
+        <span class="n">viewer</span> <span class="o">=</span> <span class="n">SimulatorViewer</span><span class="p">()</span>
+        <span class="n">scrollArea</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">viewer</span><span class="p">)</span>
+        <span class="n">scrollArea</span><span class="o">.</span><span class="n">setWidgetResizable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c">#self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setDockOptions</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="o">.</span><span class="n">DockOptions</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QTimer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span><span class="o">.</span><span class="n">setInterval</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__update_time</span><span class="p">)</span>
+        
+        <span class="c"># create the simulator thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">Simulator</span><span class="p">(</span><span class="n">viewer</span><span class="o">.</span><span class="n">renderer</span><span class="p">,</span>
+                                               <span class="n">viewer</span><span class="o">.</span><span class="n">update_bitmap</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">make_param_window</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dockmanager</span> <span class="o">=</span> <span class="n">DockManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">apply_parameters</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__create_toolbars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">tbar</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QToolBar</span><span class="p">(</span><span class="s">&quot;Control&quot;</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">setAllowedAreas</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">TopToolBarArea</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">BottomToolBarArea</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_label</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s">&quot;00:00.0&quot;</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_label</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Elapsed time&quot;</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__time_label</span><span class="p">)</span>
+        
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/arrow-left-double.png&quot;</span><span class="p">),</span>
+                       <span class="s">&quot;Rewind&quot;</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">_on_rewind</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/arrow-right.png&quot;</span><span class="p">),</span>
+                       <span class="s">&quot;Run&quot;</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">_on_run</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/media-playback-pause-7.png&quot;</span><span class="p">),</span>
+                       <span class="s">&quot;Pause&quot;</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">_on_pause</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Adjust speed&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setTickPosition</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="o">.</span><span class="n">NoTicks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">valueChanged</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scale_time</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_label</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s">&quot; Speed: 1.0x&quot;</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_label</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Current speed multiplier&quot;</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__speed_label</span><span class="p">)</span>
+                       
+        <span class="bp">self</span><span class="o">.</span><span class="n">addToolBar</span><span class="p">(</span><span class="n">tbar</span><span class="p">)</span>
+
+        <span class="n">tbar</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QToolBar</span><span class="p">(</span><span class="s">&quot;View&quot;</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">setAllowedAreas</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">TopToolBarArea</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">BottomToolBarArea</span><span class="p">)</span>
+
+        <span class="n">a</span> <span class="o">=</span> <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/grid.png&quot;</span><span class="p">),</span>
+                           <span class="s">&quot;Show/Hide grid&quot;</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">triggered</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_show_grid</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        
+        <span class="n">zoom_group</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QActionGroup</span><span class="p">(</span><span class="n">tbar</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/zoom-scene.png&quot;</span><span class="p">),</span>
+                           <span class="s">&quot;Show all&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_scene</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">zoom_group</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+        <span class="n">a</span> <span class="o">=</span> <span class="n">tbar</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;./res/image/zoom-robot.png&quot;</span><span class="p">),</span>
+                           <span class="s">&quot;Follow robot&quot;</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_robot</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">zoom_group</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setTickPosition</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="o">.</span><span class="n">NoTicks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Adjust zoom&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span><span class="mi">300</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">valueChanged</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scale_zoom</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_label</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s">&quot; Zoom: 1.0x&quot;</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_label</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Current zoom factor&quot;</span><span class="p">)</span>
+        <span class="n">tbar</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__zoom_label</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_factor</span> <span class="o">=</span> <span class="mi">0</span>
+                       
+        <span class="bp">self</span><span class="o">.</span><span class="n">addToolBar</span><span class="p">(</span><span class="n">tbar</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__create_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">menu</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMenuBar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setMenuBar</span><span class="p">(</span><span class="n">menu</span><span class="p">)</span>
+        
+        <span class="n">file_menu</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s">&quot;&amp;File&quot;</span><span class="p">)</span>
+        <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span><span class="s">&quot;document-open&quot;</span><span class="p">),</span>
+                            <span class="s">&quot;Open XML &amp;World&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_on_open_world</span><span class="p">,</span>
+                            <span class="n">QtGui</span><span class="o">.</span><span class="n">QKeySequence</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QKeySequence</span><span class="o">.</span><span class="n">Open</span><span class="p">))</span>
+                            
+        <span class="n">file_menu</span><span class="o">.</span><span class="n">addSeparator</span><span class="p">()</span>
+        <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span><span class="s">&quot;application-exit&quot;</span><span class="p">),</span>
+                            <span class="s">&quot;E&amp;xit&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">,</span>
+                            <span class="n">QtGui</span><span class="o">.</span><span class="n">QKeySequence</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QKeySequence</span><span class="o">.</span><span class="n">Quit</span><span class="p">)</span>
+                            <span class="p">)</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s">&quot;Quit the Program&quot;</span><span class="p">)</span>
+                            
+    <span class="k">def</span> <span class="nf">__create_statusbar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>      
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStatusBar</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QStatusBar</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SimulationWidget</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">closeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">make_param_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">robot_id</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">parameters</span><span class="p">):</span>       
+        <span class="c"># FIXME adding to the right for no reason</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dockmanager</span><span class="o">.</span><span class="n">add_dock_right</span><span class="p">(</span><span class="n">robot_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+
+    <span class="c"># Slots</span>
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_on_rewind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c"># Start from the beginning</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot;00:00.0&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">reset_simulation</span><span class="p">()</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_on_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c"># Run/unpause</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">start_simulation</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_on_pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c"># Pause</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">pause_simulation</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__sim_timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__speed_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_on_open_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_on_pause</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world_dialog</span><span class="o">.</span><span class="n">exec_</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dockmanager</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">read_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_world_dialog</span><span class="o">.</span><span class="n">selectedFiles</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_show_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">show</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">show_grid</span><span class="p">(</span><span class="n">show</span><span class="p">)</span>
+            
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_zoom_scene</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">focus_on_world</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_zoom_robot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">focus_on_robot</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_slider</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">adjust_zoom</span><span class="p">(</span>
+            <span class="mf">5.0</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__zoom_factor</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))</span>        
+            
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_scale_zoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">adjust_zoom</span><span class="p">(</span><span class="mf">5.0</span><span class="o">**</span><span class="p">((</span><span class="n">value</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">__zoom_factor</span><span class="p">)</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_factor</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__zoom_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot; Zoom: </span><span class="si">%.1f</span><span class="s">x&quot;</span><span class="o">%</span><span class="p">(</span><span class="mf">5.0</span><span class="o">**</span><span class="p">(</span><span class="n">value</span><span class="o">/</span><span class="mf">100.0</span><span class="p">)))</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_scale_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mf">10.0</span><span class="o">**</span><span class="p">((</span><span class="n">value</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">__zoom_factor</span><span class="p">)</span><span class="o">/</span><span class="mf">100.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">set_time_multiplier</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__speed_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot; Speed: </span><span class="si">%.1f</span><span class="s">x&quot;</span><span class="o">%</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__update_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator_thread</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span>
+        <span class="n">minutes</span> <span class="o">=</span> <span class="n">t</span><span class="o">//</span><span class="mi">60</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%02d</span><span class="s">:</span><span class="si">%04.1f</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">minutes</span><span class="p">,</span><span class="n">t</span> <span class="o">-</span> <span class="n">minutes</span><span class="o">*</span><span class="mi">60</span><span class="p">))</span>
+            
+<span class="c">#end PySimiamFrame class</span>
+</div>
+<span class="k">class</span> <span class="nc">SimulatorViewer</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFrame</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SimulatorViewer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__bitmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__blt_bitmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="o">.</span><span class="n">Format_ARGB32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="n">QtRenderer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__blt_bitmap</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__resize_on_paint</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="c"># code for async calling of update</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metaObject</span><span class="p">()</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metaObject</span><span class="p">()</span><span class="o">.</span><span class="n">indexOfMethod</span><span class="p">(</span><span class="s">&#39;update()&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SimulatorViewer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">paintEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bitmap</span><span class="o">.</span><span class="n">rect</span><span class="p">()</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">()</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">KeepAspectRatio</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">width</span><span class="p">())</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">height</span><span class="p">())</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">drawPixmap</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QRect</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QPoint</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">),</span><span class="n">s</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">__bitmap</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">__bitmap</span><span class="o">.</span><span class="n">rect</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">update_bitmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__bitmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="o">.</span><span class="n">fromImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__blt_bitmap</span><span class="p">)</span>
+        <span class="c"># resize the canvas - at this point nothing is being drawn</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__resize_on_paint</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__blt_bitmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">(),</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">(),</span>
+                                            <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="o">.</span><span class="n">Format_ARGB32</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">set_canvas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__blt_bitmap</span><span class="p">)</span>          
+            <span class="bp">self</span><span class="o">.</span><span class="n">__resize_on_paint</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">resizeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Resize panel and canvas&quot;&quot;&quot;</span>
+        <span class="c"># use cached size and flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__resize_on_paint</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">simWidget</span> <span class="o">=</span> <span class="n">SimulationWidget</span><span class="p">()</span>
+    <span class="n">simWidget</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
