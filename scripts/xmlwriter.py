@@ -6,7 +6,7 @@ class XMLWriter(XMLObject):
     entered via the UI.
 
     Public API:
-        write(self) --> write the tree as XML to the given file_      
+        write(self) --> write the tree as XML to the given file
     """
 
     _file = None
@@ -20,7 +20,7 @@ class XMLWriter(XMLObject):
         Scope:
             Public
         Parameters:
-            file_ ------> path to the file to which XML should be saved
+            file ------> path to the file to which XML should be saved
             template ---> 'simulator' or 'parameters'
         Return:
             A new XMLWriter instance  
@@ -106,7 +106,7 @@ class XMLWriter(XMLObject):
 
     def write(self):
         """
-        Write out the tree as XML to the given file_
+        Write out the tree as XML to the given file
 
         Scope:
             Public

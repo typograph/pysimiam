@@ -1,0 +1,188 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sensor &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sensor</h1><div class="highlight"><pre>
+<span class="c">#</span>
+<span class="c"># Sensors</span>
+<span class="c">#</span>
+<span class="c"># In the original Sim.I.Am code there is no base class, as the sensors are</span>
+<span class="c"># completely arbitrary objects</span>
+<span class="c">#</span>
+
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">simobject</span> <span class="kn">import</span> <span class="n">SimObject</span>
+<span class="kn">from</span> <span class="nn">pose</span> <span class="kn">import</span> <span class="n">Pose</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sqrt</span>
+
+<div class="viewcode-block" id="Sensor"><a class="viewcode-back" href="../code.html#sensor.Sensor">[docs]</a><span class="k">class</span> <span class="nc">Sensor</span><span class="p">:</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Sensor.add_gauss_noise"><a class="viewcode-back" href="../code.html#sensor.Sensor.add_gauss_noise">[docs]</a>    <span class="k">def</span> <span class="nf">add_gauss_noise</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value with an added normal noise</span>
+<span class="sd">        </span>
+<span class="sd">        The return value is normally distributed around value with a standard deviation sigma</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">sigma</span><span class="p">)</span>
+  </div></div>
+<div class="viewcode-block" id="MountedSensor"><a class="viewcode-back" href="../code.html#sensor.MountedSensor">[docs]</a><span class="k">class</span> <span class="nc">MountedSensor</span><span class="p">(</span><span class="n">SimObject</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pose</span><span class="p">,</span><span class="n">frame</span><span class="p">):</span>
+        <span class="n">SimObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__frame</span> <span class="o">=</span> <span class="n">frame</span>
+
+    <span class="k">def</span> <span class="nf">get_internal_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SimObject</span><span class="o">.</span><span class="n">get_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+       
+    <span class="k">def</span> <span class="nf">get_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">SimObject</span><span class="o">.</span><span class="n">get_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__frame</span><span class="o">.</span><span class="n">get_pose</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Pose</span><span class="p">(</span><span class="n">rx</span><span class="o">+</span><span class="n">x</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span><span class="o">-</span><span class="n">y</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">rt</span><span class="p">),</span><span class="n">ry</span><span class="o">+</span><span class="n">x</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span><span class="o">+</span><span class="n">y</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">rt</span><span class="p">),</span><span class="n">t</span><span class="o">+</span><span class="n">rt</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ProximitySensor"><a class="viewcode-back" href="../code.html#sensor.ProximitySensor">[docs]</a><span class="k">class</span> <span class="nc">ProximitySensor</span><span class="p">(</span><span class="n">MountedSensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pose</span><span class="p">,</span><span class="n">robot</span><span class="p">,</span><span class="n">geometry</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a proximity sensor mounted on robot at pose. The geometry</span>
+<span class="sd">        is a (rmin, rmax, angle) tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">MountedSensor</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pose</span><span class="p">,</span><span class="n">robot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">geometry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pts</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">/</span><span class="mi">2</span><span class="p">))]</span>
+                    
+        <span class="bp">self</span><span class="o">.</span><span class="n">__distance</span> <span class="o">=</span> <span class="mi">65536</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="mh">0x11FF5566</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_envelope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pts</span>
+
+    <span class="k">def</span> <span class="nf">distance_to_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dst</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;ProximitySensor.distance_to_value&quot;</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__distance</span>
+    
+    <span class="k">def</span> <span class="nf">reading</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_to_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distance</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">update_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_object</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sim_object</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># reset distance to max</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__distance</span> <span class="o">=</span> <span class="mi">65536</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">distance_to_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distance_to</span><span class="p">(</span><span class="n">sim_object</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">distance_to_obj</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__distance</span> <span class="o">&gt;</span> <span class="n">distance_to_obj</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__distance</span> <span class="o">=</span> <span class="n">distance_to_obj</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">set_pose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pose</span><span class="p">())</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">set_brush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_color</span><span class="p">())</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">draw_ellipse</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">draw_polygon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">get_distance_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_object</span><span class="p">):</span>
+        <span class="n">ox</span><span class="p">,</span> <span class="n">oy</span><span class="p">,</span> <span class="n">ot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pose</span><span class="p">()</span>
+        <span class="n">min_distance</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">px</span><span class="p">,</span> <span class="n">py</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_contact_points</span><span class="p">(</span><span class="n">sim_object</span><span class="p">):</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">((</span><span class="n">px</span><span class="o">-</span><span class="n">ox</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">px</span><span class="o">-</span><span class="n">ox</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">py</span><span class="o">-</span><span class="n">oy</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">py</span><span class="o">-</span><span class="n">oy</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">min_distance</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="n">min_distance</span><span class="p">:</span>
+                    <span class="n">min_distance</span> <span class="o">=</span> <span class="n">distance</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">min_distance</span> <span class="o">=</span> <span class="n">distance</span>
+            <span class="c"># Test code - return contact point info</span>
+            <span class="c">#print &quot;Contact @({0},{1}) ~{2}&quot;.format(px, py, distance)</span>
+            <span class="c">#</span>
+        <span class="k">return</span> <span class="n">min_distance</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
