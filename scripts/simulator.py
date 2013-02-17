@@ -185,6 +185,10 @@ class Simulator(threading.Thread):
                     robot.move(time_constant)
                     self._trackers[i].add_point(robot.get_pose())
 
+                self.draw() # make sure the user sees changes faster
+
+                # the parameters that might have been changed have no effect
+                # on collisions
                 if self.check_collisions():
                     print "Collision detected!"
                     self.__state = PAUSE
@@ -195,6 +199,8 @@ class Simulator(threading.Thread):
             self.draw()
 
     def draw(self):
+        self.process_queue() # make sure there's nothing else
+
         if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self._robots[0]
@@ -216,7 +222,6 @@ class Simulator(threading.Thread):
 
         # update view
         self.update_view()
-        self.process_queue()
 
     def update_view(self):
         self._out_queue.put(('update_view',()))

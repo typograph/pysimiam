@@ -54,7 +54,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
 
         self.__sim_timer = QtCore.QTimer(self)
-        self.__sim_timer.setInterval(100)
+        self.__sim_timer.setInterval(10)
         self.__sim_timer.timeout.connect(self.__update_time)
         
         self.__sim_queue = queue.Queue()
@@ -69,8 +69,9 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__dockmanager.apply_request.connect(self.apply_parameters)
 
         self._simulator_thread.start()
+        self.__sim_timer.start()
         
-        QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
+        #QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
 
     def __create_toolbars(self):
         
@@ -168,6 +169,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setStatusBar(QtGui.QStatusBar())
 
     def closeEvent(self,event):
+        self.__sim_timer.stop()
         self.__sim_queue.put(('stop',()))
         while self._simulator_thread.isAlive():
             self.process_events(True)
@@ -181,7 +183,7 @@ class SimulationWidget(QtGui.QMainWindow):
     # Slots
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
-        self.__sim_timer.stop()
+        #self.__sim_timer.stop()
         self.__time_label.setText("00:00.0")
         self.__sim_queue.put(('reset_simulation',()))
 
@@ -233,6 +235,7 @@ class SimulationWidget(QtGui.QMainWindow):
         t = self._simulator_thread.get_time()
         minutes = t//60
         self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+        self.process_events(True)
     
     def process_events(self, process_all = False):
         while not self.__in_queue.empty():
@@ -254,14 +257,14 @@ class SimulationWidget(QtGui.QMainWindow):
                 return
         
     
-    def event(self, event):
-        if event.type() == QtCore.QEvent.User:
-            # Process again
-            QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
-            self.process_events(True)
-            return True
-        else:
-            return QtGui.QMainWindow.event(self,event)
+    #def event(self, event):
+        #if event.type() == QtCore.QEvent.User:
+            ## Process again
+            #QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
+            #self.process_events(True)
+            #return True
+        #else:
+            #return QtGui.QMainWindow.event(self,event)
 
     def apply_parameters(robot_id, params):
         self.__sim_queue.put('apply_parameters', (robot_id, params))
@@ -269,15 +272,15 @@ class SimulationWidget(QtGui.QMainWindow):
 ### Queue processing
         
     def simulator_running(self):
-        self.__sim_timer.start()
+        #self.__sim_timer.start()
         self.__speed_slider.setEnabled(True)
     
     def simulator_paused(self):
-        self.__sim_timer.stop()
+        #self.__sim_timer.stop()
         self.__speed_slider.setEnabled(False)
 
     def simulator_stopped(self):
-        self.__sim_timer.stop()
+        #self.__sim_timer.stop()
         self.__speed_slider.setEnabled(False)
         
     def update_view(self):
