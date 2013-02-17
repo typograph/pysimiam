@@ -1,12 +1,13 @@
 from simobject import SimObject
 
 class Robot(SimObject):
+    """The robot class inherits from the simobject and implements moving, drawing, and information functions to interface with supervisors and the world environment."""
     def move(self,dt):
-        """Moves the robot for time dt"""
+        """Moves the robot with time dt"""
         raise NotImplementedError("Robot.move")
     
     def get_info(self):
-        """Return the information about robot, including sensor readings and
+        """Return the robot information structure, including sensor readings and
         shape information"""
         raise NotImplementedError("Robot.get_info")
 

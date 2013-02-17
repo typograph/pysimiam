@@ -40,18 +40,18 @@ class XMLObject(object):
 
         try:
             from lxml import etree
-            from lxml.etree import XMLSchema
+            from lxml.etree import RelaxNG
         except ImportError:
             raise Exception(
                 '[XMLObject.validate] Need lxml to validate xml!')
 
         try:
-            xmlschema_doc = etree.parse(schema)
-            xmlschema = XMLSchema(xmlschema_doc)
+            relaxng_doc = etree.parse(schema)
+            relaxng = RelaxNG(relaxng_doc)
             xml_doc = etree.parse(self._file)
         except etree.XMLSyntaxError, e:
             raise Exception(
                 '[XMLObject.validate] Cannot validate xml: ' + str(e)) 
         
-        return xmlschema.validate(xml_doc)
+        return relaxng.validate(xml_doc)
 

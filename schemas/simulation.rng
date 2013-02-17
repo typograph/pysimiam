@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<grammar ns="" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+    <start>
+        <choice>
+            <notAllowed/>
+            <element name="simulation">
+                <interleave>
+                    <element name="app">
+                        <attribute name="type">
+                            <data type="string"/>
+                        </attribute>
+                    </element>
+                    <oneOrMore>
+                        <element name="robot">
+                            <attribute name="type">
+                                <data type="string"/>
+                            </attribute>
+                            <optional>
+                                <attribute name="color">
+                                    <data type="string"/>
+                                </attribute>
+                            </optional>
+                            <interleave>
+                                <element name="supervisor">
+                                    <attribute name="type">
+                                        <data type="string"/>
+                                    </attribute>
+                                </element>
+                                <element name="pose">
+                                    <attribute name="x">
+                                        <data type="float"/>
+                                    </attribute>
+                                    <attribute name="y">
+                                        <data type="float"/>
+                                    </attribute>
+                                    <attribute name="theta">
+                                        <data type="float"/>
+                                    </attribute>
+                                </element>
+                            </interleave>
+                        </element>
+                    </oneOrMore>
+                    <zeroOrMore>
+                        <element name="obstacle">
+                            <optional>
+                                <attribute name="color">
+                                    <data type="string"/>
+                                </attribute>
+                            </optional>
+                            <interleave>
+                                <element name="pose">
+                                    <attribute name="x">
+                                        <data type="float"/>
+                                    </attribute>
+                                    <attribute name="y">
+                                        <data type="float"/>
+                                    </attribute>
+                                    <attribute name="theta">
+                                        <data type="float"/>
+                                    </attribute>
+
+                                </element>
+                                <element name="geometry">
+                                    <element name="point">
+                                        <attribute name="x">
+                                            <data type="float"/>
+                                        </attribute>
+                                        <attribute name="y">
+                                            <data type="float"/>
+                                        </attribute>
+                                    </element>
+                                    <element name="point">
+                                        <attribute name="x">
+                                            <data type="float"/>
+                                        </attribute>
+                                        <attribute name="y">
+                                            <data type="float"/>
+                                        </attribute>
+                                    </element>
+                                    <oneOrMore>
+                                        <element name="point">
+                                            <attribute name="x">
+                                                <data type="float"/>
+                                            </attribute>
+                                            <attribute name="y">
+                                                <data type="float"/>
+                                            </attribute>
+                                        </element>
+                                    </oneOrMore>
+                                </element>
+                            </interleave>
+                        </element>
+                    </zeroOrMore>
+                </interleave>
+            </element>
+        </choice>
+    </start>
+</grammar>

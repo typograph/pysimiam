@@ -1,14 +1,10 @@
-"""
-Title: Pose
-Author: Jonathan Whitten
-Date: 03 FEB 2013
-Comments:
-The pose class allows for a posing of objects in 2D space
-"""
 import numpy as np
 
 class Pose(object):
+    """The pose class allows for a posing of objects in 2D space. The pose uses a right-hand coordinate system with counter-clockwise measurement of theta from the x-axis"""
     def __init__(self, *args):
+        """Units in mm.  
+        @param: args - (x, y, theta) tuple, Pose object, (x, y) tuple"""
         #Units in mm
         #convert to float just in case someone types an integer
         if len(args) == 0:
@@ -24,13 +20,8 @@ class Pose(object):
 
     def set_pose(self, *args):
         """pose setter using another pose
-        @param
-        args[0] - Pose object
-        or
-        args[0] - float x
-        args[1] - float y
-        args[2] - float z
-        """
+        @params: args[0] - Pose object; or args[0] - float x, 
+        args[1] - float y, args[2] - float z"""
         if isinstance(args[0], Pose):
             self.x = args[0].x
             self.y = args[0].y
@@ -41,6 +32,7 @@ class Pose(object):
             self.theta = float(args[2])
 
     def get_list(self):
+        """returns the pose in a list [x, y, theta]"""
         return [self.x, self.y, self.theta]
 
     def __iter__(self):
@@ -49,6 +41,7 @@ class Pose(object):
         yield self.theta
 
     def get_transformation(self):
+        """returns the pose in a 3x3 transformation matrix"""
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
             [math.cos(self.theta), -math.sin(self.theta), self.x],\
@@ -60,6 +53,3 @@ class Pose(object):
         return "(%f,%f) %f" % (self.x,self.y,self.theta)
 
 #end class Pose
-
-#To convert from degress to radians use np.radians(<list>)
-#To convert from radians to degrees use np.degrees(<list>)

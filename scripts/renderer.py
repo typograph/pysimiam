@@ -5,9 +5,9 @@
 from pose import Pose
 
 class Renderer:
+    """Superclass for interfacing the python simulator to different UI graphics context"""
     def __init__(self, canvas):
         """Create a Renderer on canvas of size _size_.
-        
         The default pen and brush are transparent
         """
         self._defpose = Pose() # The pose in the bottom-left corner
@@ -48,9 +48,7 @@ class Renderer:
    
     def reset_canvas_size(self,size):
         """Change canvas size
-        
         On canvas rescale the zoom factor will be recalculated:
-        
         If the view rect was set, the view will be rescaled to fit the rect.
         If the view rect was not set, the zoom factor and default pose will
         be kept.
@@ -61,7 +59,6 @@ class Renderer:
     
     def _get_canvas_size(self,canvas):
         """Return the canvas size tuple (width,height)
-        
         To be implemented in subclasses
         """
         raise NotImplementedError("Renderer._get_canvas_size")

@@ -255,6 +255,7 @@ class ParamDock(QtGui.QDockWidget):
 class DockManager(QObject):
     apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
     
+    """Provides a dock for the Qt Simulator Widget to controll PID elements"""
     def __init__(self, parent):
         QObject.__init__(self, parent)
         self.docks = {}

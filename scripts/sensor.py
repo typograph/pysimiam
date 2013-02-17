@@ -11,6 +11,7 @@ from pose import Pose
 from math import sin, cos, sqrt
 
 class Sensor:
+    """Base superclass for sensor objects"""
     @classmethod
     def add_gauss_noise(value, sigma):
         """Returns the value with an added normal noise
@@ -20,11 +21,13 @@ class Sensor:
         return random.gauss(value,sigma)
   
 class MountedSensor(SimObject):
+    """A subclass of sensor for skirt sensors"""
     def __init__(self,pose,frame):
         SimObject.__init__(self,pose)
         self.__frame = frame
 
     def get_internal_pose(self):
+        """Get the pose of the sensor from simobject inheritance"""
         return SimObject.get_pose(self)
        
     def get_pose(self):
@@ -33,6 +36,9 @@ class MountedSensor(SimObject):
         return Pose(rx+x*cos(rt)-y*sin(rt),ry+x*sin(rt)+y*cos(rt),t+rt)
     
 class ProximitySensor(MountedSensor):
+    """Create a proximity sensor mounted on robot at pose. The geometry
+    is a (rmin, rmax, angle) tuple
+    """
     def __init__(self,pose,robot,geometry):
         """Create a proximity sensor mounted on robot at pose. The geometry
         is a (rmin, rmax, angle) tuple
@@ -48,18 +54,23 @@ class ProximitySensor(MountedSensor):
         self.set_color(0x11FF5566)
 
     def get_envelope(self):
+        """Return the envelope of the sensor"""
         return self.pts
 
     def distance_to_value(self,dst):
+        """Returns the distance to the value using sensor calculations"""
         raise NotImplementedError("ProximitySensor.distance_to_value")
         
     def distance(self):
+        """Returns the distance instance"""
         return self.__distance
     
     def reading(self):
+        """Returns the reading value"""
         return self.distance_to_value(self.distance())
 
     def update_distance(self, sim_object = None):
+        """updates all the distances from the reading"""
         if sim_object is None:
             # reset distance to max
             self.__distance = 65536
@@ -73,12 +84,14 @@ class ProximitySensor(MountedSensor):
         return False
 
     def draw(self, r):
+        """draws the sensor simobject"""
         r.set_pose(self.get_pose())
         r.set_brush(self.get_color())
         r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
         r.draw_polygon(self.pts)
         
     def get_distance_to(self, sim_object):
+        """Gets the distance to another simobject"""
         ox, oy, ot = self.get_pose()
         min_distance = None
         for px, py in self.get_contact_points(sim_object):

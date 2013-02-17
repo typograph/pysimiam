@@ -362,14 +362,14 @@ class Polygon(object):
         uses GJK algorithm. for details see:
 
         Bergen, Gino Van Den. (1999). A fast and robust GJK implementation for
-          collision detection of convex objects. Journal of Graphics Tools 4(2).
+        collision detection of convex objects. Journal of Graphics Tools 4(2).
 
         arguments:
         other -- a Polygon object
 
         keyword arguments
         r -- initial search direction; setting r to the movement vector of
-          self - other may speed convergence
+        self - other may speed convergence
         """
         P, Q = self.P, other.P
         support = _Support(P, Q) # support mapping function s_P-Q(r)
@@ -385,44 +385,44 @@ class Polygon(object):
     def raycast(self, other, r, s=array([0, 0]), self_theta=0, other_theta=0):
         """
         return the hit scalar, hit vector, and hit normal from self to other in
-          direction r
+        direction r
         uses GJK-based raycast[1] modified to accomodate constant angular
-          rotation[2][3] without needing to recompute the Minkowski Difference
-          after each iteration[4].
+        rotation[2][3] without needing to recompute the Minkowski Difference
+        after each iteration[4].
 
         [1] Bergen, Gino Van Den. (2004). Ray casting against general convex
-          objects with application to continuous collision detection. GDC 2005.
-          retrieved from
-          http://www.bulletphysics.com/ftp/pub/test/physics/papers/
-            jgt04raycast.pdf
-          on 6 July 2011.
+        objects with application to continuous collision detection. GDC 2005.
+        retrieved from
+        http://www.bulletphysics.com/ftp/pub/test/physics/papers/
+        jgt04raycast.pdf
+        on 6 July 2011.
 
         [2] Coumans, Erwin. (2005). Continuous collision detection and physics.
-          retrieved from
-          http://www.continuousphysics.com/
-            BulletContinuousCollisionDetection.pdf
-          on 18 January 2012
+        retrieved from
+        http://www.continuousphysics.com/
+        BulletContinuousCollisionDetection.pdf
+        on 18 January 2012
 
         [3] Mirtich, Brian Vincent. (1996). Impulse-based dynamic simulation of
-          rigid body systems. PhD Thesis. University of California at Berkely.
-          retrieved from
-          http://www.kuffner.org/james/software/dynamics/mirtich/
-            mirtichThesis.pdf
-          on 18 January 2012
+        rigid body systems. PhD Thesis. University of California at Berkely.
+        retrieved from
+        http://www.kuffner.org/james/software/dynamics/mirtich/
+        mirtichThesis.pdf
+        on 18 January 2012
 
         [4] Behar, Evan and Jyh-Ming Lien. (2011). Dynamic Minkowski Sum of
-          convex shapes.  In proceedings of IEEE ICRA 2011. retrieved from
-          http://masc.cs.gmu.edu/wiki/uploads/GeneralizedMsum/
-            icra11-dynsum-convex.pdf
-          on 18 January 2012.
+        convex shapes.  In proceedings of IEEE ICRA 2011. retrieved from
+        http://masc.cs.gmu.edu/wiki/uploads/GeneralizedMsum/
+        icra11-dynsum-convex.pdf
+        on 18 January 2012.
 
         arguments:
         other -- Polygon object
         r -- direction vector
-          NOTE: GJK searches IN THE DIRECTION of r, thus r needs to point
-            towards the origin with respect to the direction vector of self; in
-            other words, if r represents the movement of self then client code
-            should call raycast with -r.
+        NOTE: GJK searches IN THE DIRECTION of r, thus r needs to point
+        towards the origin with respect to the direction vector of self; in
+        other words, if r represents the movement of self then client code
+        should call raycast with -r.
 
         keyword arguments:
         s -- initial position along r, (0, 0) by default
@@ -431,9 +431,9 @@ class Polygon(object):
         returns:
         if r does not intersect other, returns False
         else, returns the hit scalar, hit vector, and hit normal
-          hit scalar -- the scalar where r intersects other
-          hit vector -- the vector where self intersects other
-          hit normal -- the edge normal at the intersection
+        hit scalar -- the scalar where r intersects other
+        hit vector -- the vector where self intersects other
+        hit normal -- the edge normal at the intersection
         """
         self_rmax, other_rmax = self.rmax, other.rmax
 

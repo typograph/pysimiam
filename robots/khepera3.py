@@ -6,18 +6,20 @@ from math import ceil, exp, sin, cos, tan, pi
 from helpers import Struct
 
 class Khepera3_IRSensor(ProximitySensor):
+    """Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors"""
     def __init__(self,pose,robot):
         # values copied from SimIAm    
         ProximitySensor.__init__(self, pose, robot, (0.02, 0.2, np.radians(20)))
 
     def distance_to_value(self,dst):
+        """Returns the distance calculation from the distance readings of the proximity sensors""" 
         if dst < self.rmin :
             return 3960;
         else:
             return (3960*exp(-30*(dst-self.rmin)));
 
 class Khepera3(Robot):
-    
+    """Inherts for the simobject--->robot class for behavior specific to the Khepera3""" 
     def __init__(self, pose, color = 0xFFFFFF):
         Robot.__init__(self, pose, color)
         
