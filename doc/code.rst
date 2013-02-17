@@ -8,8 +8,11 @@ Supervisor/Controller Device
 .. automodule:: controller
     :members:
 
-Example Controllers
--------------------
+Example Controllers/Supervisors
+-------------------------------
+.. automodule:: supervisors.template
+    :members:
+
 .. automodule:: controllers.template
     :members:
 
@@ -42,12 +45,6 @@ SimObject
     :members:
 
 .. automodule:: sensor
-    :members:
-.. autoclass:: Sensor
-    :members:
-.. autoclass:: MountedSensor
-    :members:
-.. autoclass:: ProximitySensor
     :members:
 
 UI
