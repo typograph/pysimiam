@@ -1,4 +1,3 @@
-"""Provides a dock for the Qt Simulator Widget to controll PID elements"""
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
 from helpers import Struct
@@ -257,6 +256,7 @@ class ParamDock(QtGui.QDockWidget):
         return self.widget() == self.__panel
         
 class DockManager(QObject):
+    """Provides a dock for the Qt Simulator Widget to controll PID elements"""
     def __init__(self, parent, apply_callback):
         QObject.__init__(self, parent)
         self.docks = {}

@@ -51,30 +51,13 @@ UI
 --
 .. automodule:: dockwindow
     :members:
-.. autoclass:: DockManager
-    :members:
-.. autoclass:: ParamDock
-    :members:
-.. autoclass:: ParamWidget
-    :members:
-.. autoclass:: Contents
-    :members:
-.. autoclass:: Group
-    :members:
-.. autoclass:: Entry
-    :members:
 
 .. automodule:: qtsimiam
     :members:
-.. autoclass:: SimulationWidget
-    :members:
 
-.. automodule:: renderer
-    :members:
-.. autoclass:: Renderer
-    :members:
+.. autoclass:: renderer.Renderer
 
-.. automodule:: qtrenderer
+.. autoclass:: qtrenderer.QtRenderer
     :members:
 
 Simulator

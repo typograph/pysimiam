@@ -1,7 +1,6 @@
-"""QtSimiam
-Author: Tim Fuchs
-Description: This is the top-level application for QtSimiam.
-"""
+#QtSimiam
+#Author: Tim Fuchs
+#Description: This is the top-level application for QtSimiam.
 import sys
 sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
