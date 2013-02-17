@@ -4,6 +4,9 @@ class Struct:
         #return str(self.__dict__)
 
 def load_by_name(module_string, path = None):
+    """Loads a module to the code by name string.
+    @params: module_string - module.ModuleName, 
+    path - path to module"""
     try:
         filename, class_name = module_string.split(".")
     except ValueError:
