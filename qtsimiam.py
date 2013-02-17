@@ -10,11 +10,11 @@ from qtrenderer import QtRenderer
 from dockwindow import ParamDock, DockManager
 
 import simulator as sim
-import queue
+import Queue as queue
 
-class SimulatorEvent(QtCore.QEvent):
-    def type(self):
-        return QtCore.QEvent.User
+#class SimulatorEvent(QtCore.QEvent):
+    #def type(self):
+        #return QtCore.QEvent.User
 
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
@@ -66,10 +66,11 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__in_queue = self._simulator_thread._out_queue
                                                
         self.__dockmanager = DockManager(self)
+        self.__dockmanager.apply_request.connect(self.apply_parameters)
 
         self._simulator_thread.start()
         
-        QtCore.QApplication.postEvent(self, SimulatorEvent())
+        QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
 
     def __create_toolbars(self):
         
@@ -196,11 +197,11 @@ class SimulationWidget(QtGui.QMainWindow):
         self._on_pause()
         if self._world_dialog.exec_():
             self.__dockmanager.clear()
-            self.__sim_queue('read_config',(self._world_dialog.selectedFiles()[0]))
+            self.__sim_queue.put(('read_config',(self._world_dialog.selectedFiles()[0],)))
             
     @QtCore.pyqtSlot(bool)
     def _show_grid(self,show):
-        self.__sim_queue.put(('show_grid',(show)))
+        self.__sim_queue.put(('show_grid',(show,)))
             
     @QtCore.pyqtSlot()
     def _zoom_scene(self):
@@ -211,18 +212,18 @@ class SimulationWidget(QtGui.QMainWindow):
     def _zoom_robot(self):
         self.__zoom_slider.setEnabled(True)
         self.__sim_queue.put(('focus_on_robot',()))
-        self.__sim_queue.put(('adjust_zoom',(5.0**(self.__zoom_slider.value()/100.0))))
+        self.__sim_queue.put(('adjust_zoom',(5.0**(self.__zoom_slider.value()/100.0),)))
             
     @QtCore.pyqtSlot(int)
     def _scale_zoom(self,value):
         zoom = 5.0**(value/100.0)
-        self.__sim_queue.put(('adjust_zoom',(zoom)))
+        self.__sim_queue.put(('adjust_zoom',(zoom,)))
         self.__zoom_label.setText(" Zoom: %.1fx"%(zoom))
 
     @QtCore.pyqtSlot(int)
     def _scale_time(self,value):
         m = 10.0**((value-self.__zoom_factor)/100.0)
-        self.__sim_queue.put(('set_time_multiplier',(m)))
+        self.__sim_queue.put(('set_time_multiplier',(m,)))
         self.__speed_label.setText(" Speed: %.1fx"%m)
 
     @QtCore.pyqtSlot()
@@ -234,23 +235,38 @@ class SimulationWidget(QtGui.QMainWindow):
     def event(self, event):
         if event.type() == QtCore.QEvent.User:
             # Process again
-            QtCore.QApplication.postEvent(self, SimulatorEvent())
+            QtCore.QCoreApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
             if not self.__in_queue.empty():
-                name, args = self.__in_queue.get()
-                if name in self.__dict__:
-                    self.__dict__[name](*args)
+                tpl = self.__in_queue.get()
+                if isinstance(tpl,tuple) and len(tpl) == 2:
+                    name, args = tpl
+                    if name in self.__class__.__dict__:
+                        try:
+                            self.__class__.__dict__[name](self,*args)
+                        except TypeError:
+                            print "Wrong UI event parameters {}{}".format(name,args)
+                            raise
+                    else:
+                        print "Unknown UI event '{}'".format(name)
                 else:
-                    print "Unknown event {}".format(name)
+                    print "Wrong UI event format '{}'".format(tpl)
                 self.__in_queue.task_done()
             return True
         else:
-            return QMainWindow.event(self,event)
+            return QtGui.QMainWindow.event(self,event)
 
+    def apply_parameters(robot_id, params):
+        self.__sim_queue.put('apply_parameters', (robot_id, params))
+            
 ### Queue processing
         
     def simulator_running(self):
         self.__sim_timer.start()
         self.__speed_slider.setEnabled(True)
+    
+    def simulator_paused(self):
+        self.__sim_timer.stop()
+        self.__speed_slider.setEnabled(False)
 
     def simulator_stopped(self):
         self.__sim_timer.stop()

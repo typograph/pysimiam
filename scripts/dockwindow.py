@@ -117,11 +117,12 @@ class Contents(Group):
         return p
 
 class ParamWidget(QtGui.QWidget):
-    def __init__(self, parent, window_id, parameters, callback):
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    
+    def __init__(self, parent, window_id, parameters):
         """Construct a new dockwindow following the parameters dict.
         """
         self.id_ = window_id
-        self.apply_callback = callback
         
         QtGui.QWidget.__init__(self, parent)
 
@@ -174,14 +175,12 @@ class ParamWidget(QtGui.QWidget):
     @pyqtSlot()
     def apply_click(self):
         p = self.contents.get_struct()
-        #print p
-        self.apply_callback(self.id_,p)
-        pass
+        self.apply_request.emit(self.id_,p)
     
     @pyqtSlot()
     def save_click(self):
         pass
-
+    
     @pyqtSlot()
     def load_click(self):
         pass
@@ -189,7 +188,7 @@ class ParamWidget(QtGui.QWidget):
 class ParamDock(QtGui.QDockWidget):
     title_click = pyqtSignal()
 
-    def __init__(self, parent, window_id, window_name, window_color, parameters, callback):
+    def __init__(self, parent, window_id, window_name, window_color, parameters):
         """Construct a new dockwindow following the parameters dict.
         """
         QtGui.QDockWidget.__init__(self, window_name, parent)
@@ -199,11 +198,9 @@ class ParamDock(QtGui.QDockWidget):
         self.__panel.hide()
         self.__panel.setFixedHeight(1)
 
-        self.apply_callback = callback
-
         self.__click = False
 
-        self.__widget = None
+        self._widget = None
         self.reset(window_id, window_color, parameters)
 
     def set_color(self, window_color):
@@ -220,12 +217,12 @@ class ParamDock(QtGui.QDockWidget):
 
     def reset(self,window_id, window_color, parameters):
         self.set_color(window_color)    
-        if self.__widget is not None:
-            self.__widget.hide()
-            self.__widget.deleteLater()
-        self.__widget = ParamWidget(self, window_id, parameters, self.apply_callback)
+        if self._widget is not None:
+            self._widget.hide()
+            self._widget.deleteLater()
+        self._widget = ParamWidget(self, window_id, parameters)
         if not self.is_collapsed():
-            self.setWidget(self.__widget)
+            self.setWidget(self._widget)
 
     def event(self, event):
         if event.type() == QEvent.MouseButtonPress:
@@ -244,22 +241,23 @@ class ParamDock(QtGui.QDockWidget):
     
     def expand(self, bool_expand = True):
         if bool_expand:
-            self.setWidget(self.__widget)
-            self.__widget.show()
+            self.setWidget(self._widget)
+            self._widget.show()
             self.__panel.hide()
         else:
             self.setWidget(self.__panel)
             self.__panel.show()
-            self.__widget.hide()
+            self._widget.hide()
     
     def is_collapsed(self):
         return self.widget() == self.__panel
         
 class DockManager(QObject):
-    def __init__(self, parent, apply_callback):
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    
+    def __init__(self, parent):
         QObject.__init__(self, parent)
         self.docks = {}
-        self.apply_callback = apply_callback
         self.clear()
 
     def dock_to_name(self,dock):
@@ -275,6 +273,7 @@ class DockManager(QObject):
             old_dock.dockLocationChanged.disconnect()
             old_dock.topLevelChanged.disconnect()
             old_dock.title_click.disconnect()
+            old_dock.apply_request.disconnect()
             old_dock.deleteLater()
             if old_dock in self.docks_left:
                 self.docks_left.remove(old_dock)
@@ -305,7 +304,7 @@ class DockManager(QObject):
         
         dock = ParamDock(self.parent(),
                          robot_id, name, robot_id.get_color(),
-                         parameters, self.apply_callback)
+                         parameters)
         self.docks[name] = dock
         
         if side == 'left':
@@ -326,6 +325,7 @@ class DockManager(QObject):
         dock.dockLocationChanged.connect(self.dock_location_changed)
         dock.topLevelChanged.connect(self.dock_level_changed)
         dock.title_click.connect(self.dock_user_expanded)
+        dock._widget.apply_request.connect(self.apply_request)
            
     def add_dock_left(self, robot_id, name, parameters):
         self.add_dock(robot_id, name, parameters, 'left')

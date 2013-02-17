@@ -1,7 +1,7 @@
 """Simulator Thread
 """
 import threading
-import queue
+import Queue as queue
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
@@ -102,7 +102,9 @@ class Simulator(threading.Thread):
                     name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
                         supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
-                    self.make_param_ui(robot, name, supervisor.get_ui_description())
+                    self._out_queue.put(("make_param_window",
+                                            (robot, name,
+                                             supervisor.get_ui_description())))
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
@@ -146,11 +148,11 @@ class Simulator(threading.Thread):
         maxsize = 0
         for robot in self._robots:
             xmin, ymin, xmax, ymax = robot.get_bounds()
-            maxsize = max(maxsize,sqrt((xmax-xmin)^2 + (ymax-ymin)^2))
+            maxsize = max(maxsize,sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
         if maxsize == 0:
             self._zoom_default = 1
         else:
-            self._zoom_default = max(self._renderer.size)/maxsize
+            self._zoom_default = max(self._renderer.size)/maxsize/10
             
     def reset_world(self):
         if self._world is None:
@@ -265,14 +267,14 @@ class Simulator(threading.Thread):
     def start_simulation(self):
         if self._robots:
             self.__state = RUN
-            self._out_queue.put('simulator_running',())
+            self._out_queue.put(('simulator_running',()))
 
     def is_running(self):
         return self.__state == RUN
 
     def pause_simulation(self):
         self.__state = PAUSE
-        self._out_queue.put('simulator_stopped',())
+        self._out_queue.put(('simulator_stopped',()))
 
     def reset_simulation(self):
         self.pause_simulation()
@@ -335,11 +337,19 @@ class Simulator(threading.Thread):
 
     def process_queue(self):
         while not self._in_queue.empty():
-            name, args = self._in_queue.get()
-            if name in self.__dict__:
-                self.__dict__[name](*args)
+            tpl = self._in_queue.get()
+            if isinstance(tpl,tuple) and len(tpl) == 2:
+                name, args = tpl
+                if name in self.__class__.__dict__:
+                    try:
+                        self.__class__.__dict__[name](self,*args)
+                    except TypeError:
+                        print "Wrong simulator event parameters {}{}".format(name,args)
+                        raise
+                else:
+                    print "Unknown simulator event '{}'".format(name)
             else:
-                print "Unknown simulator event {}".format(name)
+                print "Wrong simulator event format '{}'".format(tpl)
             self._in_queue.task_done()
     
     def update_sensors(self):
