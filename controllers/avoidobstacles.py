@@ -64,8 +64,8 @@ class AvoidObstacles(Controller):
         self.goalx, self.goaly = state.goal.x, state.goal.y
     
         #Non-global goal
-        goalx, goaly = self.calculate_new_goal(state.ir_distances) #user defined function
-        v_ = self.calculate_new_velocity(state.ir_distances) #user defined function
+        goalx, goaly = self.calculate_new_goal(state.ir_readings) #user defined function
+        v_ = self.calculate_new_velocity(state.ir_readings) #user defined function
 
         #1. Calculate simple proportional error
         error = math.atan2(goaly - self.roboty, goalx - self.robotx) - self.robottheta 

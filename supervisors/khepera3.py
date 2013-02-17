@@ -5,7 +5,6 @@ from math import pi, sin, cos
 from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
-    
     def __init__(self, robot_pose, robot_info):
         Supervisor.__init__(self, robot_pose, robot_info)
 
@@ -16,6 +15,7 @@ class K3Supervisor(Supervisor):
         self.right_ticks = robot_info.wheels.right_ticks
                     
     def get_default_parameters(self):
+        """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
         p.goal = Struct()
         p.goal.x = -5.0
@@ -29,7 +29,7 @@ class K3Supervisor(Supervisor):
         return p
         
     def get_ui_description(self,p = None):
-
+        """Returns the UI description for the docker"""
         if p is None:
             p = self.ui_params
         
@@ -52,6 +52,7 @@ class K3Supervisor(Supervisor):
         self.gtg.set_parameters(params.pid.gains)
 
     def uni2diff(self,uni):
+        """Convert between unicycle model to differential model"""
         (v,w) = uni
         # Assignment Week 2
         vr = (self.robot.wheels.base_length*w +2*v)/2/self.robot.wheels.radius
@@ -60,12 +61,13 @@ class K3Supervisor(Supervisor):
         return (vl,vr)
             
     def process(self):
+        """Select controller and insert data into a state info structure for the controller"""
         # Controller is already selected
         # Parameters are nearly in the right format for go-to-goal
         raise NotImplementedError('Supervisor.process') 
     
     def estimate_pose(self):
-        """Update self.pose_est"""
+        """Update self.pose_est using odometry"""
         
         # Get tick updates
         dtl = self.robot.wheels.left_ticks - self.left_ticks
@@ -99,5 +101,6 @@ class K3Supervisor(Supervisor):
         return Pose(x_new, y_new, theta_new)
             
     def execute(self, robot_info, dt):
+        """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
         return self.uni2diff(output)

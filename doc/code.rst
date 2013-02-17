@@ -110,9 +110,19 @@ Supervisor/Controller Device
 
 Khepera3 Specific Modules
 -------------------------
-.. automodule:: khepera3
+.. automodule:: robots.khepera3
     :members:
 .. autoclass:: Khepera3
     :members:
 .. autoclass:: Khepera3_IRSensor
+    :members:
+
+.. automodule:: supervisors.khepera3
+    :members:
+.. autoclass:: K3Supervisor
+    :members:
+
+.. automodule:: supervisors.k3defaultsupervisor
+    :members:
+.. autoclass:: K3DefaultSupervisor
     :members:

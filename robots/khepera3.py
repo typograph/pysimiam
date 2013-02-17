@@ -12,6 +12,7 @@ class Khepera3_IRSensor(ProximitySensor):
         ProximitySensor.__init__(self, pose, robot, (0.02, 0.2, np.radians(20)))
 
     def distance_to_value(self,dst):
+        """Returns the distance calculation from the distance readings of the proximity sensors""" 
         if dst < self.rmin :
             return 3960;
         else:

@@ -3,6 +3,7 @@ from supervisor import Supervisor
 
 class K3DefaultSupervisor(K3Supervisor):
     def __init__(self, robot_pose, robot_info):
+        """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
@@ -12,8 +13,10 @@ class K3DefaultSupervisor(K3Supervisor):
         self.current = self.gtg
 
     def process(self):
+        """Selects the best controller based on ir sensor readings
+        Updates ui_params.pose and ui_params.ir_readings"""
         self.ui_params.pose = self.pose_est
-        self.ui_params.ir_distances = self.robot.ir_sensors.readings
+        self.ui_params.ir_readings = self.robot.ir_sensors.readings
         self.current = self.gtg # default selection
         for reading in self.robot.ir_sensors.readings:
             if reading > 10.0:
