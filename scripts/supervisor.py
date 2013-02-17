@@ -1,12 +1,11 @@
-"""PySimiam
-Author: John Alexander
-ChangeDate: 8 FEB 2013; 2300EST
-Description: This is the Supervisor class for PySimiam.
-"""
-
+#PySimiam
+#Author: John Alexander
+#ChangeDate: 8 FEB 2013; 2300EST
+#Description: This is the Supervisor class for PySimiam.
 import helpers
 
 class Supervisor:
+    """The supervisor class creates a superclass for interfacing with robot objects. Any extension of pysimiam will require inheriting from this superclass."""
     def __init__(self, robot_pose, robot_info):
         """
         @param:     robot_pose - Pose object

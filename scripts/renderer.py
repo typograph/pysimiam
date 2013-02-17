@@ -5,9 +5,9 @@
 from pose import Pose
 
 class Renderer:
+    """Superclass for interfacing the python simulator to different UI graphics context"""
     def __init__(self, canvas):
         """Create a Renderer on canvas of size _size_.
-        
         The default pen and brush are transparent
         """
         self._defpose = Pose() # The pose in the bottom-left corner

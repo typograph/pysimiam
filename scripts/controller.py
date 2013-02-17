@@ -1,11 +1,11 @@
-"""PySimiam
-Author: John Alexander
-ChangeDate: 8 FEB 2013; 2300EST
-Description: This is the Controller class for PySimiam.
-"""
+#PySimiam
+#Author: John Alexander
+#ChangeDate: 8 FEB 2013; 2300EST
+#Description: This is the Controller class for PySimiam.
 import math
 
 class Controller():
+    """The controller class defines a behavior for the supervisor class. Any implemention must inherit from this class and implement the 'execute' function to return a unicycle model output."""
     def __init__(self,params):
         """Initialize the controller with parameters
         @params: params - structure with PID constants.

@@ -1,6 +1,3 @@
-"""Renderer class for PyQt4
- A glue layer between SimObject and UI
-"""
 from numpy import degrees
 from pose import Pose
 from renderer import Renderer
@@ -8,6 +5,7 @@ from PyQt4.QtGui import QPainter,QColor,QPolygonF,QPen
 from PyQt4.QtCore import QPointF,QLineF,Qt
 
 class QtRenderer(Renderer):
+    """Renderer class for PyQt4: A glue layer between SimObject and UI"""
     def __init__(self, pd):
         """Creates a new renderer based on a QPaintDevice pd"""
         self._grid_pen = QPen(QColor(0x808080))
@@ -94,6 +92,7 @@ class QtRenderer(Renderer):
         self._painter.translate(dx,dy)
 
     def clear_screen(self):
+        """Erases the current screen with a white brush"""
         self._painter.save()
         self._painter.resetTransform()
         self.set_pen(0xFFFFFF)

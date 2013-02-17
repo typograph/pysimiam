@@ -56,8 +56,6 @@ UI
 
 .. automodule:: qtrenderer
     :members:
-.. autoclass:: QtRenderer
-    :members:
 
 Simulator
 ---------
@@ -96,12 +94,8 @@ Supervisor/Controller Device
 ----------------------------
 .. automodule:: supervisor
     :members:
-.. autoclass:: Supervisor
-    :members:
 
 .. automodule:: controller
-    :members:
-.. autoclass:: Controller
     :members:
 
 Khepera3 Specific Modules
