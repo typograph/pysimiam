@@ -3,8 +3,8 @@ import numpy as np
 
 class Pose(object):
     def __init__(self, *args):
-    """Units in mm.  
-    @param: args - (x, y, theta) tuple, Pose object, (x, y) tuple"""
+        """Units in mm.  
+        @param: args - (x, y, theta) tuple, Pose object, (x, y) tuple"""
         #Units in mm
         #convert to float just in case someone types an integer
         if len(args) == 0:
