@@ -70,6 +70,11 @@ class AvoidObstacles(Controller):
 
         self.robotx, self.roboty, self.robottheta = state.pose
         self.goalx, self.goaly = state.goal.x, state.goal.y
+
+        #If we have reached the goal... stop
+        if math.fabs(state.goal.x - self.robotx) < 0.001 and math.fabs(state.goal.y - self.roboty) < 0.001:
+            print 'stopping'
+            return [0, 0]
     
         #Non-global goal
         goalx, goaly = self.calculate_new_goal(state.ir_readings) #user defined function

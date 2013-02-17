@@ -42,11 +42,15 @@ class GoToGoal(Controller):
         self.E_k += e_k*dt
         
         #Estimate first wheel speed
-        _w = self.kp*e_k + \
+        w_ = self.kp*e_k + \
              self.ki*self.E_k + \
              self.kd*(e_k - self.e_k_1)/dt
 
         #store error
         self.e_k_1 = e_k
+
+        #set velocity
+        dist = math.sqrt((x_g - x_r)**2 + (y_g - x_r)**2)
+        v_ = min(state.velocity.v*(dist), state.velocity.v)
         
-        return [state.velocity.v, _w]
+        return [v_, w_]
