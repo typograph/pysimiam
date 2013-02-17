@@ -66,8 +66,8 @@ class Khepera3(Robot):
         self.info = Struct()
         self.info.wheels = Struct()
         # these were the original parameters
-        self.info.wheels.radius = 0.21
-        self.info.wheels.base_length = 0.885
+        self.info.wheels.radius = 0.021
+        self.info.wheels.base_length = 0.0885
         self.info.wheels.ticks_per_rev = 2765
         self.info.speed_factor = 6.2953e-6
         self.info.wheels.left_ticks = 0
@@ -122,8 +122,8 @@ class Khepera3(Robot):
     
     #def __coerce_wheel_speeds(self):
         #(v,w) = self.get_unicycle_speeds();
-        #v = max(min(v,0.314),-0.3148);
-        #w = max(min(w,2.276),-2.2763);
+        #v = max(min(v,0.3148),-0.3148);
+        #w = max(min(w,2.2763),-2.2763);
         #self.ang_velocity = self.uni2diff((v,w))
     
     def diff2uni(self,diff):
