@@ -1,5 +1,7 @@
 # Python pre-compiled
 *.pyc
+# trace analysis
+*.cover
 
 # Numerous always-ignore extensions
 *.diff
