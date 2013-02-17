@@ -62,6 +62,9 @@ UI
 
 Simulator
 ---------
+.. automodule:: simulator
+    :members:
+
 .. automodule:: xmlreader
     :members:
 .. autoclass:: XMLReader

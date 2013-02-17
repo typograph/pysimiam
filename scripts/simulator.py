@@ -13,6 +13,7 @@ PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
+    """Thread that manages simobjects and their collisions, updates, and drawing routines along with supervisor updates."""
     
     nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
                    0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
@@ -73,6 +74,7 @@ class Simulator(threading.Thread):
             self.construct_world()
 
     def construct_world(self):
+        """Creates objects from the xml settings configuration file"""
         if self._world is None:
             return
 
@@ -142,6 +144,7 @@ class Simulator(threading.Thread):
             self.__supervisor_param_cache = None
 
     def reset_world(self):
+        """Resets the world and objects to starting position"""
         if self._world is None:
             return
         self.__supervisor_param_cache = [sv.get_parameters() for sv in self._supervisors ]
@@ -184,6 +187,7 @@ class Simulator(threading.Thread):
             self.draw()
 
     def draw(self):
+        """Draws the world and items in it."""
         self._render_lock.acquire()
         if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
@@ -208,6 +212,7 @@ class Simulator(threading.Thread):
         self._render_lock.release()
 
     def focus_on_world(self):
+        """Centers the world on the drawing rectangle"""
         self.__center_on_robot = False
         xl, yb, xr, yt = self._robots[0].get_bounds()
         for obstacle in self._obstacles:
@@ -225,11 +230,13 @@ class Simulator(threading.Thread):
         self._render_lock.release()
 
     def focus_on_robot(self):
+        """Centers the view on the robot"""
         self._render_lock.acquire()
         self.__center_on_robot = True
         self._render_lock.release()
 
     def show_grid(self, show=True):
+        """Show gridlines on simulator view"""
         self._render_lock.acquire()
         self._renderer.show_grid(show)
         self._render_lock.release()
@@ -237,11 +244,13 @@ class Simulator(threading.Thread):
             self.draw()
 
     def adjust_zoom(self,factor):
+        """Set the zoom by a factor. @param: factor - float"""
         self._render_lock.acquire()
         self._renderer.scale_zoom_level(factor)
         self._render_lock.release()
         
     def apply_parameters(self,robot,parameters):
+        """Apply some parameters to the robot"""
         # FIXME at the moment we could change parameters during calculation!
         index = self._robots.index(robot)
         if index < 0:
@@ -251,27 +260,34 @@ class Simulator(threading.Thread):
 
     # Stops the thread
     def stop(self):
+        """Stops the simulator thread when the entire program is closed"""
         print 'stopping simulator thread'
         self.__stop = True
 
     def start_simulation(self):
+        """Starts the simulation"""
         if self._robots:
             self.__state = RUN
 
     def is_running(self):
+        """A getter for simulation state"""
         return self.__state == RUN
 
     def pause_simulation(self):
+        """pauses the simulation"""
         self.__state = PAUSE
 
     def reset_simulation(self):
+        """resets the simulation to the start position"""
         self.pause_simulation()
         self.reset_world()
 
     def set_time_multiplier(self,multiplier):
+        """"sets the time multiplier for speeding up simulation"""
         self.__time_multiplier = multiplier
 
     def get_time(self):
+        """get the present time from the time counter for display on the UI"""
         return self.__time
 
     def check_collisions(self):
