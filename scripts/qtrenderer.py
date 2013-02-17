@@ -1,8 +1,6 @@
-#
-# Renderer class for PyQt4
-#
-# A glue layer between SimObject and UI
-#
+"""Renderer class for PyQt4
+ A glue layer between SimObject and UI
+"""
 from numpy import degrees
 from pose import Pose
 from renderer import Renderer
@@ -11,8 +9,7 @@ from PyQt4.QtCore import QPointF,QLineF,Qt
 
 class QtRenderer(Renderer):
     def __init__(self, pd):
-        """Creates a new renderer based on a QPaintDevice pd
-        """
+        """Creates a new renderer based on a QPaintDevice pd"""
         self._grid_pen = QPen(QColor(0x808080))
         self._grid_pen.setStyle(Qt.DashLine)
         self._painter = None
@@ -20,8 +17,7 @@ class QtRenderer(Renderer):
 
     def set_canvas(self, canvas):
         """Tell the renderer to draw on canvas
-        The type of canvas is implementation-dependent
-        """
+        The type of canvas is implementation-dependent"""
         if self._painter is not None:
             self._painter.restore()
             self._painter.restore()
@@ -43,15 +39,13 @@ class QtRenderer(Renderer):
 
     def push_state(self):
         """Store the current state on the stack.
-        Current state includes default pose, pen and brush
-        """
+        Current state includes default pose, pen and brush"""
         ### FIXME store things
         self._painter.save()
 
     def pop_state(self):
         """Restore the last saved state from the stack
-        The state includes default pose, pen and brush
-        """
+        The state includes default pose, pen and brush"""
         ### FIXME store things
         self._painter.restore()
 
@@ -86,20 +80,17 @@ class QtRenderer(Renderer):
 
     def scale(self, factor):
         """Scale drawing operations by factor
-        To be implemented in subclasses.
-        """
+        To be implemented in subclasses."""
         self._painter.scale(factor,factor)
 
     def rotate(self, angle):
         """Rotate canvas by angle (in radians)
-        To be implemented in subclasses.
-        """
+        To be implemented in subclasses."""
         self._painter.rotate(degrees(angle))
 
     def translate(self, dx, dy):
         """Translate canvas by dx, dy
-        To be implemented in subclasses.
-        """
+        To be implemented in subclasses."""
         self._painter.translate(dx,dy)
 
     def clear_screen(self):
@@ -113,8 +104,7 @@ class QtRenderer(Renderer):
 
     @staticmethod
     def __qcolor(color):
-        """Returns qcolor for a given ARGB color
-        """
+        """Returns qcolor for a given ARGB color"""
         c = QColor(color)
         if color > 0xFFFFFF:
             c.setAlpha((color >> 24) & 0xFF)
@@ -122,8 +112,7 @@ class QtRenderer(Renderer):
 
     def set_pen(self,color):
         """Sets the line color.
-        Color is interpreted as 0xAARRGGBB.
-        """
+        Color is interpreted as 0xAARRGGBB."""
         if color is None:
             self._painter.setPen(Qt.NoPen)
         else:
@@ -131,8 +120,7 @@ class QtRenderer(Renderer):
 
     def set_brush(self,color):
         """Sets the fill color.
-        Color is interpreted as 0xAARRGGBB.
-        """
+        Color is interpreted as 0xAARRGGBB."""
         if color is None:
             self._painter.setBrush(Qt.NoBrush)
         else:
@@ -140,26 +128,21 @@ class QtRenderer(Renderer):
 
     def draw_polygon(self,points):
         """Draws a polygon.
-        Expects a list of points as a list of tuples or as a numpy array.
-        """
+        Expects a list of points as a list of tuples or as a numpy array."""
         self._painter.drawPolygon(QPolygonF([QPointF(*point[:2]) for point in points]))
 
     def draw_ellipse(self, x, y, w, h):
-        """Draws an ellipse.
-        """
+        """Draws an ellipse."""
         self._painter.drawEllipse(x,y,w,h)
 
     def draw_rectangle(self, x, y, w, h):
-        """Draws a rectangle.
-        """
+        """Draws a rectangle."""
         self._painter.drawRect(x,y,w,h)
 
     def draw_text(self, text, x, y, bgcolor = 0):
-        """Draws a text string at the defined position.
-        """
+        """Draws a text string at the defined position."""
         pass
 
     def draw_line(self, x1, y1, x2, y2):
-        """Draws a line using the current pen from (x1,y1) to (x2,y2)
-        """
+        """Draws a line using the current pen from (x1,y1) to (x2,y2)"""
         self._painter.drawLine(QLineF(x1,y1,x2,y2))
