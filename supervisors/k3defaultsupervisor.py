@@ -2,7 +2,7 @@ from khepera3 import K3Supervisor
 from supervisor import Supervisor
 
 class K3DefaultSupervisor(K3Supervisor):
-    """K3Default supervisor creates two default supervisors: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
+    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
     def __init__(self, robot_pose, robot_info):
         """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)

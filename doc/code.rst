@@ -5,12 +5,8 @@ SimObject
 ---------
 .. automodule:: pose
     :members:
-.. autoclass:: Pose
-    :members:
 
 .. automodule:: robot
-    :members:
-.. autoclass:: Robot
     :members:
 
 .. automodule:: simobject
@@ -111,10 +107,6 @@ Supervisor/Controller Device
 Khepera3 Specific Modules
 -------------------------
 .. automodule:: robots.khepera3
-    :members:
-.. autoclass:: Khepera3
-    :members:
-.. autoclass:: Khepera3_IRSensor
     :members:
 
 .. automodule:: supervisors.khepera3

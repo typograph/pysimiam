@@ -7,6 +7,7 @@ from scipy.integrate import ode
 from helpers import Struct
 
 class Khepera3_IRSensor(ProximitySensor):
+    """Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors"""
     def __init__(self,pose,robot):
         # values copied from SimIAm    
         ProximitySensor.__init__(self, pose, robot, (0.02, 0.2, np.radians(20)))
@@ -35,7 +36,7 @@ def motion_jac(t,y,v,w):
     return j
 
 class Khepera3(Robot):
-    
+    """Inherts for the simobject--->robot class for behavior specific to the Khepera3""" 
     def __init__(self, pose, color = 0xFFFFFF):
         Robot.__init__(self, pose, color)
         

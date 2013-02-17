@@ -1,7 +1,7 @@
-"""The pose class allows for a posing of objects in 2D space. The pose uses a right-hand coordinate system with counter-clockwise measurement of theta from the x-axis"""
 import numpy as np
 
 class Pose(object):
+    """The pose class allows for a posing of objects in 2D space. The pose uses a right-hand coordinate system with counter-clockwise measurement of theta from the x-axis"""
     def __init__(self, *args):
         """Units in mm.  
         @param: args - (x, y, theta) tuple, Pose object, (x, y) tuple"""

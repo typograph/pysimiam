@@ -1,13 +1,13 @@
-"""PySimiam
-Author: John Alexander
-ChangeDate: 8 FEB 2013; 2300EST
-Description: Example PID implementation for goal-seek (incomplete)
-"""
+#PySimiam
+#Author: John Alexander
+#ChangeDate: 8 FEB 2013; 2300EST
+#Description: Example PID implementation for goal-seek (incomplete)
 from controller import Controller
 import math
 import numpy
 
 class AvoidObstacles(Controller):
+    """Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines."""
     def __init__(self, params):
         '''read another .xml for PID parameters?'''
         self.kp=10
