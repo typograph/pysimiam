@@ -1,3 +1,5 @@
+"""The base class for creating drawn objects in teh simulator. 
+Posses both a Pose object and a color"""
 from math import sin, cos
 import pylygon
 from pose import Pose
@@ -52,10 +54,8 @@ class SimObject:
         return (xmin,ymin,xmax-xmin,ymax-ymin)
     
     def has_collision(self, other):
-        """Check if the object has collided with other
-        
-        Return True or False
-        """
+        """Check if the object has collided with other.
+        Return True or False"""
         self_poly = pylygon.Polygon(self.get_world_envelope())
         other_poly = pylygon.Polygon(other.get_world_envelope())
         
@@ -74,17 +74,14 @@ class SimObject:
     
     def get_contact_points(self, other):
         """Get a list of contact points with other object
-        Retrun a list of (x, y)
-        """
+        Retrun a list of (x, y)"""
         self_poly = pylygon.Polygon(self.get_world_envelope())
         other_poly = pylygon.Polygon(other.get_world_envelope())
         return self_poly.intersection_points(other_poly)
 
     def get_bounds(self):
-        """Get the smallest rectangle that contains the object
-        
-        Returns a tuple (xmin,ymin,xmax,ymax)
-        """
+        """Get the smallest rectangle that contains the object.
+        Returns a tuple (xmin,ymin,xmax,ymax)"""
         xs, ys = zip(*self.get_world_envelope())
         return (min(xs), min(ys), max(xs), max(ys))
             
