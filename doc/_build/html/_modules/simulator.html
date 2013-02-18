@@ -1,0 +1,443 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>simulator &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for simulator</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Simulator Thread</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">clock</span>
+<span class="kn">from</span> <span class="nn">xmlreader</span> <span class="kn">import</span> <span class="n">XMLReader</span>
+<span class="kn">import</span> <span class="nn">helpers</span>
+
+<span class="kn">import</span> <span class="nn">pose</span>
+<span class="kn">import</span> <span class="nn">simobject</span>
+<span class="kn">from</span> <span class="nn">quadtree</span> <span class="kn">import</span> <span class="n">QuadTree</span><span class="p">,</span> <span class="n">Rect</span>
+
+<span class="n">PAUSE</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">RUN</span> <span class="o">=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="Simulator"><a class="viewcode-back" href="../code.html#simulator.Simulator">[docs]</a><span class="k">class</span> <span class="nc">Simulator</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thread that manages simobjects and their collisions, updates, and drawing routines along with supervisor updates.&quot;&quot;&quot;</span>
+    
+    <span class="n">nice_colors</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x55AAEE</span><span class="p">,</span> <span class="mh">0x66BB22</span><span class="p">,</span> <span class="mh">0xFFBB22</span><span class="p">,</span> <span class="mh">0xCC66AA</span><span class="p">,</span>
+                   <span class="mh">0x77CCAA</span><span class="p">,</span> <span class="mh">0xFF7711</span><span class="p">,</span> <span class="mh">0xFF5555</span><span class="p">,</span> <span class="mh">0x55CC88</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">update_callback</span><span class="p">,</span> <span class="n">param_callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The viewer object supplies:</span>
+<span class="sd">            a Renderer (viewer.renderer),</span>
+<span class="sd">            a threading.Lock (viewer.lock) to lock painting</span>
+<span class="sd">        and a threading.Event (viewer.event) to signal the end of painting</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Simulator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="c">#Attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__stop</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="n">PAUSE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span> <span class="o">=</span> <span class="n">renderer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateView</span> <span class="o">=</span> <span class="n">update_callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_param_ui</span> <span class="o">=</span> <span class="n">param_callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># Zoom on scene - Move to read_config later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+        <span class="c"># World objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_background</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="c"># Internal objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#def __delete__(self):</span>
+        <span class="c">#self.__state = PAUSE</span>
+        <span class="c">#self.__stop = True</span>
+        <span class="c">#self._render_lock.acquire()</span>
+        <span class="c">#self._render_lock.release()</span>
+
+<div class="viewcode-block" id="Simulator.read_config"><a class="viewcode-back" href="../code.html#simulator.Simulator.read_config">[docs]</a>    <span class="k">def</span> <span class="nf">read_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Read in the objects from the XML configuration file &#39;&#39;&#39;</span>
+
+        <span class="k">print</span> <span class="s">&#39;reading initial configuration&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="o">=</span> <span class="n">XMLReader</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s">&#39;simulation&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[Simulator.read_config] Failed to parse &#39;</span> <span class="o">+</span> <span class="n">config</span> \
+                <span class="o">+</span> <span class="s">&#39;: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__supervisor_param_cache</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">construct_world</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.construct_world"><a class="viewcode-back" href="../code.html#simulator.Simulator.construct_world">[docs]</a>    <span class="k">def</span> <span class="nf">construct_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates objects from the xml settings configuration file&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_background</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="k">for</span> <span class="n">thing</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world</span><span class="p">:</span>
+            <span class="n">thing_type</span> <span class="o">=</span> <span class="n">thing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">thing_type</span> <span class="o">==</span> <span class="s">&#39;robot&#39;</span><span class="p">:</span>
+                <span class="n">robot_type</span><span class="p">,</span> <span class="n">supervisor_type</span><span class="p">,</span> <span class="n">robot_pose</span><span class="p">,</span> <span class="n">robot_color</span>  <span class="o">=</span> <span class="n">thing</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">robot_module</span><span class="p">,</span> <span class="n">robot_class</span> <span class="o">=</span> <span class="n">helpers</span><span class="o">.</span><span class="n">load_by_name</span><span class="p">(</span><span class="n">robot_type</span><span class="p">,</span><span class="s">&#39;robots&#39;</span><span class="p">)</span>
+                    <span class="n">robot</span> <span class="o">=</span> <span class="n">robot_class</span><span class="p">(</span><span class="n">pose</span><span class="o">.</span><span class="n">Pose</span><span class="p">(</span><span class="n">robot_pose</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">robot_color</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">robot</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">robot_color</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+                        <span class="n">robot</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nice_colors</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">)])</span>
+                    <span class="n">sup_module</span><span class="p">,</span> <span class="n">sup_class</span> <span class="o">=</span> <span class="n">helpers</span><span class="o">.</span><span class="n">load_by_name</span><span class="p">(</span><span class="n">supervisor_type</span><span class="p">,</span><span class="s">&#39;supervisors&#39;</span><span class="p">)</span>
+                    <span class="n">supervisor</span> <span class="o">=</span> <span class="n">sup_class</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_pose</span><span class="p">(),</span>
+                                           <span class="n">robot</span><span class="o">.</span><span class="n">get_info</span><span class="p">())</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Robot {}: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">sup_class</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__supervisor_param_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">supervisor</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__supervisor_param_cache</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span><span class="p">)])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">make_param_ui</span><span class="p">(</span><span class="n">robot</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">supervisor</span><span class="o">.</span><span class="n">get_ui_description</span><span class="p">())</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">supervisor</span><span class="p">)</span>
+                    <span class="c"># append robot after supervisor for the case of exceptions</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">robot</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">simobject</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_pose</span><span class="p">(),</span><span class="n">robot</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_color</span><span class="p">())</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;[Simulator.construct_world] Robot creation failed!&quot;</span>
+                    <span class="k">raise</span>
+                    <span class="c">#raise Exception(&#39;[Simulator.construct_world] Unknown robot type!&#39;)</span>
+            <span class="k">elif</span> <span class="n">thing_type</span> <span class="o">==</span> <span class="s">&#39;obstacle&#39;</span><span class="p">:</span>
+                <span class="n">obstacle_pose</span><span class="p">,</span> <span class="n">obstacle_coords</span><span class="p">,</span> <span class="n">obstacle_color</span> <span class="o">=</span> <span class="n">thing</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">obstacle_color</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">obstacle_color</span> <span class="o">=</span> <span class="mh">0xFF0000</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">simobject</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span><span class="n">pose</span><span class="o">.</span><span class="n">Pose</span><span class="p">(</span><span class="n">obstacle_pose</span><span class="p">),</span>
+                                      <span class="n">obstacle_coords</span><span class="p">,</span>
+                                      <span class="n">obstacle_color</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">thing_type</span> <span class="o">==</span> <span class="s">&#39;marker&#39;</span><span class="p">:</span>
+                <span class="n">obj_pose</span><span class="p">,</span> <span class="n">obj_coords</span><span class="p">,</span> <span class="n">obj_color</span> <span class="o">=</span> <span class="n">thing</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">obj_color</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">obj_color</span> <span class="o">=</span> <span class="mh">0x00FF00</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_background</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">simobject</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span><span class="n">pose</span><span class="o">.</span><span class="n">Pose</span><span class="p">(</span><span class="n">obj_pose</span><span class="p">),</span>
+                                      <span class="n">obj_coords</span><span class="p">,</span>
+                                      <span class="n">obj_color</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[Simulator.construct_world] Unknown object: &#39;</span>
+                                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">thing_type</span><span class="p">))</span>
+                                
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[Simulator.construct_world] No robot specified!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">focus_on_world</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__supervisor_param_cache</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Simulator.reset_world"><a class="viewcode-back" href="../code.html#simulator.Simulator.reset_world">[docs]</a>    <span class="k">def</span> <span class="nf">reset_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Resets the world and objects to starting position&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__supervisor_param_cache</span> <span class="o">=</span> <span class="p">[</span><span class="n">sv</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span> <span class="k">for</span> <span class="n">sv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span> <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">construct_world</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&#39;starting simulator thread&#39;</span>
+
+        <span class="n">time_constant</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 20 milliseconds</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">clear_screen</span><span class="p">()</span> <span class="c">#create a white screen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateView</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stop</span><span class="p">:</span>
+
+            <span class="n">sleep</span><span class="p">(</span><span class="n">time_constant</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">__time_multiplier</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">==</span> <span class="n">RUN</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">supervisor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span><span class="p">):</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_info</span><span class="p">()</span>
+                    <span class="n">inputs</span> <span class="o">=</span> <span class="n">supervisor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span> <span class="n">info</span><span class="p">,</span> <span class="n">time_constant</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_inputs</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">__time</span> <span class="o">+=</span> <span class="n">time_constant</span>
+
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">robot</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">):</span>
+                    <span class="n">robot</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">time_constant</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_point</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_pose</span><span class="p">())</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_collisions</span><span class="p">():</span>
+                    <span class="k">print</span> <span class="s">&quot;Collision detected!&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="n">PAUSE</span>
+                    <span class="c">#self.__stop = True</span>
+                <span class="c">#self.update_sensors()</span>
+
+            <span class="c"># Draw to buffer-bitmap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Simulator.draw"><a class="viewcode-back" href="../code.html#simulator.Simulator.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws the world and items in it.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span><span class="p">:</span>
+            <span class="c"># Temporary fix - center onto first robot</span>
+            <span class="n">robot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">set_screen_center_pose</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_pose</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">clear_screen</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">bg_object</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_background</span><span class="p">:</span>
+            <span class="n">bg_object</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">obstacle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span><span class="p">:</span>
+            <span class="n">obstacle</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="p">)</span>
+
+        <span class="c"># Draw the robots, trackers and sensors after obstacles</span>
+        <span class="k">for</span> <span class="n">tracker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trackers</span><span class="p">:</span>
+            <span class="n">tracker</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">robot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">:</span>
+            <span class="n">robot</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="p">)</span>
+            <span class="n">robot</span><span class="o">.</span><span class="n">draw_sensors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateView</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.focus_on_world"><a class="viewcode-back" href="../code.html#simulator.Simulator.focus_on_world">[docs]</a>    <span class="k">def</span> <span class="nf">focus_on_world</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Centers the world on the drawing rectangle&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">xl</span><span class="p">,</span> <span class="n">yb</span><span class="p">,</span> <span class="n">xr</span><span class="p">,</span> <span class="n">yt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_bounds</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">obstacle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span><span class="p">:</span>
+            <span class="n">xlo</span><span class="p">,</span> <span class="n">ybo</span><span class="p">,</span> <span class="n">xro</span><span class="p">,</span> <span class="n">yto</span> <span class="o">=</span> <span class="n">obstacle</span><span class="o">.</span><span class="n">get_bounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">xlo</span> <span class="o">&lt;</span> <span class="n">xl</span><span class="p">:</span>
+                <span class="n">xl</span> <span class="o">=</span> <span class="n">xlo</span>
+            <span class="k">if</span> <span class="n">xro</span> <span class="o">&gt;</span> <span class="n">xr</span><span class="p">:</span>
+                <span class="n">xr</span> <span class="o">=</span> <span class="n">xro</span>
+            <span class="k">if</span> <span class="n">ybo</span> <span class="o">&lt;</span> <span class="n">yb</span><span class="p">:</span>
+                <span class="n">yb</span> <span class="o">=</span> <span class="n">ybo</span>
+            <span class="k">if</span> <span class="n">yto</span> <span class="o">&gt;</span> <span class="n">yt</span><span class="p">:</span>
+                <span class="n">yt</span> <span class="o">=</span> <span class="n">yto</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">set_view_rect</span><span class="p">(</span><span class="n">xl</span><span class="p">,</span><span class="n">yb</span><span class="p">,</span><span class="n">xr</span><span class="o">-</span><span class="n">xl</span><span class="p">,</span><span class="n">yt</span><span class="o">-</span><span class="n">yb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.focus_on_robot"><a class="viewcode-back" href="../code.html#simulator.Simulator.focus_on_robot">[docs]</a>    <span class="k">def</span> <span class="nf">focus_on_robot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Centers the view on the robot&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__center_on_robot</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.show_grid"><a class="viewcode-back" href="../code.html#simulator.Simulator.show_grid">[docs]</a>    <span class="k">def</span> <span class="nf">show_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show gridlines on simulator view&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">show_grid</span><span class="p">(</span><span class="n">show</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">!=</span> <span class="n">RUN</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.adjust_zoom"><a class="viewcode-back" href="../code.html#simulator.Simulator.adjust_zoom">[docs]</a>    <span class="k">def</span> <span class="nf">adjust_zoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the zoom by a factor. @param: factor - float&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">scale_zoom_level</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="Simulator.apply_parameters"><a class="viewcode-back" href="../code.html#simulator.Simulator.apply_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">apply_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">robot</span><span class="p">,</span><span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply some parameters to the robot&quot;&quot;&quot;</span>
+        <span class="c"># FIXME at the moment we could change parameters during calculation!</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">robot</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Robot not found&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_supervisors</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="c"># Stops the thread</span></div>
+<div class="viewcode-block" id="Simulator.stop"><a class="viewcode-back" href="../code.html#simulator.Simulator.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stops the simulator thread when the entire program is closed&quot;&quot;&quot;</span>
+        <span class="k">print</span> <span class="s">&#39;stopping simulator thread&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__stop</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="Simulator.start_simulation"><a class="viewcode-back" href="../code.html#simulator.Simulator.start_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">start_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Starts the simulation&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="n">RUN</span>
+</div>
+<div class="viewcode-block" id="Simulator.is_running"><a class="viewcode-back" href="../code.html#simulator.Simulator.is_running">[docs]</a>    <span class="k">def</span> <span class="nf">is_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A getter for simulation state&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">==</span> <span class="n">RUN</span>
+</div>
+<div class="viewcode-block" id="Simulator.pause_simulation"><a class="viewcode-back" href="../code.html#simulator.Simulator.pause_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">pause_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;pauses the simulation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="n">PAUSE</span>
+</div>
+<div class="viewcode-block" id="Simulator.reset_simulation"><a class="viewcode-back" href="../code.html#simulator.Simulator.reset_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">reset_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;resets the simulation to the start position&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pause_simulation</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_world</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Simulator.set_time_multiplier"><a class="viewcode-back" href="../code.html#simulator.Simulator.set_time_multiplier">[docs]</a>    <span class="k">def</span> <span class="nf">set_time_multiplier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">multiplier</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;sets the time multiplier for speeding up simulation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_multiplier</span> <span class="o">=</span> <span class="n">multiplier</span>
+</div>
+<div class="viewcode-block" id="Simulator.get_time"><a class="viewcode-back" href="../code.html#simulator.Simulator.get_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the present time from the time counter for display on the UI&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__time</span>
+</div>
+<div class="viewcode-block" id="Simulator.check_collisions"><a class="viewcode-back" href="../code.html#simulator.Simulator.check_collisions">[docs]</a>    <span class="k">def</span> <span class="nf">check_collisions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Detect collisions between objects &#39;&#39;&#39;</span>
+        
+        <span class="n">collisions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">checked_robots</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span> <span class="o">=</span> <span class="n">QuadTree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obstacles</span><span class="p">)</span>
+        
+        <span class="c"># check each robot</span>
+        <span class="k">for</span> <span class="n">robot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">:</span>
+                
+            <span class="c"># update proximity sensors</span>
+            <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">robot</span><span class="o">.</span><span class="n">get_external_sensors</span><span class="p">():</span>
+                <span class="n">sensor</span><span class="o">.</span><span class="n">get_world_envelope</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="n">Rect</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">get_bounding_rect</span><span class="p">())</span>
+                <span class="n">sensor</span><span class="o">.</span><span class="n">update_distance</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">obstacle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span><span class="o">.</span><span class="n">find_items</span><span class="p">(</span><span class="n">rect</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">update_distance</span><span class="p">(</span><span class="n">obstacle</span><span class="p">)):</span>
+                        <span class="k">print</span> <span class="s">&quot;{0} -&gt; {1} Distance:{2}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">sensor</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">,</span> <span class="n">sensor</span><span class="o">.</span><span class="n">distance</span><span class="p">())</span>
+            
+            <span class="n">rect</span> <span class="o">=</span> <span class="n">Rect</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get_bounding_rect</span><span class="p">())</span>
+            
+            <span class="c"># against nearest obstacles</span>
+            <span class="k">for</span> <span class="n">obstacle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__qtree</span><span class="o">.</span><span class="n">find_items</span><span class="p">(</span><span class="n">rect</span><span class="p">):</span>
+                <span class="c"># Test Code: print &quot;In proximity to:&quot;, obstacle</span>
+                <span class="k">if</span> <span class="n">robot</span><span class="o">.</span><span class="n">has_collision</span><span class="p">(</span><span class="n">obstacle</span><span class="p">):</span>
+                    <span class="n">collisions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">robot</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">))</span>
+            
+            <span class="c"># against other robots</span>
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_robots</span><span class="p">:</span> 
+                <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="n">robot</span><span class="p">:</span> <span class="k">continue</span>
+                <span class="c">#TODO: robot.update_sensors(other)</span>
+                <span class="k">if</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">checked_robots</span><span class="p">:</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">robot</span><span class="o">.</span><span class="n">has_collision</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+                    <span class="n">collisions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">robot</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+
+            <span class="n">checked_robots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">robot</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">collisions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Test code - print out collisions</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">robot</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">)</span> <span class="ow">in</span> <span class="n">collisions</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Collision between:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">robot</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">obstacle</span>
+            <span class="c"># end of test code</span>
+            <span class="k">return</span> <span class="bp">True</span>
+                
+        <span class="k">return</span> <span class="bp">False</span>
+
+    </div>
+<div class="viewcode-block" id="Simulator.update_sensors"><a class="viewcode-back" href="../code.html#simulator.Simulator.update_sensors">[docs]</a>    <span class="k">def</span> <span class="nf">update_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Update robot&#39;s sensors &#39;&#39;&#39;</span>
+        <span class="c"># Depricated </span>
+        <span class="k">return</span>
+        
+<span class="c">#end class Simulator</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

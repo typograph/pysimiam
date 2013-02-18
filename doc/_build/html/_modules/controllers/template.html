@@ -1,0 +1,137 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>controllers.template &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for controllers.template</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<div class="viewcode-block" id="Template"><a class="viewcode-back" href="../../code.html#controllers.template.Template">[docs]</a><span class="k">class</span> <span class="nc">Template</span><span class="p">(</span><span class="n">Controller</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Template controller with required functions&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="c">#Must declare some k values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kp</span><span class="o">=</span><span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ki</span><span class="o">=</span><span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kd</span><span class="o">=</span><span class="mi">0</span>
+
+        <span class="c">#Good idea to initialize some error variables </span>
+        <span class="c"># E - integral error</span>
+        <span class="c"># error_1 - the previous error measurement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_1</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Template.set_parameters"><a class="viewcode-back" href="../../code.html#controllers.template.Template.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set PID values</span>
+<span class="sd">        @param: (float) kp, ki, kd</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kp</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">kp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ki</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">ki</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kd</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">kd</span>
+</div>
+<div class="viewcode-block" id="Template.execute"><a class="viewcode-back" href="../../code.html#controllers.template.Template.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Required function: must return a unicycle model</span>
+
+<span class="sd">        return --&gt; unicycle model list [velocity, omega]&quot;&quot;&quot;</span>
+
+        <span class="c">#1. Calculate simple proportional error</span>
+        <span class="c">#2. Correct for angles (angle may be greater than PI)</span>
+        <span class="c">#3. Calculate integral error</span>
+        <span class="c">#4. Calculate differential error</span>
+        <span class="c">#5. Calculate desired omega</span>
+
+        <span class="c">#You need to modify these values!!</span>
+        <span class="n">v_</span> <span class="o">=</span> <span class="mi">0</span> <span class="c">#some default value</span>
+        <span class="n">w_</span> <span class="o">=</span> <span class="mi">0</span> <span class="c">#another default value</span>
+        <span class="c">#6. Return solution</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">v_</span><span class="p">,</span> <span class="n">w_</span><span class="p">]</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

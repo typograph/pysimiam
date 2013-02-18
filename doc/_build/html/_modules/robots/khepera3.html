@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>robots.khepera3 &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for robots.khepera3</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pose</span> <span class="kn">import</span> <span class="n">Pose</span>
+<span class="kn">from</span> <span class="nn">sensor</span> <span class="kn">import</span> <span class="n">ProximitySensor</span>
+<span class="kn">from</span> <span class="nn">robot</span> <span class="kn">import</span> <span class="n">Robot</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">ceil</span><span class="p">,</span> <span class="n">exp</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">tan</span><span class="p">,</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">ode</span>
+<span class="kn">from</span> <span class="nn">helpers</span> <span class="kn">import</span> <span class="n">Struct</span>
+
+<div class="viewcode-block" id="Khepera3_IRSensor"><a class="viewcode-back" href="../../code.html#robots.khepera3.Khepera3_IRSensor">[docs]</a><span class="k">class</span> <span class="nc">Khepera3_IRSensor</span><span class="p">(</span><span class="n">ProximitySensor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pose</span><span class="p">,</span><span class="n">robot</span><span class="p">):</span>
+        <span class="c"># values copied from SimIAm    </span>
+        <span class="n">ProximitySensor</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">,</span> <span class="n">robot</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">20</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="Khepera3_IRSensor.distance_to_value"><a class="viewcode-back" href="../../code.html#robots.khepera3.Khepera3_IRSensor.distance_to_value">[docs]</a>    <span class="k">def</span> <span class="nf">distance_to_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dst</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the distance calculation from the distance readings of the proximity sensors&quot;&quot;&quot;</span> 
+        <span class="k">if</span> <span class="n">dst</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmin</span> <span class="p">:</span>
+            <span class="k">return</span> <span class="mi">3960</span><span class="p">;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">3960</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="p">(</span><span class="n">dst</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">)));</span>
+</div></div>
+<div class="viewcode-block" id="motion_f"><a class="viewcode-back" href="../../code.html#robots.khepera3.motion_f">[docs]</a><span class="k">def</span> <span class="nf">motion_f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Drive problem</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">v</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span><span class="n">v</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span><span class="n">w</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="motion_jac"><a class="viewcode-back" href="../../code.html#robots.khepera3.motion_jac">[docs]</a><span class="k">def</span> <span class="nf">motion_jac</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Jacobian of the drive problem</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    
+    <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">v</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="c"># d(v*cos(theta))/dtheta</span>
+    <span class="n">j</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="c"># d(v*sin(theta))/dtheta</span>
+    <span class="k">return</span> <span class="n">j</span>
+</div>
+<div class="viewcode-block" id="Khepera3"><a class="viewcode-back" href="../../code.html#robots.khepera3.Khepera3">[docs]</a><span class="k">class</span> <span class="nc">Khepera3</span><span class="p">(</span><span class="n">Robot</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inherts for the simobject---&gt;robot class for behavior specific to the Khepera3&quot;&quot;&quot;</span> 
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="mh">0xFFFFFF</span><span class="p">):</span>
+        <span class="n">Robot</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+        
+        <span class="c"># create shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.031</span><span class="p">,</span>  <span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.031</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.033</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.052</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.021</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.057</span><span class="p">,</span>  <span class="mi">0</span>    <span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.052</span><span class="p">,</span>  <span class="mf">0.021</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.033</span><span class="p">,</span>  <span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.024</span><span class="p">,</span>  <span class="mf">0.064</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.033</span><span class="p">,</span>  <span class="mf">0.064</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.057</span><span class="p">,</span>  <span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.074</span><span class="p">,</span>  <span class="mf">0.010</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.010</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.057</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span> <span class="mf">0.033</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.064</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.025</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.064</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.042</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.048</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.010</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.048</span><span class="p">,</span>  <span class="mf">0.010</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.042</span><span class="p">,</span>  <span class="mf">0.043</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+
+        <span class="c"># create IR sensors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span> <span class="o">=</span> <span class="p">[]</span>
+              
+        <span class="n">ir_sensor_poses</span> <span class="o">=</span> <span class="p">[</span>
+                           <span class="n">Pose</span><span class="p">(</span><span class="o">-</span><span class="mf">0.038</span><span class="p">,</span>  <span class="mf">0.048</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">128</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.019</span><span class="p">,</span>  <span class="mf">0.064</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">75</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.050</span><span class="p">,</span>  <span class="mf">0.050</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">42</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.070</span><span class="p">,</span>  <span class="mf">0.017</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">13</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.070</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.017</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="mi">13</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.050</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.050</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span> <span class="mf">0.019</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.064</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="mi">75</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span><span class="o">-</span><span class="mf">0.038</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.048</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="mi">128</span><span class="p">)),</span>
+                           <span class="n">Pose</span><span class="p">(</span><span class="o">-</span><span class="mf">0.048</span><span class="p">,</span>  <span class="mf">0.000</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">180</span><span class="p">))</span>
+                           <span class="p">]</span>                          
+                           
+        <span class="k">for</span> <span class="n">pose</span> <span class="ow">in</span> <span class="n">ir_sensor_poses</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Khepera3_IRSensor</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span><span class="bp">self</span><span class="p">))</span>
+                                
+        <span class="c"># initialize motion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ang_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="c"># these were the original parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="mf">0.21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span> <span class="o">=</span> <span class="mf">0.885</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">ticks_per_rev</span> <span class="o">=</span> <span class="mi">2765</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">speed_factor</span> <span class="o">=</span> <span class="mf">6.2953e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">ir_sensors</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">ir_sensors</span><span class="o">.</span><span class="n">poses</span> <span class="o">=</span> <span class="n">ir_sensor_poses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">ir_sensors</span><span class="o">.</span><span class="n">readings</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">ode</span><span class="p">(</span><span class="n">motion_f</span><span class="p">,</span><span class="n">motion_jac</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">set_integrator</span><span class="p">(</span><span class="s">&#39;dopri5&#39;</span><span class="p">,</span><span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">rtol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">r</span><span class="p">):</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">set_pose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pose</span><span class="p">())</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">set_brush</span><span class="p">(</span><span class="mh">0xCCCCCC</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">draw_polygon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_p2</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">set_brush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_color</span><span class="p">())</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">draw_polygon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_p1</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">get_envelope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p2</span>
+    
+    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">):</span>
+<span class="c">#        print(&#39;(vel_r,vel_l) = (%0.6g,%0.6g)\n&#39; % self.ang_velocity);</span>
+<span class="c">#        print(&#39;Calculated velocities (v,w): (%0.3g,%0.3g)\n&#39; % self.get_unicycle_speeds());</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">set_initial_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pose</span><span class="p">()</span><span class="o">.</span><span class="n">get_list</span><span class="p">(),</span><span class="mi">0</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diff2uni</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_wheel_speeds</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">set_f_params</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">set_jac_params</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_pose</span><span class="p">(</span><span class="n">Pose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="c"># FIXME hack for wheel encoders</span>
+        <span class="n">ticks_per_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">ticks_per_rev</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span>
+        <span class="n">traveled</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="n">dt</span>
+        <span class="n">dtheta</span> <span class="o">=</span> <span class="n">w</span><span class="o">*</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span> <span class="o">+=</span> <span class="n">ticks_per_m</span><span class="o">*</span><span class="p">(</span><span class="n">traveled</span> <span class="o">-</span> <span class="n">dtheta</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span> <span class="o">+=</span> <span class="n">ticks_per_m</span><span class="o">*</span><span class="p">(</span><span class="n">traveled</span> <span class="o">+</span> <span class="n">dtheta</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">ir_sensors</span><span class="o">.</span><span class="n">readings</span> <span class="o">=</span> <span class="p">[</span><span class="n">sensor</span><span class="o">.</span><span class="n">reading</span><span class="p">()</span> <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span>
+    
+    <span class="k">def</span> <span class="nf">set_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">inputs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_wheel_speeds</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+    
+    <span class="c">#def __coerce_wheel_speeds(self):</span>
+        <span class="c">#(v,w) = self.get_unicycle_speeds();</span>
+        <span class="c">#v = max(min(v,0.314),-0.3148);</span>
+        <span class="c">#w = max(min(w,2.276),-2.2763);</span>
+        <span class="c">#self.ang_velocity = self.uni2diff((v,w))</span>
+    
+    <span class="k">def</span> <span class="nf">diff2uni</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">diff</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">vl</span><span class="p">,</span><span class="n">vr</span><span class="p">)</span> <span class="o">=</span> <span class="n">diff</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">vl</span><span class="o">+</span><span class="n">vr</span><span class="p">);</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span><span class="o">*</span><span class="p">(</span><span class="n">vr</span><span class="o">-</span><span class="n">vl</span><span class="p">);</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="c">#def uni2diff(self,uni):</span>
+        <span class="c">#(v,w) = uni</span>
+        <span class="c">## Assignment Week 2</span>
+        <span class="c">#vr = (self.info.wheels.base_length*w +2*v)/2/self.info.wheels.radius</span>
+        <span class="c">#vl = vr - self.info.wheels.base_length*w/self.info.wheels.radius</span>
+        <span class="c">## End Assignment</span>
+        <span class="c">#return (vl,vr)</span>
+    
+    <span class="k">def</span> <span class="nf">get_wheel_speeds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ang_velocity</span>
+    
+    <span class="k">def</span> <span class="nf">set_wheel_speeds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ang_velocity</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ang_velocity</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c">#self.__coerce_wheel_speeds()</span>
+
+    <span class="c">#def set_unicycle_speeds(self,*args):</span>
+        <span class="c">#if len(args) == 2:</span>
+            <span class="c">#self.ang_velocity = self.uni2diff(args)</span>
+        <span class="c">#else:</span>
+            <span class="c">#self.ang_velocity = self.uni2diff(args[0])</span>
+        <span class="c">#self.__coerce_wheel_speeds()</span>
+
+    <span class="k">def</span> <span class="nf">get_external_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span>
+
+<div class="viewcode-block" id="Khepera3.draw_sensors"><a class="viewcode-back" href="../../code.html#robots.khepera3.Khepera3.draw_sensors">[docs]</a>    <span class="k">def</span> <span class="nf">draw_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw the sensors that this robot has&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span><span class="p">:</span>
+            <span class="n">sensor</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">renderer</span><span class="p">)</span>
+            </div>
+    <span class="k">def</span> <span class="nf">update_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ir_sensors</span><span class="p">:</span>
+            <span class="n">sensor</span><span class="o">.</span><span class="n">update_distance</span><span class="p">()</span>
+    </div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">Khepera3</span><span class="p">(</span><span class="n">Pose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">diff2uni</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">uni2diff</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">uni2diff</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">diff2uni</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">diff2uni</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span><span class="mi">80</span><span class="p">)))</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
