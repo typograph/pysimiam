@@ -45,17 +45,21 @@ class ProximitySensor(MountedSensor):
         """
         MountedSensor.__init__(self,pose,robot)
         self.rmin, self.rmax, self.phi = geometry
-        self.pts = [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
-                    (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
-                    (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2)),
-                    (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
+        self.pts = self.get_cone(self.rmax)
+        self.fullcone = self.pts
                     
         self.__distance = 65536
-        self.set_color(0x11FF5566)
+        self.set_color(0x33FF5566)
 
+    def get_cone(self, distance):
+        return [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
+                (distance*cos(self.phi/2),distance*sin(self.phi/2)),
+                (distance*cos(self.phi/2),-distance*sin(self.phi/2)),
+                (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
+        
     def get_envelope(self):
         """Return the envelope of the sensor"""
-        return self.pts
+        return self.fullcone
 
     def distance_to_value(self,dst):
         """Returns the distance to the value using sensor calculations"""
@@ -74,11 +78,16 @@ class ProximitySensor(MountedSensor):
         if sim_object is None:
             # reset distance to max
             self.__distance = 65536
+            self.set_color(0x33FF5566)
+            self.pts = self.fullcone
             return True
         else:
             distance_to_obj = self.get_distance_to(sim_object)
             if distance_to_obj:
                 if self.__distance > distance_to_obj:
+                    #self.set_color(0x336655FF)
+                    self.set_color(0xCCFF5566)
+                    self.pts = self.get_cone(distance_to_obj)
                     self.__distance = distance_to_obj
                     return True
         return False
