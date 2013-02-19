@@ -65,15 +65,6 @@ Simulator
 .. automodule:: simulator
     :members:
 
-.. automodule:: xmlreader
-    :members:
-
-.. automodule:: xmlwriter
-    :members:
-
-.. automodule:: xmlobject
-    :members:
-
 .. automodule:: pylygon
     :members:
 .. autoclass:: Polygon
@@ -92,5 +83,16 @@ Simulator
 .. automodule:: helpers
     :members:
 .. autoclass:: Struct
+    :members:
+
+XML
+---
+.. automodule:: xmlreader
+    :members:
+
+.. automodule:: xmlwriter
+    :members:
+
+.. automodule:: xmlobject
     :members:
 
