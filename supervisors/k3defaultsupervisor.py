@@ -23,7 +23,6 @@ class K3DefaultSupervisor(K3Supervisor):
             if distance < 0.19:
                 self.current = self.avoidobstacles
                 break
-                
 
         return self.ui_params
 
