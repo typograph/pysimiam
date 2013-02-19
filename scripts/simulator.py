@@ -78,6 +78,8 @@ class Simulator(threading.Thread):
         if self._world is None:
             return
 
+        helpers.unload_user_modules()
+            
         self._robots = []
         self._obstacles = []
         self._supervisors = []
