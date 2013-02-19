@@ -17,13 +17,12 @@ class K3DefaultSupervisor(K3Supervisor):
         """Selects the best controller based on ir sensor readings
         Updates ui_params.pose and ui_params.ir_readings"""
         self.ui_params.pose = self.pose_est
-        self.ui_params.ir_readings = self.robot.ir_sensors.readings
+        self.ui_params.ir_distances = self.get_ir_distances()
         self.current = self.gtg # default selection
-        for reading in self.robot.ir_sensors.readings:
-            if reading > 10.0:
+        for distance in self.ui_params.ir_distances:
+            if distance < 0.19:
                 self.current = self.avoidobstacles
                 break
-                
 
         return self.ui_params
 
