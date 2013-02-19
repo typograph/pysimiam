@@ -50,7 +50,6 @@ class GoToGoal(Controller):
         self.e_k_1 = e_k
 
         #set velocity
-        dist = math.sqrt((x_g - x_r)**2 + (y_g - x_r)**2)
+        dist = math.sqrt((x_g - x_r)**2 + (y_g - y_r)**2)
         v_ = min(state.velocity.v*(dist), state.velocity.v)
-        
         return [v_, w_]

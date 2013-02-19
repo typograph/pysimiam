@@ -1,9 +1,11 @@
 """Simulator Thread
 """
 import threading
+import Queue as queue
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
+from math import sqrt
 
 import pose
 import simobject
@@ -18,7 +20,7 @@ class Simulator(threading.Thread):
     nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
                    0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
 
-    def __init__(self, renderer, update_callback, param_callback):
+    def __init__(self, renderer, in_queue):
         """
         The viewer object supplies:
             a Renderer (viewer.renderer),
@@ -31,15 +33,14 @@ class Simulator(threading.Thread):
         self.__stop = False
         self.__state = PAUSE
         self._renderer = renderer
-        self.updateView = update_callback
-        self.make_param_ui = param_callback
         self.__center_on_robot = False
+        
+        self._in_queue = in_queue
+        self._out_queue = queue.Queue()
 
         # Zoom on scene - Move to read_config later
         self.__time_multiplier = 1.0
         self.__time = 0.0
-
-        self._render_lock = threading.Lock()
 
         # World objects
         self._robots = []
@@ -47,6 +48,7 @@ class Simulator(threading.Thread):
         self._obstacles = []
         self._supervisors = []
         self._background = []
+        self._zoom_default = 1
 
         self._world = None
         
@@ -78,7 +80,8 @@ class Simulator(threading.Thread):
         if self._world is None:
             return
 
-        self._render_lock.acquire()
+        helpers.unload_user_modules()
+            
         self._robots = []
         self._obstacles = []
         self._supervisors = []
@@ -103,7 +106,9 @@ class Simulator(threading.Thread):
                     name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
                         supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
-                    self.make_param_ui(robot, name, supervisor.get_ui_description())
+                    self._out_queue.put(("make_param_window",
+                                            (robot, name,
+                                             supervisor.get_ui_description())))
                     self._supervisors.append(supervisor)
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
@@ -133,16 +138,26 @@ class Simulator(threading.Thread):
                 raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing_type))
                                 
-        self._render_lock.release()
         self.__time = 0.0
         if not self._robots:
             raise Exception('[Simulator.construct_world] No robot specified!')
         else:
+            self.recalculate_default_zoom()
             if not self.__center_on_robot:
                 self.focus_on_world()
             self.draw()
             self.__supervisor_param_cache = None
 
+    def recalculate_default_zoom(self):
+        maxsize = 0
+        for robot in self._robots:
+            xmin, ymin, xmax, ymax = robot.get_bounds()
+            maxsize = max(maxsize,sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
+        if maxsize == 0:
+            self._zoom_default = 1
+        else:
+            self._zoom_default = max(self._renderer.size)/maxsize/10
+            
     def reset_world(self):
         """Resets the world and objects to starting position"""
         if self._world is None:
@@ -153,12 +168,10 @@ class Simulator(threading.Thread):
     def run(self):
         print 'starting simulator thread'
 
-        time_constant = 0.02  # 20 milliseconds
+        time_constant = 0.02 # 20 milliseconds
         
-        self._render_lock.acquire()
         self._renderer.clear_screen() #create a white screen
-        self.updateView()
-        self._render_lock.release()
+        self.update_view()
 
         while not self.__stop:
 
@@ -177,6 +190,8 @@ class Simulator(threading.Thread):
                     robot.move(time_constant)
                     self._trackers[i].add_point(robot.get_pose())
 
+                # the parameters that might have been changed have no effect
+                # on collisions
                 if self.check_collisions():
                     print "Collision detected!"
                     self.__state = PAUSE
@@ -188,7 +203,8 @@ class Simulator(threading.Thread):
 
     def draw(self):
         """Draws the world and items in it."""
-        self._render_lock.acquire()
+        self.process_queue()
+
         if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self._robots[0]
@@ -208,9 +224,13 @@ class Simulator(threading.Thread):
             robot.draw(self._renderer)
             robot.draw_sensors(self._renderer)
 
-        self.updateView()
-        self._render_lock.release()
+        # update view
+        self.update_view()
 
+    def update_view(self):
+        self._out_queue.put(('update_view',()))
+        self._out_queue.join() # wait until drawn
+        
     def focus_on_world(self):
         """Centers the world on the drawing rectangle"""
         self.__center_on_robot = False
@@ -225,29 +245,22 @@ class Simulator(threading.Thread):
                 yb = ybo
             if yto > yt:
                 yt = yto
-        self._render_lock.acquire()
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
-        self._render_lock.release()
 
     def focus_on_robot(self):
         """Centers the view on the robot"""
-        self._render_lock.acquire()
         self.__center_on_robot = True
-        self._render_lock.release()
 
     def show_grid(self, show=True):
         """Show gridlines on simulator view"""
-        self._render_lock.acquire()
         self._renderer.show_grid(show)
-        self._render_lock.release()
         if self._robots[0] is not None and self.__state != RUN:
             self.draw()
+            self._out_queue.join()
 
     def adjust_zoom(self,factor):
         """Set the zoom by a factor. @param: factor - float"""
-        self._render_lock.acquire()
-        self._renderer.scale_zoom_level(factor)
-        self._render_lock.release()
+        self._renderer.set_zoom_level(self._zoom_default*factor)
         
     def apply_parameters(self,robot,parameters):
         """Apply some parameters to the robot"""
@@ -268,6 +281,7 @@ class Simulator(threading.Thread):
         """Starts the simulation"""
         if self._robots:
             self.__state = RUN
+            self._out_queue.put(('simulator_running',()))
 
     def is_running(self):
         """A getter for simulation state"""
@@ -276,6 +290,7 @@ class Simulator(threading.Thread):
     def pause_simulation(self):
         """pauses the simulation"""
         self.__state = PAUSE
+        self._out_queue.put(('simulator_stopped',()))
 
     def reset_simulation(self):
         """resets the simulation to the start position"""
@@ -339,6 +354,22 @@ class Simulator(threading.Thread):
                 
         return False
 
+    def process_queue(self):
+        while not self._in_queue.empty():
+            tpl = self._in_queue.get()
+            if isinstance(tpl,tuple) and len(tpl) == 2:
+                name, args = tpl
+                if name in self.__class__.__dict__:
+                    try:
+                        self.__class__.__dict__[name](self,*args)
+                    except TypeError:
+                        print "Wrong simulator event parameters {}{}".format(name,args)
+                        raise
+                else:
+                    print "Unknown simulator event '{}'".format(name)
+            else:
+                print "Wrong simulator event format '{}'".format(tpl)
+            self._in_queue.task_done()
     
     def update_sensors(self):
         ''' Update robot's sensors '''

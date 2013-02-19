@@ -23,13 +23,13 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
         p.goal = Struct()
-        p.goal.x = -5.0
-        p.goal.y = 5.0
+        p.goal.x = 0.0
+        p.goal.y = 0.5
         p.velocity = Struct()
-        p.velocity.v = 2.0
+        p.velocity.v = 0.2
         p.gains = Struct()
-        p.gains.kp = 1.0
-        p.gains.ki = 0.1
+        p.gains.kp = 10.0
+        p.gains.ki = 2.0
         p.gains.kd = 0.0
         return p
         
@@ -113,7 +113,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         x_new = x + x_dt
         y_new = y + y_dt                           
            
-        return Pose(x_new, y_new, theta_new)
+        return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
             
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""

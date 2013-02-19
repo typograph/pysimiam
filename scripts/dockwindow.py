@@ -1,6 +1,9 @@
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
 from helpers import Struct
+from xmlreader import XMLReader
+from xmlwriter import XMLWriter
+from collections import OrderedDict
 
 # Constructing UI from parameters:
 # 
@@ -17,17 +20,8 @@ from helpers import Struct
 # if it has at least one of such nodes inside
 
 class Entry():
-    def __init__(self,label_key,value):
-        if isinstance(label_key,str):
-            self.field = label_key
-            self.label = label_key.capitalize()
-        elif isinstance(label_key,tuple):
-            self.field = label_key[0]
-            self.label = label_key[1]
-            if len(label_key) > 2:
-                raise ValueError("Too many entries in key")            
-        else:
-            raise ValueError("Invalid tree key")
+    def __init__(self,label,value):
+        self.label = label
         self.value = value
     
     def create_widgets(self,parent,layout):
@@ -38,63 +32,75 @@ class Entry():
         self.control.setValue(self.value)
         layout.addRow(self.label,self.control)
     
-    def fill_struct(self,p):
-        self.value = self.control.value()
-        p.__dict__[self.field] = self.value
+    def get_value(self):
+        return self.control.value()
+
+    def get_struct(self):
+        return self.get_value()
         
-    #def set_parameters(self,p):
-        #pass
+    def set_value(self, value):
+        self.control.setValue(value)
     
 class Group():
-    def __init__(self,label_key,parameters):
+    def __init__(self,label,parameters):
         if not isinstance(parameters,dict):
             raise ValueError(
                 "Invalid tree leaf class {}".format(
                     parameters.__class__.__name__))
-        self.field_id = None
-        if isinstance(label_key,str):
-            self.field = label_key
-            self.label = label_key.capitalize()
-        elif isinstance(label_key,tuple):
-            self.field = label_key[0]
-            self.label = label_key[1]
-            if len(label_key) > 2:
-                self.field_id = label_key[2]
-        else:
-            raise ValueError("Invalid tree key")
-        self.leafs = []
-        self.n_entries = 0
-        self.n_groups = 0
+        self.label = label
+        self.leafs = OrderedDict()
         for key in parameters:
+            if isinstance(key,str):
+                dict_key = key
+                child_label = key.capitalize()
+            elif isinstance(key,tuple):
+                child_label = key[1]
+                if len(key) == 2:
+                    dict_key = key[0]
+                elif len(key) == 3:
+                    dict_key = (key[0], key[2])
+                else:
+                    raise ValueError("Too many entries in key")                                
+            else:
+                raise ValueError("Invalid tree key")
+            
             v = parameters[key]
             if isinstance(v,float):
-                self.leafs.append(Entry(key,v))
-                self.n_entries += 1
+                self.leafs[dict_key] = Entry(child_label,v)
             elif isinstance(v,int):
-                self.leafs.append(Entry(key,float(v)))
-                self.n_entries += 1
+                self.leafs[dict_key] = Entry(child_label,float(v))
             else:
-                self.leafs.append(Group(key,v))
-                self.n_groups += 1
+                self.leafs[dict_key] = Group(child_label,v)
         
     def create_widgets(self, parent, layout):
         self.box = QtGui.QGroupBox(self.label,parent)
         form_layout = QtGui.QFormLayout(self.box)
-        for leaf in self.leafs:
+        for leaf in self.leafs.values():
             leaf.create_widgets(self.box,form_layout)
         layout.addRow(self.box)
-    
-    def fill_struct(self,params):
-        p = Struct()
-        for leaf in self.leafs:
-            leaf.fill_struct(p)
-        if self.field_id is None:
-            params.__dict__[self.field] = p
-        else:
-            if self.field not in params.__dict__:
-                params.__dict__[self.field] = {}
-            params.__dict__[self.field][self.field_id] = p
+
+    def set_value(self, value):
+        if not isinstance(value,dict):
+            raise ValueError("Invalid parameter value {}".format(value))
+        for k, v in value.items():
+            if k in self.leafs:
+                self.leafs[k].set_value(v)
+            else:
+                raise KeyError("Key '{}' not accepted by supervisor".format(k))
         
+    def get_value(self):
+        return dict([(key, self.leafs[key].get_value()) for key in self.leafs])
+
+    def get_struct(self):
+        p = Struct()
+        for key, leaf in self.leafs.items():
+            if isinstance(key, tuple):
+                if key[0] not in p.__dict__:
+                    p.__dict__[key[0]] = {}
+                p.__dict__[key[0]][key[1]] = leaf.get_struct()
+            else:
+                p.__dict__[key] = leaf.get_struct()
+        return p
 
 class Contents(Group):
     def __init__(self,parameters):
@@ -102,42 +108,29 @@ class Contents(Group):
     
     def create_widgets(self, parent, layout):
         form_layout = QtGui.QFormLayout()
-        for leaf in self.leafs:
+        for leaf in self.leafs.values():
             leaf.create_widgets(parent,form_layout)
         layout.addLayout(form_layout)
     
-    def fill_struct(self):
-        """This method should not be called on this class"""
-        raise NotImplementedError("Contents.fill_struct")
-    
-    def get_struct(self):
-        p = Struct()
-        for leaf in self.leafs:
-            leaf.fill_struct(p)
-        return p
+    def get_xmlstruct(self):
+        return self.get_value()
 
+    def use_xmlstruct(self, params):
+        self.set_value(params)
+        
 class ParamWidget(QtGui.QWidget):
-    def __init__(self, parent, window_id, parameters, callback):
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    
+    def __init__(self, parent, window_id, parameters):
         """Construct a new dockwindow following the parameters dict.
         """
         self.id_ = window_id
-        self.apply_callback = callback
         
         QtGui.QWidget.__init__(self, parent)
 
         verticalLayout = QtGui.QVBoxLayout(self)
         verticalLayout.setContentsMargins(10,10,10,10)
         verticalLayout.setSpacing(10)
-        
-        # Big Label
-        #robot_label = QtGui.QLabel(window_name,self)
-        #font = QtGui.QFont(self.font())
-        #font.setPointSize(13)
-        #robot_label.setFont(font)
-        #robot_label.setFrameShape(QtGui.QFrame.Panel)
-        #robot_label.setFrameShadow(QtGui.QFrame.Sunken)
-        #robot_label.setAlignment(QtCore.Qt.AlignCenter)
-        #verticalLayout.addWidget(robot_label)
         
         # Contents
         self.contents = Contents(parameters)
@@ -150,11 +143,11 @@ class ParamWidget(QtGui.QWidget):
         self.apply_button.clicked.connect(self.apply_click)
         horizontalLayout.addWidget(self.apply_button)
         self.save_button = QtGui.QPushButton("Save",self)
-        self.save_button.setEnabled(False)
+        #self.save_button.setEnabled(False)
         self.save_button.clicked.connect(self.save_click)
         horizontalLayout.addWidget(self.save_button)
         self.load_button = QtGui.QPushButton("Load",self)
-        self.load_button.setEnabled(False)
+        #self.load_button.setEnabled(False)
         self.load_button.clicked.connect(self.load_click)
         horizontalLayout.addWidget(self.load_button)
 
@@ -174,22 +167,41 @@ class ParamWidget(QtGui.QWidget):
     @pyqtSlot()
     def apply_click(self):
         p = self.contents.get_struct()
-        #print p
-        self.apply_callback(self.id_,p)
-        pass
+        self.apply_request.emit(self.id_,p)
     
     @pyqtSlot()
     def save_click(self):
-        pass
-
+        filename = QtGui.QFileDialog.getSaveFileName(self,
+                        "Select a file for parameters",
+                        "supervisors",
+                        "XML files (*.xml)")
+        if filename is not None:
+            writer = XMLWriter(filename, 'parameters', self.contents.get_xmlstruct())
+            try:
+                writer.write()
+            except Exception as e:
+                QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
+    
     @pyqtSlot()
     def load_click(self):
-        pass
+        filename = QtGui.QFileDialog.getOpenFileName(self,
+                        "Select a file with parameters",
+                        "supervisors",
+                        "XML files (*.xml)")
+        if filename is not None:
+            reader = XMLReader(filename, 'parameters')
+            cache = self.contents.get_xmlstruct()
+            try:
+                self.contents.use_xmlstruct(reader.read())
+            except Exception as e:
+                QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
+                self.contents.use_xmlstruct(cache)
 
 class ParamDock(QtGui.QDockWidget):
     title_click = pyqtSignal()
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
 
-    def __init__(self, parent, window_id, window_name, window_color, parameters, callback):
+    def __init__(self, parent, window_id, window_name, window_color, parameters):
         """Construct a new dockwindow following the parameters dict.
         """
         QtGui.QDockWidget.__init__(self, window_name, parent)
@@ -198,8 +210,6 @@ class ParamDock(QtGui.QDockWidget):
         self.__panel = QtGui.QWidget(self)
         self.__panel.hide()
         self.__panel.setFixedHeight(1)
-
-        self.apply_callback = callback
 
         self.__click = False
 
@@ -223,7 +233,8 @@ class ParamDock(QtGui.QDockWidget):
         if self.__widget is not None:
             self.__widget.hide()
             self.__widget.deleteLater()
-        self.__widget = ParamWidget(self, window_id, parameters, self.apply_callback)
+        self.__widget = ParamWidget(self, window_id, parameters)
+        self.__widget.apply_request.connect(self.apply_request)
         if not self.is_collapsed():
             self.setWidget(self.__widget)
 
@@ -256,11 +267,12 @@ class ParamDock(QtGui.QDockWidget):
         return self.widget() == self.__panel
         
 class DockManager(QObject):
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    
     """Provides a dock for the Qt Simulator Widget to controll PID elements"""
-    def __init__(self, parent, apply_callback):
+    def __init__(self, parent):
         QObject.__init__(self, parent)
         self.docks = {}
-        self.apply_callback = apply_callback
         self.clear()
 
     def dock_to_name(self,dock):
@@ -276,6 +288,7 @@ class DockManager(QObject):
             old_dock.dockLocationChanged.disconnect()
             old_dock.topLevelChanged.disconnect()
             old_dock.title_click.disconnect()
+            old_dock.apply_request.disconnect()
             old_dock.deleteLater()
             if old_dock in self.docks_left:
                 self.docks_left.remove(old_dock)
@@ -306,7 +319,7 @@ class DockManager(QObject):
         
         dock = ParamDock(self.parent(),
                          robot_id, name, robot_id.get_color(),
-                         parameters, self.apply_callback)
+                         parameters)
         self.docks[name] = dock
         
         if side == 'left':
@@ -327,6 +340,7 @@ class DockManager(QObject):
         dock.dockLocationChanged.connect(self.dock_location_changed)
         dock.topLevelChanged.connect(self.dock_level_changed)
         dock.title_click.connect(self.dock_user_expanded)
+        dock.apply_request.connect(self.apply_request)
            
     def add_dock_left(self, robot_id, name, parameters):
         self.add_dock(robot_id, name, parameters, 'left')

@@ -43,7 +43,6 @@ class Supervisor:
 
     def add_controller(self, module_string, parameters):
         module, controller_class = helpers.load_by_name(module_string, 'controllers')
-        self.controller_modules[module_string] = (module, controller_class)
         return controller_class(parameters)
 
     def get_current(self):
