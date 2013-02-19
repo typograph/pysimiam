@@ -11,10 +11,11 @@ or
 
 
 Week 2: Unicycle to Differential Transformation
------------------------------------------------
+===============================================
 Week one is about download and familiarization. So onward...
 
-Part 1: Add unicycle to differential transformation to K3Supevisor
+Part 1: Unicycle to Differential
+--------------------------------
 
 1. Navigate to ./pysimiam/supervisors/khepera3.py and open it in an editor
 
@@ -57,7 +58,8 @@ And the differential model is:
 .. math::
     \frac{d\phi}{dt} = \frac{R}{L}*(v_r - v_l)
 
-Part 2: Add odometry for wheel tick conversion to distances
+Part 2: Odometry 
+-----------------------------------------------------------
 
 1. Open ./pysimiam/supevisors/khepera3.py in an editor.
 
@@ -79,17 +81,18 @@ You are given these variables:
 self.robot.wheels.left_ticks and .right_ticks are real integers representing the tick numbering of the encoder (not elapsed ticks... you have to calculate that). 
 
 
-You will need to implement a memory variable that stores the value read to perform the comparison. One example of how to do this might be:
+You will need to implement a memory variable to store previous values. One example of how to do this might be:
 
 prev_right_ticks = self.robot.wheels.right_ticks
 
 prev_left_ticks = self.robot.wheels.left_ticks
 
 
-Your objective is to solve for the change in x, y, and theta and from those values update the variables x_new, y_new, and theta_new from the given values. x_new, y_new, and theta_new will be used to update the estimated pose that the supevisor manages.
+Your objective is to solve for the change in x, y, and theta and from those values update the variables x_new, y_new, and theta_new. The values x_new, y_new, and theta_new will be used to update the estimated pose for the supervisor. 
 
 
-Part 3: Convert IR sensor readings to distances (in meters)
+Part 3: IR Distance calculation (in meters) 
+-----------------------------------------------------------
 
 1. Open ./pysimiam/supervisors/khepera3.py in a text editor.
 
@@ -112,3 +115,28 @@ Knowing that the sensitive range of distance is 0.02 meters to 0.2 meters and th
     \end{eqnarray}
 
 Convert to distances for the sensors and assign them to a list called ir_distances. 
+
+Week 3: Go To Goal Controller
+=============================
+1. Open ./pysimiam/controllers/gotogoal.py in an editor.
+2. Find the execute function in the controller with the appropriate label for week 3.
+
+Given the following variables:
+
+- state.goal.x
+
+- state.pose  (the robot's pose)
+
+To use the pose data, use a command like this:
+
+(x, y, theta) = state.pose
+
+
+3. Calculate the bearing (angle) to the goal (state.goal.x and state.goal.y)
+4. Calculate the error from the present heading (theta) and the bearing.
+5. Calculate proportional, integral, and differential terms of the PID.
+
+
+Week 4: Avoid Obstacles Controller
+==================================
+
