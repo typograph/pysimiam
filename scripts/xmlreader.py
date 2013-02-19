@@ -5,9 +5,6 @@ class XMLReader(XMLObject):
     """
     A class to handle reading and parsing of XML files for the simulator and 
     parameters configuration files.
-
-    Public API:
-        read(self) ------> the parsing function
     """
 
     _file = None
@@ -226,15 +223,26 @@ class XMLReader(XMLObject):
  
     def read(self):
         """ 
-        Call the correct parsing function 
-       
-        Scope:
-            Public 
-        Parameters:
-            None
-        Return:
-            The result of reading and parsing the file (type dependent on the 
-            template)
+        Read in and parse the XML given in *file_* representing the specified *template*.
+
+|        *Parameters:* 
+|         None
+|        *Return:*     
+|         The result of reading and parsing the file.  The type of return is dependent on the template, as follows:
+|           
+|           1) **simulation**: a list of tuples representing robots, obstacles, and markers, as follows:
+|                       ('robot', *robot_type*, *supervisor_type*, *pose*, *color*)
+|                       ('obstacle', *pose*, [*point1*, *point2*, *point3*, ...], *color*)
+|                       ('marker', *pose*, [*point1*, *point2*, *point3*, ...], *color*)
+|             
+|           2) **parameters**: a dictionary representing the structure of the XML, as follows:
+|                       { *root_element*:
+|                           { *parameter_name*: {*attribute_name*: *attribute_value*, ... },
+|                             ...
+|                             (*parameter_name*, *parameter_id*): {*attribute_name*: *attribute_value*, ... },
+|                             ...
+|                           }
+|                       }
         """
  
         if self._template == "parameters":

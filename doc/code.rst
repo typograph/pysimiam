@@ -67,12 +67,11 @@ Simulator
 
 .. automodule:: xmlreader
     :members:
-.. autoclass:: XMLReader
-    :members:
 
 .. automodule:: xmlwriter
     :members:
-.. autoclass:: XMLWriter
+
+.. automodule:: xmlobject
     :members:
 
 .. automodule:: pylygon

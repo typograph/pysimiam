@@ -4,9 +4,6 @@ class XMLWriter(XMLObject):
     """
     A class to handle saving XML files for the simulator and parameters
     entered via the UI.
-
-    Public API:
-        write(self) --> write the tree as XML to the given file
     """
 
     _file = None
@@ -106,14 +103,12 @@ class XMLWriter(XMLObject):
 
     def write(self):
         """
-        Write out the tree as XML to the given file
+        Write out the *tree* as XML representing the specified *template* to the given *file_*. 
 
-        Scope:
-            Public
-        Paramaters:
-            None
-        Return:
-            void
+|        *Paramaters:* 
+|         None
+|        *Return:* 
+|         void
         """
         
         if self._tree == None:

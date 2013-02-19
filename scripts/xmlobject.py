@@ -3,9 +3,6 @@ import xml.etree.ElementTree as ET
 class XMLObject(object):
     """
     Base class for XML handling.
-    
-    Public API:
-        validate(self, file_, schema) ------> validate XML against a schema
     """
 
     _file = None
@@ -28,14 +25,12 @@ class XMLObject(object):
 
     def validate(self, schema):
         """ 
-        Validate the xml against a given schema.
+        Validate the XML in *file_* against a given schema.
 
-        Scope:
-            Public
-        Parameters:
-            schema ---> path to the schema (.xsd) file
-        Return:
-            True if schema validates successfully, False otherwise 
+|        *Parameters:* 
+|            *schema*........path to the schema file (*must* be RelaxNG)
+|        *Return:* 
+|         True if schema validates successfully, False otherwise 
         """
 
         try:
