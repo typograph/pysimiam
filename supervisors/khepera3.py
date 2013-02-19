@@ -1,7 +1,7 @@
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
-from math import pi, sin, cos
+from math import pi, sin, cos, log1p
 from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
@@ -65,6 +65,16 @@ The UI may use the get_parameters function interface to create docker windows fo
         # End Assignment
         return (vl,vr)
             
+    def get_ir_distances(self):
+        """Converts the IR distance readings into a distance in meters"""
+        default_value = 3960
+        ir_distances = []
+        for reading in self.robot.ir_sensors.readings:
+            val = max( min( (log1p(3960) - log1p(reading))/30 + 0.02 , 3960) , 0.02)
+            ir_distances.append(val) 
+
+        return ir_distances
+
     def process(self):
         """Select controller and insert data into a state info structure for the controller"""
         # Controller is already selected

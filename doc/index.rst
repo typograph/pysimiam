@@ -6,17 +6,26 @@
 Welcome to PySimiam's documentation!
 ====================================
 
-Introduction.
-This program is a Sim.I.Am port of Jean-Pierre de la Croix's program along with python specific UI code interface.
+Introduction
+------------
+PySimiam is a robot simulator inspired by Jean-Pierre de la Croix's program named Sim.I.Am. Parts of Jean-Pierre's code is included specifically for application to the khepera3 robot. Special thanks to him for his hard work.
 
 Special notes
+-------------
 The program has the ability to change goal and parameters at runtime.
 
 Requirements
-Project depends on PyQt and Numpy
+------------
+Project depends on 
 
-Contents:
+PyQT ---> http://www.riverbankcomputing.com/software/pyqt/download
 
+Numpy --> http://www.scipy.org/Download
+
+Python 2.7 --> http://www.python.org/getit/
+
+Website Tree
+------------
 .. toctree::
    :maxdepth: 2
 

@@ -26,15 +26,15 @@ class AvoidObstacles(Controller):
         self.kd = params.kd
 
     #User-defined function
-    def calculate_new_goal(self, ir_readings):
+    def calculate_new_goal(self, ir_distances):
         """Determines a new goal for the robot based on which sensors are active"""
         #Normalize the angle values
         ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
 
         #travel orthogonally unless more then one point detected
         objlist = []
-        for i in range(0, len(ir_readings)):
-            if ir_readings[i] > 100:
+        for i in range(0, len(ir_distances)):
+            if ir_distances[i] < 0.19:
                 objlist.append(i)
             
         numobjects = len(objlist)
@@ -53,7 +53,7 @@ class AvoidObstacles(Controller):
         """Adjusts robot velocity based on distance to object"""
         #Compare values to range
         for dist in ir_distances:
-            if dist > 100:
+            if dist < 0.19:
                 return 0.1 
 
         #if nothing found
@@ -77,8 +77,8 @@ class AvoidObstacles(Controller):
             return [0, 0]
     
         #Non-global goal
-        goalx, goaly = self.calculate_new_goal(state.ir_readings) #user defined function
-        v_ = self.calculate_new_velocity(state.ir_readings) #user defined function
+        goalx, goaly = self.calculate_new_goal(state.ir_distances) #user defined function
+        v_ = self.calculate_new_velocity(state.ir_distances) #user defined function
 
         #1. Calculate simple proportional error
         error = math.atan2(goaly - self.roboty, goalx - self.robotx) - self.robottheta 
