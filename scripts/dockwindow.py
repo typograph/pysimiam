@@ -199,6 +199,7 @@ class ParamWidget(QtGui.QWidget):
 
 class ParamDock(QtGui.QDockWidget):
     title_click = pyqtSignal()
+    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
 
     def __init__(self, parent, window_id, window_name, window_color, parameters):
         """Construct a new dockwindow following the parameters dict.
@@ -212,7 +213,7 @@ class ParamDock(QtGui.QDockWidget):
 
         self.__click = False
 
-        self._widget = None
+        self.__widget = None
         self.reset(window_id, window_color, parameters)
 
     def set_color(self, window_color):
@@ -229,12 +230,13 @@ class ParamDock(QtGui.QDockWidget):
 
     def reset(self,window_id, window_color, parameters):
         self.set_color(window_color)    
-        if self._widget is not None:
-            self._widget.hide()
-            self._widget.deleteLater()
-        self._widget = ParamWidget(self, window_id, parameters)
+        if self.__widget is not None:
+            self.__widget.hide()
+            self.__widget.deleteLater()
+        self.__widget = ParamWidget(self, window_id, parameters)
+        self.__widget.apply_request.connect(self.apply_request)
         if not self.is_collapsed():
-            self.setWidget(self._widget)
+            self.setWidget(self.__widget)
 
     def event(self, event):
         if event.type() == QEvent.MouseButtonPress:
@@ -253,13 +255,13 @@ class ParamDock(QtGui.QDockWidget):
     
     def expand(self, bool_expand = True):
         if bool_expand:
-            self.setWidget(self._widget)
-            self._widget.show()
+            self.setWidget(self.__widget)
+            self.__widget.show()
             self.__panel.hide()
         else:
             self.setWidget(self.__panel)
             self.__panel.show()
-            self._widget.hide()
+            self.__widget.hide()
     
     def is_collapsed(self):
         return self.widget() == self.__panel
@@ -338,7 +340,7 @@ class DockManager(QObject):
         dock.dockLocationChanged.connect(self.dock_location_changed)
         dock.topLevelChanged.connect(self.dock_level_changed)
         dock.title_click.connect(self.dock_user_expanded)
-        dock._widget.apply_request.connect(self.apply_request)
+        dock.apply_request.connect(self.apply_request)
            
     def add_dock_left(self, robot_id, name, parameters):
         self.add_dock(robot_id, name, parameters, 'left')

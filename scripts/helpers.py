@@ -2,7 +2,7 @@ import sys
 
 class Struct:
     def __str__(self):
-        return "\{{}\}".format(", ".join(["{} : {}".format(k,v) for k,v in self.__dict__.items()]))
+        return "{{{}}}".format(", ".join(["{} : {}".format(k,v) for k,v in self.__dict__.items()]))
         #return str(self.__dict__)
 
 __loaded_modules = []
