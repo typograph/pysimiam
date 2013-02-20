@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>xmlreader &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for xmlreader</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">as</span> <span class="nn">ET</span>
+<span class="kn">from</span> <span class="nn">xmlobject</span> <span class="kn">import</span> <span class="n">XMLObject</span>
+
+<div class="viewcode-block" id="XMLReader"><a class="viewcode-back" href="../code.html#xmlreader.XMLReader">[docs]</a><span class="k">class</span> <span class="nc">XMLReader</span><span class="p">(</span><span class="n">XMLObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to handle reading and parsing of XML files for the simulator and </span>
+<span class="sd">    parameters configuration files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_root</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Construct a new XMLReader instance</span>
+
+<span class="sd">        Scope:</span>
+<span class="sd">            Public</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            file_ ------&gt; path to the file containing the XML</span>
+<span class="sd">            template ---&gt; &#39;simulator&#39; or &#39;parameters&#39;</span>
+<span class="sd">        Return:</span>
+<span class="sd">            A new XMLReader instance  </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">XMLReader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span>
+
+        <span class="n">_tree</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">file_</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[XMLReader.__init__] Could not open &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">ET</span><span class="o">.</span><span class="n">ParseError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[XMLReader.__init__] Could not parse &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_</span><span class="p">))</span>
+         
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root</span> <span class="o">=</span> <span class="n">_tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_parse_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Parse a parameters configuration file</span>
+<span class="sd">     </span>
+<span class="sd">        Scope:</span>
+<span class="sd">            Private </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            None</span>
+<span class="sd">        Return:</span>
+<span class="sd">            A dictionary encapsulating the parameters. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">:</span>
+            <span class="n">sub_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">sub</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">sub</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="n">sub_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">result</span><span class="p">[(</span><span class="n">sub</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">sub</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">))]</span> <span class="o">=</span> <span class="n">sub_dict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">sub</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">sub_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">sub</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_parameters] Bad value in XML!&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="o">.</span><span class="n">tag</span> <span class="p">:</span> <span class="n">result</span><span class="p">}</span> 
+ 
+    <span class="k">def</span> <span class="nf">_parse_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a color attribute value to int</span>
+<span class="sd">        </span>
+<span class="sd">        None will yield None, &#39;#FFACDD&#39; will yield 0xFFACDD</span>
+<span class="sd">        </span>
+<span class="sd">        Scope:</span>
+<span class="sd">            Private</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            color ----&gt; the color to be converted</span>
+<span class="sd">        Return:</span>
+<span class="sd">            An integer value in the (AA)RRGGBB format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">color</span>
+        <span class="k">if</span> <span class="n">color</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;#&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s">&#39;black&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mh">0x000000</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s">&#39;red&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mh">0xFF0000</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s">&#39;green&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mh">0x00FF00</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s">&#39;blue&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mh">0x0000FF</span>        
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;[XMLReader._parse_color] Bad color value in XML!&#39;</span><span class="p">)</span>
+ 
+    <span class="k">def</span> <span class="nf">_parse_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Parse a simulation configuration file</span>
+<span class="sd">       </span>
+<span class="sd">        Scope: </span>
+<span class="sd">            Private </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            None</span>
+<span class="sd">        Return:</span>
+<span class="sd">            A list of the objects in the simulation. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">simulator_objects</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># robots</span>
+        <span class="k">for</span> <span class="n">robot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;robot&#39;</span><span class="p">):</span>
+            <span class="n">robot_type</span> <span class="o">=</span> <span class="n">robot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">)</span>
+            <span class="n">supervisor</span> <span class="o">=</span> <span class="n">robot</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;supervisor&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">supervisor</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No supervisor specified!&#39;</span><span class="p">)</span>
+
+            <span class="n">pose</span> <span class="o">=</span> <span class="n">robot</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;pose&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pose</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No pose specified!&#39;</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;theta&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">theta</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s">&#39;[XMLReader._parse_simulation] Invalid pose!&#39;</span><span class="p">)</span>
+
+                <span class="n">robot_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_color</span><span class="p">(</span><span class="n">robot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;color&#39;</span><span class="p">))</span>
+
+                <span class="n">simulator_objects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39;robot&#39;</span><span class="p">,</span>
+                                          <span class="n">robot_type</span><span class="p">,</span>
+                                          <span class="n">supervisor</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span>
+                                          <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">theta</span><span class="p">)),</span>
+                                          <span class="n">robot_color</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] Invalid robot (bad value)!&#39;</span><span class="p">)</span> 
+
+        <span class="c"># obstacles</span>
+        <span class="k">for</span> <span class="n">obstacle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;obstacle&#39;</span><span class="p">):</span>
+            <span class="n">pose</span> <span class="o">=</span> <span class="n">obstacle</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;pose&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pose</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No pose specified!&#39;</span><span class="p">)</span>
+
+            <span class="n">geometry</span> <span class="o">=</span> <span class="n">obstacle</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;geometry&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">geometry</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No geometry specified!&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">geometry</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;point&#39;</span><span class="p">):</span>
+                    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">),</span> <span class="n">point</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                            <span class="s">&#39;[XMLReader._parse_simulation] Invalid point!&#39;</span><span class="p">)</span>
+                    <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s">&#39;[XMLReader._parse_simulation] Too few points!&#39;</span><span class="p">)</span>
+
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;theta&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">theta</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s">&#39;[XMLReader._parse_simulation] Invalid pose!&#39;</span><span class="p">)</span>
+
+                <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_color</span><span class="p">(</span><span class="n">obstacle</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;color&#39;</span><span class="p">))</span>
+                <span class="n">simulator_objects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39;obstacle&#39;</span><span class="p">,</span>
+                                          <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">theta</span><span class="p">)),</span>
+                                          <span class="n">points</span><span class="p">,</span>
+                                          <span class="n">color</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] Invalid obstacle (bad value)!&#39;</span><span class="p">)</span>
+        
+        <span class="c"># background</span>
+        <span class="k">for</span> <span class="n">marker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;marker&#39;</span><span class="p">):</span>
+            <span class="n">pose</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;pose&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pose</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No pose specified!&#39;</span><span class="p">)</span>
+            
+            <span class="n">geometry</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;geometry&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">geometry</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] No geometry specified!&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">geometry</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;point&#39;</span><span class="p">):</span>
+                    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">),</span> <span class="n">point</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                            <span class="s">&#39;[XMLReader._parse_simulation] Invalid point!&#39;</span><span class="p">)</span>
+                    <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+                    
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s">&#39;[XMLReader._parse_simulation] Too few points!&#39;</span><span class="p">)</span>
+                
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">),</span> <span class="n">pose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;theta&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">theta</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s">&#39;[XMLReader._parse_simulation] Invalid pose!&#39;</span><span class="p">)</span>
+                
+                <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_color</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;color&#39;</span><span class="p">))</span>
+                <span class="n">simulator_objects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39;marker&#39;</span><span class="p">,</span>
+                                          <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                                           <span class="nb">float</span><span class="p">(</span><span class="n">theta</span><span class="p">)),</span>
+                                          <span class="n">points</span><span class="p">,</span>
+                                          <span class="n">color</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s">&#39;[XMLReader._parse_simulation] Invalid marker (bad value)!&#39;</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="n">simulator_objects</span>
+ 
+<div class="viewcode-block" id="XMLReader.read"><a class="viewcode-back" href="../code.html#xmlreader.XMLReader.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Read in and parse the XML given in *file_* representing the specified *template*.</span>
+
+<span class="sd">|        *Parameters:* </span>
+<span class="sd">|         None</span>
+<span class="sd">|        *Return:*     </span>
+<span class="sd">|         The result of reading and parsing the file.  The type of return is dependent on the template, as follows:</span>
+<span class="sd">|           </span>
+<span class="sd">|           1) **simulation**: a list of tuples representing robots, obstacles, and markers, as follows:</span>
+<span class="sd">|                       (&#39;robot&#39;, *robot_type*, *supervisor_type*, *pose*, *color*)</span>
+<span class="sd">|                       (&#39;obstacle&#39;, *pose*, [*point1*, *point2*, *point3*, ...], *color*)</span>
+<span class="sd">|                       (&#39;marker&#39;, *pose*, [*point1*, *point2*, *point3*, ...], *color*)</span>
+<span class="sd">|             </span>
+<span class="sd">|           2) **parameters**: a dictionary representing the structure of the XML, as follows:</span>
+<span class="sd">|                       { *root_element*:</span>
+<span class="sd">|                           { *parameter_name*: {*attribute_name*: *attribute_value*, ... },</span>
+<span class="sd">|                             ...</span>
+<span class="sd">|                             (*parameter_name*, *parameter_id*): {*attribute_name*: *attribute_value*, ... },</span>
+<span class="sd">|                             ...</span>
+<span class="sd">|                           }</span>
+<span class="sd">|                       }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+ 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_template</span> <span class="o">==</span> <span class="s">&quot;parameters&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_parameters</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_template</span> <span class="o">==</span> <span class="s">&quot;simulation&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_simulation</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s">&#39;[XMLReader.read] Unknown template!&#39;</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

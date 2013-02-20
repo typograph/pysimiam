@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>supervisor &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for supervisor</h1><div class="highlight"><pre>
+<span class="c"># PySimiam Supervisor</span>
+<span class="kn">import</span> <span class="nn">helpers</span>
+
+<div class="viewcode-block" id="Supervisor"><a class="viewcode-back" href="../code.html#supervisor.Supervisor">[docs]</a><span class="k">class</span> <span class="nc">Supervisor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The supervisor class oversees the control of a single robot.</span>
+<span class="sd">        The supervisor does not move the robot directly. Instead, the supervisor</span>
+<span class="sd">        selects a controller to do the work and uses the controller outputs</span>
+<span class="sd">        to generate the robot inputs.</span>
+
+<span class="sd">        :param robot_pose: The initial pose of the robot,</span>
+<span class="sd">        :type robot_pose: :class:`~pose.Pose`</span>
+<span class="sd">        :param robot_info: Info structure, the format defined by the robot&#39;s</span>
+<span class="sd">                           :meth:&#39;~robot.Robot.get_info&#39;</span>
+<span class="sd">        :type robot_info: :class:`~helpers.Struct`</span>
+<span class="sd">        </span>
+<span class="sd">        Any extension of pysimiam will require inheriting from this superclass.</span>
+<span class="sd">        The important methods that have to be implemented to control a robot are</span>
+<span class="sd">        :meth:`~Supervisor.estimate_pose`, :meth:`~Supervisor.process`,</span>
+<span class="sd">        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`</span>
+
+<span class="sd">        .. attribute:: initial_pose </span>
+<span class="sd">            </span>
+<span class="sd">            :type: :class:`~pose.Pose`</span>
+<span class="sd">            </span>
+<span class="sd">            The initial pose of the robot, as supplied to the constructor. This parameter can be used in the user implementation</span>
+
+<span class="sd">        .. attribute:: pose_est</span>
+<span class="sd">        </span>
+<span class="sd">            :type: :py:class:`~pose.Pose`</span>
+
+<span class="sd">            The estimated pose of the robot. This variable is updated automatically in</span>
+<span class="sd">            the beginning of the calculation cycle using :py:meth:`~Supervisor.estimate_pose`</span>
+<span class="sd">            </span>
+<span class="sd">        .. attribute:: ui_params</span>
+<span class="sd">        </span>
+<span class="sd">            :type: :class:`~helpers.Struct`</span>
+
+<span class="sd">            Current parameter structure of the supervisor. Updated in the :py:meth:`~Supervisor.set_parameters`</span>
+<span class="sd">            </span>
+<span class="sd">        .. attribute:: current</span>
+
+<span class="sd">            :type: :class:`~controller.Controller`</span>
+<span class="sd">        </span>
+<span class="sd">            The current controller to be executed in :py:meth:`~Supervisor.execute`.</span>
+<span class="sd">            The subclass can set this value in :py:meth:`~Supervisor.process`</span>
+<span class="sd">            or in the constructor.</span>
+<span class="sd">            </span>
+<span class="sd">        .. attribute:: robot</span>
+<span class="sd">        </span>
+<span class="sd">            :type: :class:`~helpers.Struct`</span>
+<span class="sd">        </span>
+<span class="sd">            The robot information structure given by the robot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_pose</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param robot_pose: The initial pose of the robot,</span>
+<span class="sd">        :type robot_pose: :class:`~pose.Pose`</span>
+<span class="sd">        :param robot_info: Info structure, the format defined by the robot</span>
+<span class="sd">        :type robot_info: :class:`~helpers.Struct`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_pose</span> <span class="o">=</span> <span class="n">robot_pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pose_est</span> <span class="o">=</span> <span class="n">robot_pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_parameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">robot</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="Supervisor.get_parameters"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the parameter structure of the supervisor.</span>
+<span class="sd">        A call to ``supervisor.set_parameters(supervisor.get_parameters())``</span>
+<span class="sd">        should not change the supervisor&#39;s state</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A supervisor-specific parameter structure.</span>
+<span class="sd">        :rtype: :class:`~helpers.Struct`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span>
+</div>
+<div class="viewcode-block" id="Supervisor.get_default_parameters"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_default_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the default parameter structure, suitable for running this supervisor.</span>
+<span class="sd">        </span>
+<span class="sd">        Must be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Supervisor.get_default_parameters&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Supervisor.get_ui_description"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.get_ui_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_ui_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a dictionary describing the parameters available to the user.</span>
+
+<span class="sd">        :param params: An instance of the paramaters structure as returned</span>
+<span class="sd">                       from get_parameters. If not specified, this method</span>
+<span class="sd">                       should use :attr:`~Supervisor.ui_params`</span>
+<span class="sd">        :type params:  :class:`~helpers.Struct`</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A dictionary describing the interface</span>
+<span class="sd">        :rtype: `collections.OrderedDict`</span>
+<span class="sd">        </span>
+<span class="sd">        The structure returned by this function is used in the interface</span>
+<span class="sd">        to show a window where the user can adjust the supervisor parameters.</span>
+<span class="sd">        When the user confirms the changed parameters, this structure is used</span>
+<span class="sd">        to create the structure that will be passed to :meth:`set_parameters`.</span>
+<span class="sd">        </span>
+<span class="sd">        The format of the returned object is as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        - The object is a dictionary. It is recommended to use `collections.OrderedDict`</span>
+<span class="sd">          for the correct order of fields in the UI form.</span>
+<span class="sd">        - The key to the dictionary is either a string or a tuple. If it is a tuple,</span>
+<span class="sd">          then the first value is the name of the parameter field,</span>
+<span class="sd">          the second value is an UI label, and the third is an optional string</span>
+<span class="sd">          identifier if the parameter structure has several fields, identical in</span>
+<span class="sd">          structure. If the key is a string, it is used both as a label, capitalized,</span>
+<span class="sd">          and as a field name.</span>
+<span class="sd">        - The values of the dictionary are either floats, in which case they describe</span>
+<span class="sd">          individual parameters, or dictionaries, structured the same way the root</span>
+<span class="sd">          dictionary is structured.</span>
+<span class="sd">        </span>
+<span class="sd">        Must be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Supervisor.get_ui_description&quot;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Supervisor.set_parameters"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update this supervisor parameters</span>
+
+<span class="sd">        :param params: An instance of the paramaters structure as can be returned</span>
+<span class="sd">                       from :meth:`~Supervisor.get_parameters`.</span>
+<span class="sd">        :type params: :class:`~helpers.Struct`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span> <span class="o">=</span> <span class="n">params</span>
+</div>
+<div class="viewcode-block" id="Supervisor.add_controller"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.add_controller">[docs]</a>    <span class="k">def</span> <span class="nf">add_controller</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_string</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create and return a controller instance for a given controller class.</span>
+
+<span class="sd">        :param module_string: a string specifying a class in a module. See :ref:`module-string`</span>
+<span class="sd">        :type module_string: string</span>
+<span class="sd">        :param parameters: a parameter structure to be passed to the controller constructor</span>
+<span class="sd">        :type paramaters: :class:`~helpers.Struct`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">module</span><span class="p">,</span> <span class="n">controller_class</span> <span class="o">=</span> <span class="n">helpers</span><span class="o">.</span><span class="n">load_by_name</span><span class="p">(</span><span class="n">module_string</span><span class="p">,</span> <span class="s">&#39;controllers&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">controller_class</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Supervisor.execute"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Based on robot state and elapsed time, return the parameters</span>
+<span class="sd">        for robot motion.</span>
+<span class="sd">        </span>
+<span class="sd">        :param robot_info: The state of the robot</span>
+<span class="sd">        :type robot_info: :class:`~helpers.Struct`</span>
+<span class="sd">        </span>
+<span class="sd">        :param float dt: The amount of time elapsed since the last call of `execute`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An object (normally a tuple) that will be passed to the robot&#39;s :meth:`~robot.Robot.set_inputs` method.</span>
+<span class="sd">        </span>
+<span class="sd">        The default implementation proceeds as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        #. Store robot information in :attr:`~Supervisor.robot`</span>
+<span class="sd">        #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`</span>
+<span class="sd">        #. Set controller and get controller parameters from :meth:`~Supervisor.process`</span>
+<span class="sd">        #. Execute currently selected controller with the parameters from previous step</span>
+<span class="sd">        #. Return unicycle model parameters as an output (velocity, omega)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">robot</span> <span class="o">=</span> <span class="n">robot_info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pose_est</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_pose</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">()</span> <span class="c">#User-defined algorithm</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">dt</span><span class="p">)</span> <span class="c">#execute the current controller</span>
+        <span class="k">return</span> <span class="n">output</span>
+</div>
+<div class="viewcode-block" id="Supervisor.process"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate the information about the robot and select a controller.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A parameter structure in the format appropriate for the current controller.</span>
+<span class="sd">        :rtype: :class:`~helpers.Struct`</span>
+<span class="sd">        </span>
+<span class="sd">        The result of this function will be used to run the controller.</span>
+<span class="sd">        </span>
+<span class="sd">        Must be implemented in subclasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;Supervisor.process&#39;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Supervisor.estimate_pose"><a class="viewcode-back" href="../code.html#supervisor.Supervisor.estimate_pose">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the pose using odometry calculations.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The estimated robot pose</span>
+<span class="sd">        :rtype: :class:`~pose.Pose`</span>
+<span class="sd">        </span>
+<span class="sd">        The result of the evaluation of this function will be used to set ``self.pose_est``</span>
+
+<span class="sd">        Must be implemented in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;Supervisor.estimate_pose&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

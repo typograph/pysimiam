@@ -1,0 +1,670 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pylygon &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pylygon</h1><div class="highlight"><pre>
+<span class="c"># Copyright (c) 2011, Chandler Armstrong (omni dot armstrong at gmail dot com)</span>
+<span class="c"># see LICENSE.txt for details</span>
+
+<span class="c"># Added collidepoints</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">polygon object</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">mul</span>
+
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="n">fabs</span><span class="p">,</span> <span class="n">lexsort</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="c">##from pygame import Rect</span>
+
+<span class="c">##from convexhull import convexhull</span>
+<span class="c"># convex hull related functions </span>
+<span class="n">TURN_LEFT</span><span class="p">,</span> <span class="n">TURN_RIGHT</span><span class="p">,</span> <span class="n">TURN_NONE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_turn</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">P</span>
+    <span class="n">_P</span> <span class="o">=</span> <span class="n">P</span>
+    <span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">),</span> <span class="p">(</span><span class="n">q_x</span><span class="p">,</span> <span class="n">q_y</span><span class="p">),</span> <span class="p">(</span><span class="n">r_x</span><span class="p">,</span> <span class="n">r_y</span><span class="p">)</span> <span class="o">=</span> <span class="n">_P</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">_P</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">_P</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">cmp</span><span class="p">((</span><span class="n">q_x</span> <span class="o">-</span> <span class="n">p_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">r_y</span> <span class="o">-</span> <span class="n">p_y</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">r_x</span> <span class="o">-</span> <span class="n">p_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">q_y</span> <span class="o">-</span> <span class="n">p_y</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_keep_left</span><span class="p">(</span><span class="n">hull</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">hull</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">_turn</span><span class="p">(</span><span class="n">hull</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">hull</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">)</span> <span class="o">!=</span> <span class="n">TURN_LEFT</span><span class="p">:</span> <span class="n">hull</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hull</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">hull</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span> <span class="n">hull</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hull</span>
+
+
+<div class="viewcode-block" id="convexhull"><a class="viewcode-back" href="../code.html#pylygon.convexhull">[docs]</a><span class="k">def</span> <span class="nf">convexhull</span><span class="p">(</span><span class="n">_P</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns an array of the points in convex hull of P in CCW order.</span>
+
+<span class="sd">    arguments: P -- a Polygon object or an numpy.array object of points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">P</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">_P</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">lexsort</span><span class="p">((</span><span class="n">_P</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span><span class="n">_P</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">_keep_left</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">_keep_left</span><span class="p">,</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="p">[])</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">array</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+
+
+<span class="c"># error tolerances</span></div>
+<span class="n">_MACHEPS</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">24</span><span class="p">)</span>
+<span class="n">_E</span> <span class="o">=</span> <span class="n">_MACHEPS</span> <span class="o">*</span> <span class="mi">10</span>
+
+<span class="c"># utility functions</span>
+<span class="n">_clamp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>              <span class="c"># clamp v between a and b</span>
+<span class="n">_perp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span>                   <span class="c"># perpendicular</span>
+<span class="n">_prod</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">X</span><span class="p">:</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>                        <span class="c"># product</span>
+<span class="n">_mag</span> <span class="o">=</span> <span class="k">lambda</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>               <span class="c"># magnitude, or length</span>
+<span class="n">_normalize</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">V</span><span class="p">:</span> <span class="n">array</span><span class="p">([</span><span class="n">i</span> <span class="o">/</span> <span class="n">_mag</span><span class="p">(</span><span class="n">V</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">V</span><span class="p">])</span>  <span class="c"># normalize a vector</span>
+<span class="n">_intersect</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">:</span> <span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">B</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">B</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c"># intersection test</span>
+<span class="n">_unzip</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">zipped</span><span class="p">:</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">zipped</span><span class="p">)</span>                    <span class="c"># unzip a list of tuples</span>
+
+<span class="k">def</span> <span class="nf">_isbetween</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="c"># returns true if point p between points o and q</span>
+    <span class="n">o_x</span><span class="p">,</span> <span class="n">o_y</span> <span class="o">=</span> <span class="n">o</span>
+    <span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="n">q_x</span><span class="p">,</span> <span class="n">q_y</span> <span class="o">=</span> <span class="n">q</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">q_y</span> <span class="o">-</span> <span class="n">o_y</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">q_x</span> <span class="o">-</span> <span class="n">o_x</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">o_y</span> <span class="o">-</span> <span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">o_x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fabs</span><span class="p">(</span><span class="n">p_y</span> <span class="o">-</span> <span class="p">((</span><span class="n">m</span> <span class="o">*</span> <span class="n">p_x</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">_MACHEPS</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">_line_intersect</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">q1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">q2</span><span class="p">):</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">p1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">q1</span>
+    <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span> <span class="o">=</span> <span class="n">p2</span>
+    <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span> <span class="o">=</span> <span class="n">q2</span>
+    
+    <span class="n">x12</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">x2</span>
+    <span class="n">x34</span> <span class="o">=</span> <span class="n">x3</span> <span class="o">-</span> <span class="n">x4</span>
+    <span class="n">y12</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">-</span> <span class="n">y2</span>
+    <span class="n">y34</span> <span class="o">=</span> <span class="n">y3</span> <span class="o">-</span> <span class="n">y4</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">x12</span> <span class="o">*</span> <span class="n">y34</span> <span class="o">-</span> <span class="n">y12</span> <span class="o">*</span> <span class="n">x34</span>
+    
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.01</span><span class="p">:</span>
+        <span class="c"># Intersection</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span> <span class="o">*</span> <span class="n">x2</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">x3</span> <span class="o">*</span> <span class="n">y4</span> <span class="o">-</span> <span class="n">y3</span> <span class="o">*</span> <span class="n">x4</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">x34</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">x12</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">y34</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">y12</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span>
+        
+        <span class="c"># check boundaries</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">x4</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="n">x</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">x4</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="n">y</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">y3</span><span class="p">,</span> <span class="n">y4</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="n">y</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">y3</span><span class="p">,</span> <span class="n">y4</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">None</span>
+
+
+<span class="k">class</span> <span class="nc">_Support</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="c"># the support mapping of P - Q; s_P-Q</span>
+    <span class="c"># s_P-Q is the generic support mapping for polygons</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s_P</span> <span class="o">=</span> <span class="n">s</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s_Q</span> <span class="o">=</span> <span class="n">s</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">q</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span>
+        <span class="c"># returns a function that returns the support mapping of C</span>
+        <span class="c"># the support mapping is the p in C such that</span>
+        <span class="c">#   dot(r, p) == dot(r, _s(C)(r))</span>
+        <span class="c"># ie, the support mapping is the p in C most in the direction of r</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="nb">dict</span><span class="p">((</span><span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">C</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">1</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="c"># add the value of s_P-Q(r) to self and return that value</span>
+        <span class="c"># NOTE: return value is always a pair of vertices from P and Q</span>
+        <span class="n">s_P</span><span class="p">,</span> <span class="n">s_Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s_P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s_Q</span>
+        <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="n">s_P</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">s_Q</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span>
+
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="c"># return value of s_P-Q(r)</span>
+        <span class="c"># NOTE: return value is always a pair of vertices from P and Q</span>
+        <span class="n">s_P</span><span class="p">,</span> <span class="n">s_Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s_P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s_Q</span>
+        <span class="k">return</span> <span class="n">s_P</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">-</span> <span class="n">s_Q</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">v</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c"># find the point on the convex hull of C closest to q by iteratively</span>
+        <span class="c">#   searching around voronoi regions</span>
+        <span class="c"># i is the index of the initial test edge</span>
+        <span class="c"># returns the point closest to q and sets self.M to be the minimum set</span>
+        <span class="c">#   of points in C such that q in conv(points)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">I</span> <span class="o">=</span> <span class="n">convexhull</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+
+        <span class="n">C</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="o">*-</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">edges</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">C</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">C</span><span class="o">.</span><span class="n">P</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">checked</span><span class="p">,</span> <span class="n">inside</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">checked</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">len2</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span> <span class="c"># len(edge)**2</span>
+            <span class="n">vprj</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>    <span class="c"># p projected onto edge</span>
+
+            <span class="k">if</span> <span class="n">vprj</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>    <span class="c"># q lies CW of edge</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">checked</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inside</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">[</span><span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
+                        <span class="k">return</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">vprj</span> <span class="o">&gt;</span> <span class="n">len2</span><span class="p">:</span> <span class="c"># q lies CCW of edge</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">checked</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inside</span><span class="p">:</span>
+                        <span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">[</span><span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
+                        <span class="k">return</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+                <span class="k">continue</span>
+
+            <span class="n">nprj</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">_perp</span><span class="p">(</span><span class="n">edge</span><span class="p">))</span> <span class="c"># p projected onto edge normal</span>
+            <span class="c"># perp of CCW edges will always point &quot;outside&quot;</span>
+            <span class="k">if</span> <span class="n">nprj</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c"># q is &quot;inside&quot; the edge</span>
+                <span class="n">inside</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checked</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span> <span class="k">return</span> <span class="n">q</span> <span class="c"># q in C</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+                <span class="k">continue</span>
+
+            <span class="c"># q is closest to edge</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">[</span><span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">[</span><span class="n">I</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]]]</span>
+            <span class="n">edge_n</span> <span class="o">=</span> <span class="n">_normalize</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="c"># move from p to q projected on to edge</span>
+            <span class="n">qprj</span> <span class="o">=</span> <span class="n">p</span> <span class="o">-</span> <span class="p">((</span><span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">edge_n</span><span class="p">))</span> <span class="o">*</span> <span class="n">edge_n</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">qprj</span>
+
+
+
+<div class="viewcode-block" id="Polygon"><a class="viewcode-back" href="../code.html#pylygon.Polygon">[docs]</a><span class="k">class</span> <span class="nc">Polygon</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;polygon object&quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        arguments:</span>
+<span class="sd">        P -- iterable or 2d numpy.array of (x, y) points.  the constructor will</span>
+<span class="sd">          find the convex hull of the points in CCW order; see the conv keyword</span>
+<span class="sd">          argument for details.</span>
+
+<span class="sd">        keyword arguments:</span>
+<span class="sd">        conv -- boolean indicating if the convex hull of P should be found.</span>
+<span class="sd">          conv is True by default.  Polygon is intended for convex polygons only</span>
+<span class="sd">          and P must be in CCW order.  conv will ensure that P is both convex</span>
+<span class="sd">          and in CCW.  even if P is already convex, it is recommended to leave</span>
+<span class="sd">          conv True, unless client code can be sure that P is also in CCW order.</span>
+<span class="sd">          CCW order is requried for certain operations.</span>
+
+<span class="sd">          NOTE: the order must be with respect to a bottom left orgin; graphics</span>
+<span class="sd">            applications typically use a topleft origin.  if your points are CCW</span>
+<span class="sd">            with respect to a topleft origin they will be CW in a bottomleft</span>
+<span class="sd">            origin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">P</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">conv</span><span class="p">:</span> <span class="n">P</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">convexhull</span><span class="p">(</span><span class="n">P</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">P</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="c"># number of points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_A</span><span class="p">()</span> <span class="c"># area of polygon</span>
+
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># an edge is the vector from p to q</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">P</span><span class="p">):</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">P</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span> <span class="c"># x, y of next point in series</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">C</span>
+        <span class="c"># longest distance from C for all p in P</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span> <span class="o">-</span> <span class="n">p</span><span class="p">,</span> <span class="n">C</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns the minkowski sum of self and other</span>
+
+<span class="sd">        arguments:</span>
+<span class="sd">        other is a Polygon object</span>
+
+<span class="sd">        returns an array of points for the results of minkowski addition</span>
+
+<span class="sd">        NOTE: use the unary negation operator on other to find the so-called</span>
+<span class="sd">          minkowski difference. eg A + (-B)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">P</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">P</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">Q</span><span class="p">])</span>
+
+
+    <span class="k">def</span> <span class="nf">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="n">Polygon</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Polygon.get_rect"><a class="viewcode-back" href="../code.html#pylygon.Polygon.get_rect">[docs]</a>    <span class="k">def</span> <span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the AABB, as a pygame rect, of the polygon&quot;&quot;&quot;</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">_unzip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span>
+        <span class="c">#return Rect(x, y, w, h)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.move"><a class="viewcode-back" href="../code.html#pylygon.Polygon.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return a new polygon moved by x, y&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Polygon</span><span class="p">([(</span><span class="n">x</span> <span class="o">+</span> <span class="n">p_x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">p_y</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.move_ip"><a class="viewcode-back" href="../code.html#pylygon.Polygon.move_ip">[docs]</a>    <span class="k">def</span> <span class="nf">move_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;move the polygon by x, y&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">array</span><span class="p">([(</span><span class="n">x</span> <span class="o">+</span> <span class="n">p_x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">p_y</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.collidepoint"><a class="viewcode-back" href="../code.html#pylygon.Polygon.collidepoint">[docs]</a>    <span class="k">def</span> <span class="nf">collidepoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        test if point (x, y) is outside, on the boundary, or inside polygon</span>
+<span class="sd">        uses raytracing algorithm</span>
+
+<span class="sd">        returns 0 if outside</span>
+<span class="sd">        returns -1 if on boundary</span>
+<span class="sd">        returns 1 if inside</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+
+        <span class="c"># test if (x, y) on a vertex</span>
+        <span class="k">for</span> <span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span> <span class="ow">in</span> <span class="n">P</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">p_x</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">p_y</span><span class="p">):</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">intersections</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">):</span>
+            <span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="n">q_x</span><span class="p">,</span> <span class="n">q_y</span> <span class="o">=</span> <span class="n">P</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span>
+            <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">q_x</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">q_x</span><span class="p">)</span>
+            <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p_y</span><span class="p">,</span> <span class="n">q_y</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">p_y</span><span class="p">,</span> <span class="n">q_y</span><span class="p">)</span>
+            <span class="c"># test if (x, y) on horizontal boundary</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">p_y</span> <span class="o">==</span> <span class="n">q_y</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">p_y</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">x_min</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">x_max</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">y_min</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="n">y_max</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">p_y</span> <span class="o">!=</span> <span class="n">q_y</span><span class="p">):</span>
+                <span class="n">x_inters</span> <span class="o">=</span> <span class="p">(((</span><span class="n">y</span> <span class="o">-</span> <span class="n">p_y</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">q_x</span> <span class="o">-</span> <span class="n">p_x</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">q_y</span> <span class="o">-</span> <span class="n">p_y</span><span class="p">))</span> <span class="o">+</span> <span class="n">p_x</span>
+                <span class="c"># test if (x, y) on non-horizontal polygon boundary</span>
+                <span class="k">if</span> <span class="n">x_inters</span> <span class="o">==</span> <span class="n">x</span><span class="p">:</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="c"># test if line from (x, y) intersects boundary</span>
+                <span class="k">if</span> <span class="n">p_x</span> <span class="o">==</span> <span class="n">q_x</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">x_inters</span><span class="p">:</span> <span class="n">intersections</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">intersections</span> <span class="o">%</span> <span class="mi">2</span>
+
+    </div>
+<div class="viewcode-block" id="Polygon.collidepoly"><a class="viewcode-back" href="../code.html#pylygon.Polygon.collidepoly">[docs]</a>    <span class="k">def</span> <span class="nf">collidepoly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        test if other polygon collides with self using seperating axis theorem</span>
+<span class="sd">        if collision, return projections</span>
+
+<span class="sd">        arguments:</span>
+<span class="sd">        other -- a polygon object</span>
+
+<span class="sd">        returns:</span>
+<span class="sd">        an array of projections</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># a projection is a vector representing the span of a polygon projected</span>
+        <span class="c"># onto an axis</span>
+        <span class="n">projections</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">edges</span><span class="p">)):</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">_normalize</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="c"># the separating axis is the line perpendicular to the edge</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">_perp</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="n">self_projection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+            <span class="n">other_projection</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+            <span class="c"># if self and other do not intersect on any axis, they do not</span>
+            <span class="c"># intersect in space</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_intersect</span><span class="p">(</span><span class="n">self_projection</span><span class="p">,</span> <span class="n">other_projection</span><span class="p">):</span> <span class="k">return</span> <span class="bp">False</span>
+            <span class="c"># find the overlapping portion of the projections</span>
+            <span class="n">projection</span> <span class="o">=</span> <span class="n">self_projection</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">other_projection</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">projections</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">projection</span><span class="p">,</span> <span class="n">axis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">projection</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.distance"><a class="viewcode-back" href="../code.html#pylygon.Polygon.distance">[docs]</a>    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return distance between self and other</span>
+<span class="sd">        uses GJK algorithm. for details see:</span>
+
+<span class="sd">        Bergen, Gino Van Den. (1999). A fast and robust GJK implementation for</span>
+<span class="sd">        collision detection of convex objects. Journal of Graphics Tools 4(2).</span>
+
+<span class="sd">        arguments:</span>
+<span class="sd">        other -- a Polygon object</span>
+
+<span class="sd">        keyword arguments</span>
+<span class="sd">        r -- initial search direction; setting r to the movement vector of</span>
+<span class="sd">        self - other may speed convergence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">P</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">_Support</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span> <span class="c"># support mapping function s_P-Q(r)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>       <span class="c"># initial support point</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">-</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_MACHEPS</span><span class="p">:</span> <span class="c"># while w is closer to origin</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">v</span><span class="p">()</span> <span class="c"># closest point to origin in support points</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span> <span class="k">return</span> <span class="n">v</span> <span class="c"># the origin is inside W; intersection</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">-</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.raycast"><a class="viewcode-back" href="../code.html#pylygon.Polygon.raycast">[docs]</a>    <span class="k">def</span> <span class="nf">raycast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">self_theta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">other_theta</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the hit scalar, hit vector, and hit normal from self to other in</span>
+<span class="sd">        direction r</span>
+<span class="sd">        uses GJK-based raycast[1] modified to accomodate constant angular</span>
+<span class="sd">        rotation[2][3] without needing to recompute the Minkowski Difference</span>
+<span class="sd">        after each iteration[4].</span>
+
+<span class="sd">        [1] Bergen, Gino Van Den. (2004). Ray casting against general convex</span>
+<span class="sd">        objects with application to continuous collision detection. GDC 2005.</span>
+<span class="sd">        retrieved from</span>
+<span class="sd">        http://www.bulletphysics.com/ftp/pub/test/physics/papers/</span>
+<span class="sd">        jgt04raycast.pdf</span>
+<span class="sd">        on 6 July 2011.</span>
+
+<span class="sd">        [2] Coumans, Erwin. (2005). Continuous collision detection and physics.</span>
+<span class="sd">        retrieved from</span>
+<span class="sd">        http://www.continuousphysics.com/</span>
+<span class="sd">        BulletContinuousCollisionDetection.pdf</span>
+<span class="sd">        on 18 January 2012</span>
+
+<span class="sd">        [3] Mirtich, Brian Vincent. (1996). Impulse-based dynamic simulation of</span>
+<span class="sd">        rigid body systems. PhD Thesis. University of California at Berkely.</span>
+<span class="sd">        retrieved from</span>
+<span class="sd">        http://www.kuffner.org/james/software/dynamics/mirtich/</span>
+<span class="sd">        mirtichThesis.pdf</span>
+<span class="sd">        on 18 January 2012</span>
+
+<span class="sd">        [4] Behar, Evan and Jyh-Ming Lien. (2011). Dynamic Minkowski Sum of</span>
+<span class="sd">        convex shapes.  In proceedings of IEEE ICRA 2011. retrieved from</span>
+<span class="sd">        http://masc.cs.gmu.edu/wiki/uploads/GeneralizedMsum/</span>
+<span class="sd">        icra11-dynsum-convex.pdf</span>
+<span class="sd">        on 18 January 2012.</span>
+
+<span class="sd">        arguments:</span>
+<span class="sd">        other -- Polygon object</span>
+<span class="sd">        r -- direction vector</span>
+<span class="sd">        NOTE: GJK searches IN THE DIRECTION of r, thus r needs to point</span>
+<span class="sd">        towards the origin with respect to the direction vector of self; in</span>
+<span class="sd">        other words, if r represents the movement of self then client code</span>
+<span class="sd">        should call raycast with -r.</span>
+
+<span class="sd">        keyword arguments:</span>
+<span class="sd">        s -- initial position along r, (0, 0) by default</span>
+<span class="sd">        theta -- angular velocity in radians</span>
+
+<span class="sd">        returns:</span>
+<span class="sd">        if r does not intersect other, returns False</span>
+<span class="sd">        else, returns the hit scalar, hit vector, and hit normal</span>
+<span class="sd">        hit scalar -- the scalar where r intersects other</span>
+<span class="sd">        hit vector -- the vector where self intersects other</span>
+<span class="sd">        hit normal -- the edge normal at the intersection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">self_rmax</span><span class="p">,</span> <span class="n">other_rmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">rmax</span>
+
+        <span class="c"># max arc length of rotation</span>
+        <span class="c"># maximum radians for arc length is pi</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="p">((</span><span class="n">self_rmax</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">_clamp</span><span class="p">(</span><span class="o">-</span><span class="n">pi</span><span class="p">,</span> <span class="n">self_theta</span><span class="p">,</span> <span class="n">pi</span><span class="p">)))</span> <span class="o">+</span>
+             <span class="p">(</span><span class="n">other_rmax</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">_clamp</span><span class="p">(</span><span class="o">-</span><span class="n">pi</span><span class="p">,</span> <span class="n">other_theta</span><span class="p">,</span> <span class="n">pi</span><span class="p">))))</span>
+
+        <span class="c"># polygons for support function; copied because they will be rotated</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Polygon</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">_Support</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span> <span class="c"># support mapping function s_P-Q(r)</span>
+
+        <span class="n">lambda_</span> <span class="o">=</span> <span class="mi">0</span>              <span class="c"># scalar of r to hit spot</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">s</span>                    <span class="c"># current point along r</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>        <span class="c"># hit normal at q</span>
+
+        <span class="n">v</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">-</span> <span class="n">q</span>   <span class="c"># vector from q to s_P-Q</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">-</span><span class="n">v</span><span class="p">)</span>      <span class="c"># support returns a v opposite of r</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span>
+        <span class="k">while</span> <span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_E</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">support</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span>  <span class="p">(</span><span class="n">L</span> <span class="o">*</span> <span class="n">L</span><span class="p">)):</span> <span class="k">return</span> <span class="bp">False</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="o">-</span><span class="n">v</span>
+                <span class="c"># update lambda</span>
+                <span class="c"># translation distance lower bound := dot(v, w) / dot(v, r)</span>
+                <span class="c"># angular rotation distance lower bound := L * (1 - lambda)</span>
+                <span class="n">lambda_change</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">L</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lambda_</span><span class="p">)))</span>
+                <span class="n">lambda_</span> <span class="o">=</span> <span class="n">lambda_</span> <span class="o">+</span> <span class="n">lambda_change</span>
+                <span class="k">if</span> <span class="n">lambda_</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+                <span class="c"># interpolate lambda</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="p">(</span><span class="n">lambda_</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span> <span class="c"># translation</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">rotate_ip</span><span class="p">(</span><span class="n">lambda_change</span> <span class="o">*</span> <span class="n">self_theta</span><span class="p">)</span> <span class="c"># rotation</span>
+                <span class="n">B</span><span class="o">.</span><span class="n">rotate_ip</span><span class="p">(</span><span class="n">lambda_change</span> <span class="o">*</span> <span class="n">other_theta</span><span class="p">)</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="c"># closest point to q in support points</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">-</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">p</span> <span class="o">-</span> <span class="n">q</span>
+        <span class="k">return</span> <span class="n">lambda_</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">n</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_A</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># the area of polygon</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">P</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">X</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">C</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the centroid of the polygon&quot;&quot;&quot;</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">_unzip</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">Y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">c_x</span><span class="p">,</span> <span class="n">c_y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">a_i</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">X</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">c_x</span> <span class="o">+=</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">X</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">])</span> <span class="o">*</span> <span class="n">a_i</span>
+            <span class="n">c_y</span> <span class="o">+=</span> <span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Y</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">])</span> <span class="o">*</span> <span class="n">a_i</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+        <span class="n">c_x</span> <span class="o">*=</span> <span class="n">b</span>
+        <span class="n">c_y</span> <span class="o">*=</span> <span class="n">b</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">c_x</span><span class="p">,</span> <span class="n">c_y</span><span class="p">])</span>
+
+
+    <span class="nd">@C.setter</span>
+<div class="viewcode-block" id="Polygon.C"><a class="viewcode-back" href="../code.html#pylygon.Polygon.C">[docs]</a>    <span class="k">def</span> <span class="nf">C</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="n">c_x</span><span class="p">,</span> <span class="n">c_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">C</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">c_x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="n">c_y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">array</span><span class="p">([(</span><span class="n">p_x</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">p_y</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">])</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">origin</span><span class="p">:</span> <span class="n">origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">C</span>
+
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">-</span> <span class="n">origin</span> <span class="c"># assingment operator (-=) would modify original x0</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="o">-</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)],</span> <span class="c"># rotation matrix</span>
+                   <span class="p">[</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)]])</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">origin</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="Polygon.rotopoints"><a class="viewcode-back" href="../code.html#pylygon.Polygon.rotopoints">[docs]</a>    <span class="k">def</span> <span class="nf">rotopoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns an array of points rotated theta radians around the centroid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">rotate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">rotate</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="Polygon.rotoedges"><a class="viewcode-back" href="../code.html#pylygon.Polygon.rotoedges">[docs]</a>    <span class="k">def</span> <span class="nf">rotoedges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return an array of vectors of edges rotated theta radians&quot;&quot;&quot;</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span>
+        <span class="n">rotate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span>
+        <span class="c"># edges, essentially angles, are always rotated around (0, 0)</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">rotate</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+                      <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">])</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span> <span class="k">return</span> <span class="n">Polygon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotopoints</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">rotate_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotopoints</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">P</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">edges</span>
+
+
+<div class="viewcode-block" id="Polygon.project"><a class="viewcode-back" href="../code.html#pylygon.Polygon.project">[docs]</a>    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;project self onto axis&quot;&quot;&quot;</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">projected_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">]</span>
+        <span class="c"># return the span of the projection</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">projected_points</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">projected_points</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Polygon.intersection_points"><a class="viewcode-back" href="../code.html#pylygon.Polygon.intersection_points">[docs]</a>    <span class="k">def</span> <span class="nf">intersection_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine contact (intersection) points between the self</span>
+<span class="sd">        and other.</span>
+
+<span class="sd">        returns Empty list if no collisions found</span>
+<span class="sd">        returns List of intersection points</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">):</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">P</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">P</span><span class="p">[(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">P</span><span class="p">)]</span>
+                <span class="n">ipt</span> <span class="o">=</span> <span class="n">_line_intersect</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ipt</span><span class="p">:</span> <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ipt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">points</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

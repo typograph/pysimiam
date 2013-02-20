@@ -1,0 +1,216 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>supervisors.khepera3 &mdash; PySimiam 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PySimiam 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for supervisors.khepera3</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">supervisor</span> <span class="kn">import</span> <span class="n">Supervisor</span>
+<span class="kn">from</span> <span class="nn">helpers</span> <span class="kn">import</span> <span class="n">Struct</span>
+<span class="kn">from</span> <span class="nn">pose</span> <span class="kn">import</span> <span class="n">Pose</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">log1p</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<div class="viewcode-block" id="K3Supervisor"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor">[docs]</a><span class="k">class</span> <span class="nc">K3Supervisor</span><span class="p">(</span><span class="n">Supervisor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The K3Supervisor inherits from the superclass &#39;supervisor.Supervisor&#39; to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the k3defaultsupervisor.K3DefaultSupervisor class in which this class is used to reduce noisy code interactions.</span>
+
+<span class="sd">Most importantly, the K3Supervisor object implements the system functions necessary to operate a Khepera3, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.</span>
+
+<span class="sd">The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_pose</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">):</span>
+        <span class="n">Supervisor</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_pose</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">)</span>
+
+        <span class="c">#Create conrollers</span>
+        
+        <span class="c"># initialize memory registers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_ticks</span>  <span class="o">=</span> <span class="n">robot_info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right_ticks</span> <span class="o">=</span> <span class="n">robot_info</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span>
+                    
+<div class="viewcode-block" id="K3Supervisor.get_default_parameters"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.get_default_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the default PID parameters, goal, and velocity&quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">goal</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">goal</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">goal</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mf">0.2</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">gains</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">kp</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">ki</span> <span class="o">=</span> <span class="mf">2.0</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">kd</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="n">p</span>
+        </div>
+<div class="viewcode-block" id="K3Supervisor.get_ui_description"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.get_ui_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_ui_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">p</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the UI description for the docker&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui_params</span>
+        
+        <span class="k">return</span> <span class="p">{</span> <span class="p">(</span><span class="s">&#39;pid&#39;</span><span class="p">,</span><span class="s">&#39;GoToGoal&#39;</span><span class="p">):</span>
+                   <span class="n">OrderedDict</span><span class="p">([</span>
+                       <span class="p">(</span><span class="s">&#39;goal&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">goal</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">goal</span><span class="o">.</span><span class="n">y</span><span class="p">)])),</span>
+                       <span class="p">(</span><span class="s">&#39;velocity&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;v&#39;</span><span class="p">:</span><span class="n">p</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">v</span><span class="p">}),</span>
+                       <span class="p">(</span><span class="s">&#39;gains&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">([</span>
+                           <span class="p">((</span><span class="s">&#39;kp&#39;</span><span class="p">,</span><span class="s">&#39;Proportional gain&#39;</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">kp</span><span class="p">),</span>
+                           <span class="p">((</span><span class="s">&#39;ki&#39;</span><span class="p">,</span><span class="s">&#39;Integral gain&#39;</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">ki</span><span class="p">),</span>
+                           <span class="p">((</span><span class="s">&#39;kd&#39;</span><span class="p">,</span><span class="s">&#39;Differential gain&#39;</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">gains</span><span class="o">.</span><span class="n">kd</span><span class="p">)]))])}</span>
+</div>
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">()</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">Supervisor</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span>
+                                  
+    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">Supervisor</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="o">.</span><span class="n">pid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gtg</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pid</span><span class="o">.</span><span class="n">gains</span><span class="p">)</span>
+
+<div class="viewcode-block" id="K3Supervisor.uni2diff"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.uni2diff">[docs]</a>    <span class="k">def</span> <span class="nf">uni2diff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">uni</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert between unicycle model to differential model&quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="n">uni</span>
+        <span class="c"># Assignment Week 2</span>
+        <span class="n">vr</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span><span class="o">*</span><span class="n">w</span> <span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">v</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span>
+        <span class="n">vl</span> <span class="o">=</span> <span class="n">vr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span><span class="o">*</span><span class="n">w</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span>
+        <span class="c"># End Assignment</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">vl</span><span class="p">,</span><span class="n">vr</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="K3Supervisor.get_ir_distances"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.get_ir_distances">[docs]</a>    <span class="k">def</span> <span class="nf">get_ir_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts the IR distance readings into a distance in meters&quot;&quot;&quot;</span>
+        <span class="n">default_value</span> <span class="o">=</span> <span class="mi">3960</span>
+        <span class="n">ir_distances</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">reading</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">ir_sensors</span><span class="o">.</span><span class="n">readings</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="nb">min</span><span class="p">(</span> <span class="p">(</span><span class="n">log1p</span><span class="p">(</span><span class="mi">3960</span><span class="p">)</span> <span class="o">-</span> <span class="n">log1p</span><span class="p">(</span><span class="n">reading</span><span class="p">))</span><span class="o">/</span><span class="mi">30</span> <span class="o">+</span> <span class="mf">0.02</span> <span class="p">,</span> <span class="mi">3960</span><span class="p">)</span> <span class="p">,</span> <span class="mf">0.02</span><span class="p">)</span>
+            <span class="n">ir_distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> 
+
+        <span class="k">return</span> <span class="n">ir_distances</span>
+</div>
+<div class="viewcode-block" id="K3Supervisor.process"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Select controller and insert data into a state info structure for the controller&quot;&quot;&quot;</span>
+        <span class="c"># Controller is already selected</span>
+        <span class="c"># Parameters are nearly in the right format for go-to-goal</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;Supervisor.process&#39;</span><span class="p">)</span> 
+    </div>
+<div class="viewcode-block" id="K3Supervisor.estimate_pose"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.estimate_pose">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update self.pose_est using odometry&quot;&quot;&quot;</span>
+        
+        <span class="c"># Get tick updates</span>
+        <span class="n">dtl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_ticks</span>
+        <span class="n">dtr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">right_ticks</span>
+        
+        <span class="c"># Save the wheel encoder ticks for the next estimate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_ticks</span> <span class="o">+=</span> <span class="n">dtl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right_ticks</span> <span class="o">+=</span> <span class="n">dtr</span>
+        
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pose_est</span>
+
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">radius</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">base_length</span>
+        <span class="n">m_per_tick</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="n">R</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">ticks_per_rev</span>
+            
+        <span class="c"># distance travelled by left wheel</span>
+        <span class="n">dl</span> <span class="o">=</span> <span class="n">dtl</span><span class="o">*</span><span class="n">m_per_tick</span>
+        <span class="c"># distance travelled by right wheel</span>
+        <span class="n">dr</span> <span class="o">=</span> <span class="n">dtr</span><span class="o">*</span><span class="n">m_per_tick</span>
+            
+        <span class="n">theta_dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">dr</span><span class="o">-</span><span class="n">dl</span><span class="p">)</span><span class="o">/</span><span class="n">L</span>
+        <span class="n">theta_mid</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="n">theta_dt</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">dr</span><span class="o">+</span><span class="n">dl</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">x_dt</span> <span class="o">=</span> <span class="n">dst</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">theta_mid</span><span class="p">)</span>
+        <span class="n">y_dt</span> <span class="o">=</span> <span class="n">dst</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">theta_mid</span><span class="p">)</span>
+            
+        <span class="n">theta_new</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="n">theta_dt</span>
+        <span class="n">x_new</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">x_dt</span>
+        <span class="n">y_new</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">y_dt</span>                           
+           
+        <span class="k">return</span> <span class="n">Pose</span><span class="p">(</span><span class="n">x_new</span><span class="p">,</span> <span class="n">y_new</span><span class="p">,</span> <span class="p">(</span><span class="n">theta_new</span> <span class="o">+</span> <span class="n">pi</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span><span class="o">-</span><span class="n">pi</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="K3Supervisor.execute"><a class="viewcode-back" href="../../code.html#supervisors.khepera3.K3Supervisor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Inherit default supervisor procedures and return unicycle model output (x, y, theta)&quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">Supervisor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">robot_info</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uni2diff</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PySimiam 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
