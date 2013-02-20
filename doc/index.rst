@@ -29,6 +29,7 @@ Website Tree
 .. toctree::
    :maxdepth: 2
 
+   overview
    tutorial
    project
    code
