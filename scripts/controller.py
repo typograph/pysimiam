@@ -5,24 +5,38 @@
 import math
 
 class Controller():
-    """The controller class defines a behavior for the supervisor class. Any implemention must inherit from this class and implement the 'execute' function to return a unicycle model output."""
+    """
+        The controller class defines a behavior for the supervisor class.
+        Any implemention must inherit from this class and implement the
+        :meth:`~Controller,execute` method to return a unicycle model output.
+
+        :param params: A structure containing the internal controller parameters, such as PID constants.
+        :type params: :class:`~helpers.Struct`
+        """
     def __init__(self,params):
         """Initialize the controller with parameters
-        @params: params - structure with PID constants.
+        :params params: A structure containing the internal controller parameters, such as PID constants.
+        :type params: :class:`~helpers.Struct`
         """
         self.set_parameters(params)
     
     def execute(self, state, dt):
-        """Given state and elapsed time, calculate and return robot motion parameters
-        @params:state - input from the supervisor process method
-        dt - change in time.
-        To be implemented in subclasses
+        """Given a state and elapsed time, calculate and return robot motion parameters
+
+        :param state: Output from the supervisor :meth:`~Supervisor.process` method
+        :type state: :class:`~helpers.Struct`
+        :param float dt: Time elapsed since last call to `execute()`
+        
+        To be implemented in subclasses.
         """
         raise NotImplementedError("Controller.execute")
 
     def set_parameters(self,params):
-        """Get the internal paramters from the params structure
-        @params: params - set the PID controller parameter values.
-        To be implemented in subclasses
+        """Set the internal parameters of the controller.
+        
+        :param params: A structure containing the internal controller parameters, such as PID constants.
+        :type params: :class:`~helpers.Struct`
+
+        To be implemented in subclasses,
         """
         raise NotImplementedError("Controller.set_parameters")
