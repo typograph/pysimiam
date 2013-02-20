@@ -53,7 +53,7 @@ And the differential model is:
     \frac{dx}{dt} = \frac{R}{2}*(v_r + v_l)*cos(\phi)
 
 .. math::
-    \frac{dy}{dt} = \frac{R}{2}*(v_r + v_l)*cos(\phi)
+    \frac{dy}{dt} = \frac{R}{2}*(v_r + v_l)*sin(\phi)
 
 .. math::
     \frac{d\phi}{dt} = \frac{R}{L}*(v_r - v_l)
