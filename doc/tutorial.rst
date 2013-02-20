@@ -58,6 +58,12 @@ And the differential model is:
 .. math::
     \frac{d\phi}{dt} = \frac{R}{L}*(v_r - v_l)
 
+You are given the values:
+
+- self.robot.wheels.radius (float)
+- omega (float)
+- velocity (float)
+
 Part 2: Odometry 
 -----------------------------------------------------------
 

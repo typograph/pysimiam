@@ -10,6 +10,8 @@ Introduction
 ------------
 PySimiam is a robot simulator inspired by Jean-Pierre de la Croix's program named Sim.I.Am. Parts of Jean-Pierre's code is included specifically for application to the khepera3 robot. Special thanks to him for his hard work.
 
+PySimiam is written by Timofey Fuchs, Shaun Lippy, John Alexander, and Jonathan Whitten.
+
 Special notes
 -------------
 The program has the ability to change goal and parameters at runtime.
