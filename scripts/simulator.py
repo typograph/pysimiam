@@ -324,8 +324,9 @@ class Simulator(threading.Thread):
                 sensor.update_distance()
                 for obstacle in self.__qtree.find_items(rect):
                     if (sensor.update_distance(obstacle)):
-                        print "{0} -> {1} Distance:{2}".format(
-                                sensor, obstacle, sensor.distance())
+                        #print "{0} -> {1} Distance:{2}".format(
+                        #sensor, obstacle, sensor.distance())
+                        pass
             
             rect = Rect(robot.get_bounding_rect())
             
