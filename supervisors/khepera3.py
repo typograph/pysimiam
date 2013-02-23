@@ -72,7 +72,6 @@ The UI may use the get_parameters function interface to create docker windows fo
         #self.robot.ir_sensors.readings | (may want to use this)
 
         #End Assignment week2
-
         return ir_distances
 
     def process(self):
