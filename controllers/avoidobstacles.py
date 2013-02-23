@@ -17,6 +17,23 @@ class AvoidObstacles(Controller):
         self.E = 0
         self.error_1 = 0
 
+        self.ir_angles = [
+        math.radians(128), 
+        math.radians(75),
+        math.radians(42), 
+        math.radians(13), 
+        math.radians(-13),
+        math.radians(-42),
+        math.radians(-75),
+        math.radians(-128),
+        math.radians(0) ]
+
+        self.ir_weights = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+    def clear_error(self):
+        self.E = 0
+        self.error_1 = 0
+
     def set_parameters(self, params):
         """Set PID values
         @param: (float) kp, ki, kd
@@ -28,36 +45,30 @@ class AvoidObstacles(Controller):
     #User-defined function
     def calculate_new_goal(self, ir_distances):
         """Determines a new goal for the robot based on which sensors are active"""
-        #Normalize the angle values
-        ir_angles = [128, 75, 42, 13, -13, -42, -75, -128, 180]
+        angle = 0.0
+        weightdist = 0.0
+        for i in range(len(ir_distances)):
+            angle += self.ir_angles[i]*ir_distances[i]*self.ir_weights[i]
+            weightdist += ir_distances[i]*self.ir_weights[i] 
 
-        #travel orthogonally unless more then one point detected
-        objlist = []
-        for i in range(0, len(ir_distances)):
-            if ir_distances[i] < 0.19:
-                objlist.append(i)
-            
-        numobjects = len(objlist)
-        if numobjects > 1: # simple go 90 degrees from object
-            index = objlist[0]
-            angle = ir_angles[index] + 90
-            angle = math.radians(angle)
-            angle = math.atan2(math.sin(angle), math.cos(angle))
-            goalx = self.robotx + 100*math.cos(self.robottheta + angle)
-            goaly = self.robotx + 100*math.sin(self.robottheta + angle)
-            return (goalx, goaly)
+        angle = angle/weightdist #average angle to the clear
+        angle = angle + self.robottheta
+
+        #if angle < 0.0:
+        #    angle += 2*math.pi
+        #elif angle > 2*math.pi:
+        #    angle -= 2*math.pi
+
+        print angle
+        return angle 
         
-        return (self.goalx, self.goaly)
 
     def calculate_new_velocity(self, ir_distances):
         """Adjusts robot velocity based on distance to object"""
-        #Compare values to range
-        for dist in ir_distances:
-            if dist < 0.19:
-                return 0.1 
-
-        #if nothing found
-        return 0.4 
+        mindist = min(ir_distances)
+        
+        vel = max(min(mindist/0.29*0.4, 0.4), 0.1) 
+        return vel 
 
     def execute(self, state, dt):
         """Executes avoidance behavior based on state and dt. 
@@ -66,22 +77,19 @@ class AvoidObstacles(Controller):
         dt --> supervisor set timestep
 
         return --> unicycle model list [velocity, omega]"""
-        #Select a goal, ccw obstacle avoidance
-
         self.robotx, self.roboty, self.robottheta = state.pose
-        self.goalx, self.goaly = state.goal.x, state.goal.y
+
 
         #If we have reached the goal... stop
-        if math.fabs(state.goal.x - self.robotx) < 0.001 and math.fabs(state.goal.y - self.roboty) < 0.001:
-            print 'stopping'
+        if math.fabs(state.goal.x - self.robotx) < 0.005 and math.fabs(state.goal.y - self.roboty) < 0.005:
             return [0, 0]
     
         #Non-global goal
-        goalx, goaly = self.calculate_new_goal(state.ir_distances) #user defined function
+        theta = self.calculate_new_goal(state.ir_distances) #user defined function
         v_ = self.calculate_new_velocity(state.ir_distances) #user defined function
 
         #1. Calculate simple proportional error
-        error = math.atan2(goaly - self.roboty, goalx - self.robotx) - self.robottheta 
+        error = theta - self.robottheta
 
         #2. Correct for angles (angle may be greater than PI)
         error = math.atan2(math.sin(error), math.cos(error))

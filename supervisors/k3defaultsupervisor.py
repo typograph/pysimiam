@@ -16,13 +16,21 @@ class K3DefaultSupervisor(K3Supervisor):
     def process(self):
         """Selects the best controller based on ir sensor readings
         Updates ui_params.pose and ui_params.ir_readings"""
+        distmin = min(self.get_ir_distances())
+        if self.current is self.avoidobstacles:
+            print "AVOID"
+            if distmin > 0.199:
+                self.current = self.gtg
+
+        elif self.current is self.gtg:
+            print "GTG"
+            if distmin < 0.10:
+                self.current = self.avoidobstacles
+                self.avoidobstacles.clear_error()
+
+
         self.ui_params.pose = self.pose_est
         self.ui_params.ir_distances = self.get_ir_distances()
-        self.current = self.gtg # default selection
-        for distance in self.ui_params.ir_distances:
-            if distance < 0.19:
-                self.current = self.avoidobstacles
-                break
 
         return self.ui_params
 
