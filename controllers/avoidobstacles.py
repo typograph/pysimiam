@@ -65,11 +65,6 @@ class AvoidObstacles(Controller):
         return --> unicycle model list [velocity, omega]"""
         self.robotx, self.roboty, self.robottheta = state.pose
 
-
-        #If we have reached the goal... stop
-        if math.fabs(state.goal.x - self.robotx) < 0.005 and math.fabs(state.goal.y - self.roboty) < 0.005:
-            return [0, 0]
-    
         #Non-global goal
         theta = self.calculate_new_goal(state.sensor_distances) #user defined function
         v_ = self.calculate_new_velocity(state.sensor_distances) #user defined function
