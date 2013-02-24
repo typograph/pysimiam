@@ -90,10 +90,10 @@ def _line_intersect(p1, q1, p2, q2):
         y = (a * y34 - b * y12) / c
         
         # check boundaries
-        if (x >= min(x1, x2) and x >= min(x3, x4) and
-            x <= max(x1, x2) and x <= max(x3, x4) and
-            y >= min(y1, y2) and y >= min(y3, y4) and
-            y <= max(y1, y2) and y <= max(y3, y4)):
+        if (x - min(x1, x2) > -1e-8 and x - min(x3, x4) > -1e-8 and
+            max(x1, x2) - x > -1e-8 and max(x3, x4) - x > -1e-8 and
+            y - min(y1, y2) > -1e-8 and y - min(y3, y4) > -1e-8 and
+            max(y1, y2) - y > -1e-8 and max(y3, y4) - y > -1e-8):
             return (x, y)
     return None
 

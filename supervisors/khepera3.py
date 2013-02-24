@@ -70,7 +70,10 @@ The UI may use the get_parameters function interface to create docker windows fo
         default_value = 3960
         ir_distances = []
         for reading in self.robot.ir_sensors.readings:
-            val = max( min( (log1p(3960) - log1p(reading))/30 + 0.02 , 3960) , 0.02)
+            val = max(
+                    min( (log1p(3960) - log1p(reading))/30 + self.robot.ir_sensors.rmin,
+                         self.robot.ir_sensors.rmax),
+                    self.robot.ir_sensors.rmin)
             ir_distances.append(val) 
 
         return ir_distances
