@@ -81,6 +81,8 @@ class Khepera3(Robot):
         self.info.ir_sensors = Struct()
         self.info.ir_sensors.poses = ir_sensor_poses
         self.info.ir_sensors.readings = None
+        self.info.ir_sensors.rmax = 0.2
+        self.info.ir_sensors.rmin = 0.02
 
     def draw(self,r):
         r.set_pose(self.get_pose())

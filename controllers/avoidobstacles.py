@@ -10,25 +10,8 @@ class AvoidObstacles(Controller):
     """Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines."""
     def __init__(self, params):
         '''read another .xml for PID parameters?'''
-        self.kp=10
-        self.ki=0
-        self.kd=0
-
-        self.E = 0
-        self.error_1 = 0
-
-        self.ir_angles = [
-        math.radians(128), 
-        math.radians(75),
-        math.radians(42), 
-        math.radians(13), 
-        math.radians(-13),
-        math.radians(-42),
-        math.radians(-75),
-        math.radians(-128),
-        math.radians(0) ]
-
-        self.ir_weights = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+	Controller.__init__(self,params)
+	self.clear_error()
 
     def clear_error(self):
         self.E = 0
@@ -38,18 +21,21 @@ class AvoidObstacles(Controller):
         """Set PID values
         @param: (float) kp, ki, kd
         """
-        self.kp = params.kp
-        self.ki = params.ki
-        self.kd = params.kd
+        self.kp = params.gains.kp
+        self.ki = params.gains.ki
+        self.kd = params.gains.kd
+
+	self.angles = params.sensor_angles
+	self.weights = [1]*len(self.angles)
 
     #User-defined function
-    def calculate_new_goal(self, ir_distances):
+    def calculate_new_goal(self, distances):
         """Determines a new goal for the robot based on which sensors are active"""
         angle = 0.0
         weightdist = 0.0
-        for i in range(len(ir_distances)):
-            angle += self.ir_angles[i]*ir_distances[i]*self.ir_weights[i]
-            weightdist += ir_distances[i]*self.ir_weights[i] 
+        for i in range(len(distances)):
+            angle += self.angles[i]*distances[i]*self.weights[i]
+            weightdist += distances[i]*self.weights[i] 
 
         angle = angle/weightdist #average angle to the clear
         angle = angle + self.robottheta
@@ -63,9 +49,9 @@ class AvoidObstacles(Controller):
         return angle 
         
 
-    def calculate_new_velocity(self, ir_distances):
+    def calculate_new_velocity(self, distances):
         """Adjusts robot velocity based on distance to object"""
-        mindist = min(ir_distances)
+        mindist = min(distances)
         
         vel = max(min(mindist/0.29*0.4, 0.4), 0.1) 
         return vel 
@@ -79,14 +65,9 @@ class AvoidObstacles(Controller):
         return --> unicycle model list [velocity, omega]"""
         self.robotx, self.roboty, self.robottheta = state.pose
 
-
-        #If we have reached the goal... stop
-        if math.fabs(state.goal.x - self.robotx) < 0.005 and math.fabs(state.goal.y - self.roboty) < 0.005:
-            return [0, 0]
-    
         #Non-global goal
-        theta = self.calculate_new_goal(state.ir_distances) #user defined function
-        v_ = self.calculate_new_velocity(state.ir_distances) #user defined function
+        theta = self.calculate_new_goal(state.sensor_distances) #user defined function
+        v_ = self.calculate_new_velocity(state.sensor_distances) #user defined function
 
         #1. Calculate simple proportional error
         error = theta - self.robottheta
