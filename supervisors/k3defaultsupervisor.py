@@ -8,7 +8,8 @@ class K3DefaultSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
-        self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params.gains)
+	self.ui_params.sensor_angles = [pose.theta for pose in robot_info.ir_sensors.poses]
+        self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params)
         self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
 
         self.current = self.gtg
@@ -30,7 +31,7 @@ class K3DefaultSupervisor(K3Supervisor):
 
 
         self.ui_params.pose = self.pose_est
-        self.ui_params.ir_distances = self.get_ir_distances()
+        self.ui_params.sensor_distances = self.get_ir_distances()
 
         return self.ui_params
 
