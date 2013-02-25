@@ -59,9 +59,12 @@
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="how-to-run-the-program">
 <h2>How to run the program<a class="headerlink" href="#how-to-run-the-program" title="Permalink to this headline">¶</a></h2>
-<p>&gt; python qtsimiam.py</p>
-<p>or</p>
-<p>&gt; ./qtsimiam.py</p>
+<div class="highlight-python"><pre>&gt; python qtsimiam.py</pre>
+</div>
+<p>or for those with knowledge of the &#8216;nix OS</p>
+<div class="highlight-python"><pre>&gt; chmod +x qtsimiam.py
+&gt; chmod ./qtsimiam.py</pre>
+</div>
 </div>
 </div>
 <div class="section" id="week-2-unicycle-to-differential-transformation">
@@ -73,93 +76,106 @@
 <li>Navigate to ./pysimiam/supervisors/khepera3.py and open it in an editor</li>
 <li>Find the function labeled <cite>uni2diff</cite> in the khepera3.K3Supervisor class.</li>
 </ol>
-<dl class="docutils">
-<dt>def uni2diff(uni)</dt>
-<dd><p class="first">(v,w) = uni</p>
-<p>#Insert Week 2 Assignment Code Here</p>
-<p>#End Week 2 Assignment Code</p>
-<p class="last">return (vl, vr)</p>
-</dd>
-</dl>
-<p><cite>uni</cite> is a python tuple with two values. To get those values out of the variable simple apply a statement like this:</p>
-<p>(v, w) = uni</p>
-<p>Your job is to assign values to vl and vr such that the velocity and omega unicycle input correspond to the velocity-left and velocity right.</p>
-<p>Recall that the equations for unicycle model are:</p>
-<div class="math">
-\[\frac{dx}{dt} = v*cos(\phi)\]</div>
-<div class="math">
-\[\frac{dy}{dt} = v*sin(\phi)\]</div>
-<div class="math">
-\[\frac{d\phi}{dt} = \omega\]</div>
-<p>And the differential model is:</p>
-<div class="math">
-\[\frac{dx}{dt} = \frac{R}{2}*(v_r + v_l)*cos(\phi)\]</div>
-<div class="math">
-\[\frac{dy}{dt} = \frac{R}{2}*(v_r + v_l)*sin(\phi)\]</div>
-<div class="math">
-\[\frac{d\phi}{dt} = \frac{R}{L}*(v_r - v_l)\]</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">uni2diff</span><span class="p">(</span><span class="n">uni</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="n">uni</span>
+
+    <span class="c">#Insert Week 2 Assignment Code Here</span>
+
+    <span class="c">#End Week 2 Assignment Code</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">vl</span><span class="p">,</span> <span class="n">vr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">uni</span></tt> is a python tuple with two values. To get those values out of the variable simple apply a statement like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">uni</span>
+</pre></div>
+</div>
 <p>You are given the values:</p>
 <ul class="simple">
-<li>self.robot.wheels.radius (float)</li>
-<li>omega (float)</li>
-<li>velocity (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">omega</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">velocity</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float)</li>
+</ul>
+<p>Your job is to assign values to <tt class="docutils literal"><span class="pre">vl</span></tt> and <tt class="docutils literal"><span class="pre">vr</span></tt> such that the velocity and omega unicycle input correspond to the robot&#8217;s left and right wheel velocities.</p>
+<p>Recall that the equations for unicycle model are:</p>
+<div class="math">
+\[\begin{split}\frac{dx}{dt} &amp;= v\cos(\phi) \\
+\frac{dy}{dt} &amp;= v\sin(\phi) \\
+\frac{d\phi}{dt} &amp;= \omega\end{split}\]</div>
+<p>And the differential model is:</p>
+<div class="math">
+\[\begin{split}\frac{dx}{dt} &amp;= \frac{R}{2}(v_r + v_l)\cos(\phi) \\
+\frac{dy}{dt} &amp;= \frac{R}{2}(v_r + v_l)\sin(\phi) \\
+\frac{d\phi}{dt} &amp;= \frac{R}{L}(v_r - v_l)\end{split}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li>R is the radius of the wheels <tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt></li>
+<li>L is the length of the base <tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt></li>
 </ul>
 </div>
 <div class="section" id="part-2-odometry">
 <h2>Part 2: Odometry<a class="headerlink" href="#part-2-odometry" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Open ./pysimiam/supevisors/khepera3.py in an editor.</li>
-<li>Scoll to the <cite>estimate_pose</cite> function and enter you code in the noted area.</li>
+<li>Open <tt class="docutils literal"><span class="pre">./pysimiam/supevisors/khepera3.py</span></tt> in an editor.</li>
+<li>Find to the <cite>estimate_pose</cite> function and enter you code in the indicated area.</li>
 </ol>
 <p>You are given these variables:</p>
 <ul class="simple">
-<li>self.robot.wheels.radius (float)</li>
-<li>self.robot.wheels.base_lenght (float)</li>
-<li>self.robot.wheels.ticks_per_rev (integer)</li>
-<li>self.robot.wheels.left_ticks (integer)</li>
-<li>self.robot.wheels.right_ticks (integer)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.ticks_per_rev</span></tt> (integer)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> (integer)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.right_ticks</span></tt> (integer)</li>
 </ul>
-<p>self.robot.wheels.left_ticks and .right_ticks are real integers representing the tick numbering of the encoder (not elapsed ticks... you have to calculate that).</p>
+<p><tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">.right_ticks</span></tt> are real integers representing the tick numbering of the encoder (not elapsed ticks... you have to calculate that).</p>
 <p>You will need to implement a memory variable to store previous values. One example of how to do this might be:</p>
-<p>prev_right_ticks = self.robot.wheels.right_ticks</p>
-<p>prev_left_ticks = self.robot.wheels.left_ticks</p>
-<p>Your objective is to solve for the change in x, y, and theta and from those values update the variables x_new, y_new, and theta_new. The values x_new, y_new, and theta_new will be used to update the estimated pose for the supervisor.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">prev_right_ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">prev_left_ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span>
+</pre></div>
+</div>
+<p>Your objective is to solve for the change in <cite>x</cite>, <cite>y</cite>, and <cite>theta</cite> and from those values update the variables <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite>. The values <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite> will be used to update the estimated pose for the supervisor.</p>
+<p>Recall that the equations for odometry are in lecture 2 slides.</p>
 </div>
 <div class="section" id="part-3-ir-distance-calculation-in-meters">
 <h2>Part 3: IR Distance calculation (in meters)<a class="headerlink" href="#part-3-ir-distance-calculation-in-meters" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Open ./pysimiam/supervisors/khepera3.py in a text editor.</li>
-<li>Find the <cite>get_ir_distances</cite> function.</li>
+<li>Open <tt class="docutils literal"><span class="pre">./pysimiam/supervisors/khepera3.py</span></tt> in a text editor.</li>
+<li>Find the <tt class="docutils literal"><span class="pre">get_ir_distances</span></tt> function.</li>
 <li>Insert your code into the indicated area.</li>
 </ol>
 <p>You are provided with the variable:</p>
 <ul class="simple">
-<li>self.robot.ir_sensors.readings (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.ir_sensors.readings</span></tt> (float)</li>
 </ul>
 <p>Knowing that the sensitive range of distance is 0.02 meters to 0.2 meters and that the intensity as a function of distance is given by:</p>
 <div class="math">
-\[f(\delta) = \{\begin{eqnarray}
+\[f(\delta) = \left\{\begin{eqnarray}
     3960 & \quad 0m <  \delta  < 0.02m\\
     3960e^{-30(\delta-0.02)} & \quad 0.02m <  \delta  < 0.2m
-\end{eqnarray}\]</div><p>Convert to distances for the sensors and assign them to a list called ir_distances.</p>
+\end{eqnarray}\right.\]</div><p>Convert to distances for the sensors and assign them to a list called ir_distances.</p>
+<p>For the those curious to explain why IR sensors behave in an exponentially decaying manner: the intensity of the light decays in accordance to the <a class="reference external" href="http://en.wikipedia.org/wiki/Inverse-square_law">inverse square law</a>.</p>
 </div>
 </div>
 <div class="section" id="week-3-go-to-goal-controller">
 <h1>Week 3: Go To Goal Controller<a class="headerlink" href="#week-3-go-to-goal-controller" title="Permalink to this headline">¶</a></h1>
 <ol class="arabic simple">
-<li>Open ./pysimiam/controllers/gotogoal.py in an editor.</li>
+<li>Open <tt class="docutils literal"><span class="pre">./pysimiam/controllers/gotogoal.py</span></tt> in an editor.</li>
 <li>Find the execute function in the controller with the appropriate label for week 3.</li>
 </ol>
 <p>Given the following variables:</p>
 <ul class="simple">
-<li>state.goal.x</li>
-<li>state.pose  (the robot&#8217;s pose)</li>
+<li><tt class="docutils literal"><span class="pre">state.goal.x</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">state.goal.y</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">state.pose</span></tt>  (the robot&#8217;s pose)</li>
 </ul>
-<p>To use the pose data, use a command like this:</p>
-<p>(x, y, theta) = state.pose</p>
+<p>To extract the pose data, you can use a command like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pose</span>
+</pre></div>
+</div>
 <ol class="arabic simple" start="3">
-<li>Calculate the bearing (angle) to the goal (state.goal.x and state.goal.y)</li>
-<li>Calculate the error from the present heading (theta) and the bearing.</li>
+<li>Calculate the bearing (angle) to the goal (<tt class="docutils literal"><span class="pre">state.goal.x</span></tt> and <tt class="docutils literal"><span class="pre">state.goal.y</span></tt>)</li>
+<li>Calculate the error from the present heading (<cite>theta</cite>) and the bearing.</li>
 <li>Calculate proportional, integral, and differential terms of the PID.</li>
 </ol>
 </div>

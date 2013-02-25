@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #QtSimiam
 #Author: Tim Fuchs
 #Description: This is the top-level application for QtSimiam.
