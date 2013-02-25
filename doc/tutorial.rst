@@ -4,7 +4,6 @@ Tutorial
 How to run the program
 -------------------------------
 
-
 ::
 
 > python qtsimiam.py
