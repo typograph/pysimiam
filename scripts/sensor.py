@@ -10,6 +10,9 @@ from simobject import SimObject
 from pose import Pose
 from math import sin, cos, sqrt
 
+from robot import Robot
+
+
 class Sensor:
     """Base superclass for sensor objects"""
     @classmethod
@@ -100,7 +103,8 @@ class ProximitySensor(MountedSensor):
         r.draw_polygon(self.pts)
         
     def get_distance_to(self, sim_object):
-        """Gets the distance to another simobject"""
+        """Gets the distance to another simobject
+        returns distance in meters or None if not in contact"""
         ox, oy, ot = self.get_pose()
         min_distance = None
         for px, py in self.get_contact_points(sim_object):
@@ -109,7 +113,4 @@ class ProximitySensor(MountedSensor):
                 if distance < min_distance:
                     min_distance = distance
             else: min_distance = distance
-            # Test code - return contact point info
-            #print "Contact @({0},{1}) ~{2}".format(px, py, distance)
-            #
         return min_distance

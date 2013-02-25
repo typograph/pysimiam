@@ -196,7 +196,6 @@ class Simulator(threading.Thread):
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
-                #self.update_sensors()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -306,13 +305,17 @@ class Simulator(threading.Thread):
         return self.__time
 
     def check_collisions(self):
-        ''' Detect collisions between objects '''
+        """updates proximity sensors and detects collisions between objects"""
         
         collisions = []
         checked_robots = []
         
         if self.__qtree is None:
             self.__qtree = QuadTree(self._obstacles)
+            
+        if len(self._robots) > 1:
+            rqtree = QuadTree(self._robots)
+        else: rqtree = None
         
         # check each robot
         for robot in self._robots:
@@ -322,27 +325,29 @@ class Simulator(threading.Thread):
                 sensor.get_world_envelope(True)
                 rect = Rect(sensor.get_bounding_rect())
                 sensor.update_distance()
+                # distance to obstacles
                 for obstacle in self.__qtree.find_items(rect):
-                    if (sensor.update_distance(obstacle)):
-                        #print "{0} -> {1} Distance:{2}".format(
-                        #sensor, obstacle, sensor.distance())
-                        pass
+                    sensor.update_distance(obstacle)
+                # distance to other robots
+                if rqtree is None: continue
+                for other in rqtree.find_items(rect):
+                    if other is not robot:
+                        sensor.update_distance(other)
             
             rect = Rect(robot.get_bounding_rect())
             
             # against nearest obstacles
             for obstacle in self.__qtree.find_items(rect):
-                # Test Code: print "In proximity to:", obstacle
                 if robot.has_collision(obstacle):
                     collisions.append((robot, obstacle))
             
             # against other robots
-            for other in self._robots: 
-                if other is robot: continue
-                #TODO: robot.update_sensors(other)
-                if other in checked_robots: continue
-                if robot.has_collision(other):
-                    collisions.append((robot, other))
+            if rqtree is not None:
+                for other in rqtree.find_items(rect):
+                    if other is robot: continue
+                    if other in checked_robots: continue
+                    if robot.has_collision(other):
+                        collisions.append((robot, other))
 
             checked_robots.append(robot)
             
@@ -372,9 +377,4 @@ class Simulator(threading.Thread):
                 print "Wrong simulator event format '{}'".format(tpl)
             self._in_queue.task_done()
     
-    def update_sensors(self):
-        ''' Update robot's sensors '''
-        # Depricated 
-        return
-        
 #end class Simulator

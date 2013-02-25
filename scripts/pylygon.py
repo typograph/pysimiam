@@ -1,7 +1,4 @@
-# Copyright (c) 2011, Chandler Armstrong (omni dot armstrong at gmail dot com)
-# see LICENSE.txt for details
-
-# Added collidepoints
+# Based on work by Chandler Armstrong (omni dot armstrong at gmail dot com)
 
 
 """
@@ -70,6 +67,7 @@ def _isbetween(o, p, q):
     if fabs(p_y - ((m * p_x) + b)) < _MACHEPS: return True
 
 def _line_intersect(p1, q1, p2, q2):
+    """ gets an intersection point of two lines """
     x1, y1 = p1
     x2, y2 = q1
     x3, y3 = p2
@@ -82,7 +80,7 @@ def _line_intersect(p1, q1, p2, q2):
 
     c = x12 * y34 - y12 * x34
     
-    if abs(c) > 0.01:
+    if abs(c) > 0.001:
         # Intersection
         a = x1 * y2 - y1 * x2
         b = x3 * y4 - y3 * x4
@@ -559,7 +557,7 @@ class Polygon(object):
 
     def intersection_points(self, other):
         """
-        Determine contact (intersection) points between the self
+        Determine contact (intersection) points between self
         and other.
 
         returns Empty list if no collisions found
