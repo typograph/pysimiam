@@ -181,6 +181,10 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__dockmanager.add_dock_right(robot_id, name, parameters)
 
     def load_world(self,filename):
+        if not os.path.exists(filename):
+            filename = os.path.join('worlds',filename)
+            if not os.path.exists(filename):
+                print "Cannot open file {}".format(filename)
         self.__dockmanager.clear()
         self.revaction.setEnabled(True)
         self.runaction.setEnabled(True)
@@ -330,4 +334,9 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     simWidget = SimulationWidget()
     simWidget.show()
+    if len(sys.argv) > 1:
+        if len(sys.argv) == 2:
+            simWidget.load_world(sys.argv[1])
+        else:
+            print "Too many command-line options"
     app.exec_()
