@@ -76,15 +76,21 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__time_label.setToolTip("Elapsed time")
         tbar.addWidget(self.__time_label)
         
-        tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
-                       "Rewind",
-                       self._on_rewind)
-        tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),
-                       "Run",
-                       self._on_run)
-        tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
+        self.revaction = \
+            tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
+                        "Rewind",
+                        self._on_rewind)
+        self.runaction = \
+            tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),
+                           "Run",
+                           self._on_run)
+        self.pauseaction = \
+            tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
                        "Pause",
                        self._on_pause)
+        self.revaction.setEnabled(False)
+        self.runaction.setEnabled(False)
+        self.pauseaction.setVisible(False)
         self.__speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.__speed_slider.setToolTip("Adjust speed")
         self.__speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
@@ -174,28 +180,40 @@ class SimulationWidget(QtGui.QMainWindow):
         # FIXME adding to the right for no reason
         self.__dockmanager.add_dock_right(robot_id, name, parameters)
 
+    def load_world(self,filename):
+        self.__dockmanager.clear()
+        self.revaction.setEnabled(True)
+        self.runaction.setEnabled(True)
+        self.__sim_queue.put(('read_config',(filename,)))
+
     # Slots
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
         #self.__sim_timer.stop()
+        self.pauseaction.setVisible(False)
+        self.runaction.setVisible(True)
+        self.revaction.setEnabled(False)
         self.__time_label.setText("00:00.0")
         self.__sim_queue.put(('reset_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_run(self): # Run/unpause
-        #self._simulator_thread.start_simulation()
+        self.pauseaction.setVisible(True)
+        self.runaction.setVisible(False)
+        self.revaction.setEnabled(True)
         self.__sim_queue.put(('start_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_pause(self): # Pause
+        self.pauseaction.setVisible(False)
+        self.runaction.setVisible(True)
         self.__sim_queue.put(('pause_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_open_world(self):
         self._on_pause()
         if self._world_dialog.exec_():
-            self.__dockmanager.clear()
-            self.__sim_queue.put(('read_config',(self._world_dialog.selectedFiles()[0],)))
+            self.load_world(self._world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
     def _show_grid(self,show):
