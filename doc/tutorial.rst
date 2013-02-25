@@ -129,6 +129,8 @@ For the those curious to explain why IR sensors behave in an exponentially decay
 
 .. _inverse square law: http://en.wikipedia.org/wiki/Inverse-square_law
 
+When you have completed all these exercises, run the simulator. Ctrl+O opens the dialog to load the world environment. If you select settings.xml you can test out your odometry by changing the goal in realtime. By default, the robot only goes upward, but if you change the goal you can see the bot avoid obstacles based on your calculations.
+
 
 
 Week 3: Go To Goal Controller
