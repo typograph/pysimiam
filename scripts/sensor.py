@@ -105,7 +105,7 @@ class ProximitySensor(MountedSensor):
         min_distance = None
         for px, py in self.get_contact_points(sim_object):
             distance = sqrt((px-ox)*(px-ox)+(py-oy)*(py-oy))
-            if min_distance:
+            if min_distance is not None:
                 if distance < min_distance:
                     min_distance = distance
             else: min_distance = distance

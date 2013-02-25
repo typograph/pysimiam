@@ -25,12 +25,13 @@ class AvoidObstacles(Controller):
         self.ki = params.gains.ki
         self.kd = params.gains.kd
 
-	self.angles = params.sensor_angles
-	self.weights = [1]*len(self.angles)
+        self.angles = params.sensor_angles
+        self.weights = [(math.cos(a)+1.1) for a in self.angles]
 
     #User-defined function
     def calculate_new_goal(self, distances):
         """Determines a new goal for the robot based on which sensors are active"""
+        
         angle = 0.0
         weightdist = 0.0
         for i in range(len(distances)):
@@ -46,8 +47,7 @@ class AvoidObstacles(Controller):
         #    angle -= 2*math.pi
 
         print angle
-        return angle 
-        
+        return angle
 
     def calculate_new_velocity(self, distances):
         """Adjusts robot velocity based on distance to object"""
