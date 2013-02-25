@@ -60,22 +60,27 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Convert between unicycle model to differential model"""
         (v,w) = uni
         # Assignment Week 2
-        vr = (self.robot.wheels.base_length*w +2*v)/2/self.robot.wheels.radius
-        vl = vr - self.robot.wheels.base_length*w/self.robot.wheels.radius
+
+        summ = 2*v/self.robot.wheels.radius
+        diff = self.robot.wheels.base_length*w/self.robot.wheels.radius
+
+        vl = (summ-diff)/2
+        vr = (summ+diff)/2
+
         # End Assignment
         return (vl,vr)
             
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
         default_value = 3960
-        ir_distances = []
+        #Assignment week2
+        ir_distances = [] #populate this list
+        #self.robot.ir_sensors.readings | (may want to use this)
         for reading in self.robot.ir_sensors.readings:
-            val = max(
-                    min( (log1p(3960) - log1p(reading))/30 + self.robot.ir_sensors.rmin,
-                         self.robot.ir_sensors.rmax),
-                    self.robot.ir_sensors.rmin)
+            val = max( min( (log1p(3960) - log1p(reading))/30 + 0.02 , 3960) , 0.02)
             ir_distances.append(val) 
 
+        #End Assignment week2
         return ir_distances
 
     def process(self):
@@ -87,6 +92,7 @@ The UI may use the get_parameters function interface to create docker windows fo
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
         
+        #Week 2 exercise 
         # Get tick updates
         dtl = self.robot.wheels.left_ticks - self.left_ticks
         dtr = self.robot.wheels.right_ticks - self.right_ticks
@@ -114,7 +120,8 @@ The UI may use the get_parameters function interface to create docker windows fo
             
         theta_new = theta + theta_dt
         x_new = x + x_dt
-        y_new = y + y_dt                           
+        y_new = y + y_dt             
+        #end week2 exercise
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
             
