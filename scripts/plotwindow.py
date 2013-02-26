@@ -29,10 +29,9 @@ class Plot:
     The plot follows one or more variables through time.
     It keeps track of the variables.
     """
-    def __init__(self,expression,axes):
+    def __init__(self,axes):
         self.axes = axes
         self.variables = []
-        self.add_curve(expression)
     
     def add_curve(self,expression):
         self.variables.append(PlotVariable(expression,self.axes))
@@ -50,7 +49,7 @@ class PlotWindow(QtGui.QWidget):
     It keeps track of all subplots
     """
     
-    def __init__(self, expression):
+    def __init__(self):
         QtGui.QWidget.__init__(self)
 
         self.plots = []
@@ -65,28 +64,125 @@ class PlotWindow(QtGui.QWidget):
 
         vlayout.addWidget(tbar)
         vlayout.addWidget(canvas)
-        
-        self.add_plot(expression)
     
     #Slots
     def clear(self):
         self.plots = []
         self.figure.clf()
         
-    def add_plot(self,expression):
+    def add_plot(self):
         """Add a new subplot with a curve given by expression"""
         n = len(self.plots)
         if n > 0:
             for i, plot in enumerate(self.plots):
                 plot.axes.change_geometry(n+1,1,i+1)
             self.plots.append(
-                Plot(expression,
-                     self.figure.add_subplot(n+1,1,n+1,sharex=self.plots[0].axes)))
+                Plot(self.figure.add_subplot(n+1,1,n+1,sharex=self.plots[0].axes)))
         else:
-            self.plots.append(Plot(expression, self.figure.add_subplot(111)))
+            self.plots.append(Plot(self.figure.add_subplot(111)))
         self.figure.canvas.draw()
+        return self.plots[-1]
     
     def add_data(self,data):
         for plot in self.plots:
             plot.add_data(data)
         self.figure.canvas.draw()
+
+def create_plot_window(plotables):
+    """Create a dialog for plot creation.
+       Return selected expressions
+    """
+    dialog = PlotDialog(plotables)
+    if dialog.exec_():
+        # Create plots
+        return dialog.expressions(), dialog.plot()
+    return None
+
+class PlotableComboBox(QtGui.QComboBox):
+    def __init__(self,plotables,parent):
+        QtGui.QComboBox.__init__(self,parent)
+        #self.plotables = plotables
+        for label, expr in plotables.items():
+            self.addItem(label,expr)
+        self.setEditable(True)
+        self.setCurrentIndex(0)
+    
+    def _expression(self):
+        if self.currentIndex() > -1:
+            return self.itemData(self.currentIndex()).toPyObject()
+        else:
+            return self.currentText()
+    
+    def expression(self):
+        return str(self._expression())
+    
+    def create_curve(self,plot):
+        plot.add_curve(self.expression())
+    
+class SubPlotGroup(QtGui.QGroupBox):
+    def __init__(self,plotables,parent):
+        QtGui.QGroupBox.__init__(self,"Subplot",parent)
+        self.plotables = plotables
+        self.combos = []
+        
+        self.vl = QtGui.QVBoxLayout(self)
+        button = QtGui.QPushButton("Add curve",self)
+        button.clicked.connect(self.add_curve)
+        self.vl.addWidget(button)
+        self.add_curve()
+        
+    def add_curve(self):
+        self.combos.append(PlotableComboBox(self.plotables,self))
+        self.vl.insertWidget(len(self.combos)-1,self.combos[-1])
+    
+    def expressions(self):
+        return [c.expression() for c in self.combos]
+    
+    def create_plot(self,plot):
+        splot = plot.add_plot()
+        for combobox in self.combos:
+            combobox.create_curve(splot)
+
+class PlotDialog(QtGui.QDialog):
+    def __init__(self,plotables):
+        QtGui.QWidget.__init__(self)
+        
+        self.plotables = plotables
+        
+        self.vl = QtGui.QVBoxLayout(self)
+        self.plots = []
+              
+        hl = QtGui.QHBoxLayout()
+
+        addplotbutton = QtGui.QPushButton("Add subplot",self)
+        addplotbutton.clicked.connect(self.add_subplot)
+        hl.addWidget(addplotbutton)
+        hl.addItem(
+            QtGui.QSpacerItem(40, 20,
+                              QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+                              
+        plotbutton = QtGui.QPushButton("Plot",self)
+        plotbutton.clicked.connect(self.accept)
+        hl.addWidget(plotbutton)
+
+        cancelbutton = QtGui.QPushButton("Cancel",self)
+        cancelbutton.clicked.connect(self.reject)
+        hl.addWidget(cancelbutton)
+
+        self.vl.addLayout(hl)
+        
+        self.add_subplot()
+     
+    def add_subplot(self):
+        self.plots.append(SubPlotGroup(self.plotables,self))
+        self.vl.insertWidget(len(self.plots)-1,self.plots[-1])
+        
+    def expressions(self):
+        return [expr for plot in self.plots for expr in plot.expressions()]
+    
+    def plot(self):
+        p = PlotWindow()
+        for plt in self.plots:
+            plt.create_plot(p)
+        return p
