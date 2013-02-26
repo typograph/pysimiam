@@ -97,7 +97,8 @@ the elapsed ticks. One example of how to do this might be::
    self.prev_right_ticks = self.robot.wheels.right_ticks
    self.prev_left_ticks = self.robot.wheels.left_ticks
 
-The initial ticks are saved for you in ``self.left_ticks`` and ``self.right_ticks``.
+Note that ``self.prev_left_ticks`` and ``self.prev_right_ticks`` have to be initialized
+in the constructor. The code is already in place for you in the ``__init__()`` method.
 
 Your objective is to solve for the change in `x`, `y`, and `theta`
 and from those values update the variables `x_new`, `y_new`, and `theta_new`.
@@ -110,10 +111,7 @@ Part 3: IR Distance calculation (in meters)
 -----------------------------------------------------------
 
 1. Open ``./pysimiam/supervisors/khepera3.py`` in a text editor.
-
-2. Find the ``get_ir_distances`` function.
-
-3. Insert your code into the indicated area.
+2. Find the `get_ir_distances` function and insert your code into the indicated area.
 
 You are provided with the variable:
 
@@ -135,19 +133,56 @@ For the those curious to explain why IR sensors behave in an exponentially decay
 
 .. _inverse square law: http://en.wikipedia.org/wiki/Inverse-square_law
 
+Testing
+-----------------------------------------------------------
+
 When you have completed all these exercises, run the simulator with::
 
 > python qtsimiam.py week2.xml
-    
-You can test out your odometry by changing the goal in realtime. By default,
-the robot only goes right, but if you change the goal, you can see the bot
-avoid obstacles based on your calculations.
 
+In the beginning, your robot will not move. After you have implemented the
+unicycle to differential transformation, it will start to revolve in place.
+With the odometry implemented, it will go up by default and crash into the wall.
+As soon as the sensors work correctly, you will see it avoid obstacles based
+on your calculations.
+
+You can change the goal position in real-time and see the robot move to the new goal.
 
 Week 3: Go To Goal Controller
 =============================
 1. Open ``./pysimiam/controllers/gotogoal.py`` in an editor.
-2. Find the execute function in the controller with the appropriate label for week 3.
+2. Find the `__init__` and `execute` function in the controller with the appropriate label for week 3.
+
+.. code-block:: python
+
+    def __init__(self, params):
+        """init
+        @params: 
+
+        """
+        Controller.__init__(self,params)
+        #Week 3
+        #Place any variables you would like to store here
+        #e.g.: self.myvar1
+
+        #End week3
+
+   def execute(self,state,dt):
+        """Executes the controller behavior
+        @return --> unicycle model list [velocity, omega]
+        """
+        #Week 3
+        # Here is an example of how to get goal position
+        # and robot pose data. Feel free to name them differently.
+
+        #x_g, y_g = state.goal.x, state.goal.y
+        #x_r, y_r, theta = state.pose
+
+        #Your goal is to modify these two variables
+        w = 0
+        v = 0 
+        #End week3 exercise
+        return [v, w] 
 
 Given the following variables:
 

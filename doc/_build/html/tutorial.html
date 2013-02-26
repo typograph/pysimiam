@@ -142,7 +142,8 @@ the elapsed ticks. One example of how to do this might be:</p>
 <span class="bp">self</span><span class="o">.</span><span class="n">prev_left_ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span>
 </pre></div>
 </div>
-<p>The initial ticks are saved for you in <tt class="docutils literal"><span class="pre">self.left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">self.right_ticks</span></tt>.</p>
+<p>Note that <tt class="docutils literal"><span class="pre">self.prev_left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">self.prev_right_ticks</span></tt> have to be initialized
+in the constructor. The code is already in place for you in the <tt class="docutils literal"><span class="pre">__init__()</span></tt> method.</p>
 <p>Your objective is to solve for the change in <cite>x</cite>, <cite>y</cite>, and <cite>theta</cite>
 and from those values update the variables <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite>.
 The values <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite> will be used to update
@@ -153,8 +154,7 @@ the estimated pose for the supervisor.</p>
 <h2>Part 3: IR Distance calculation (in meters)<a class="headerlink" href="#part-3-ir-distance-calculation-in-meters" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li>Open <tt class="docutils literal"><span class="pre">./pysimiam/supervisors/khepera3.py</span></tt> in a text editor.</li>
-<li>Find the <tt class="docutils literal"><span class="pre">get_ir_distances</span></tt> function.</li>
-<li>Insert your code into the indicated area.</li>
+<li>Find the <cite>get_ir_distances</cite> function and insert your code into the indicated area.</li>
 </ol>
 <p>You are provided with the variable:</p>
 <ul class="simple">
@@ -167,20 +167,56 @@ the estimated pose for the supervisor.</p>
     3960e^{-30(\delta-0.02)} & \quad 0.02m <  \delta  < 0.2m
 \end{eqnarray}\right.\]</div><p>Convert to distances for the sensors and assign them to a list called ir_distances.</p>
 <p>For the those curious to explain why IR sensors behave in an exponentially decaying manner: the intensity of the light decays in accordance to the <a class="reference external" href="http://en.wikipedia.org/wiki/Inverse-square_law">inverse square law</a>.</p>
+</div>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
 <p>When you have completed all these exercises, run the simulator with:</p>
 <div class="highlight-python"><pre>&gt; python qtsimiam.py week2.xml</pre>
 </div>
-<p>You can test out your odometry by changing the goal in realtime. By default,
-the robot only goes right, but if you change the goal, you can see the bot
-avoid obstacles based on your calculations.</p>
+<p>In the beginning, your robot will not move. After you have implemented the
+unicycle to differential transformation, it will start to revolve in place.
+With the odometry implemented, it will go up by default and crash into the wall.
+As soon as the sensors work correctly, you will see it avoid obstacles based
+on your calculations.</p>
+<p>You can change the goal position in real-time and see the robot move to the new goal.</p>
 </div>
 </div>
 <div class="section" id="week-3-go-to-goal-controller">
 <h1>Week 3: Go To Goal Controller<a class="headerlink" href="#week-3-go-to-goal-controller" title="Permalink to this headline">¶</a></h1>
 <ol class="arabic simple">
 <li>Open <tt class="docutils literal"><span class="pre">./pysimiam/controllers/gotogoal.py</span></tt> in an editor.</li>
-<li>Find the execute function in the controller with the appropriate label for week 3.</li>
+<li>Find the <cite>__init__</cite> and <cite>execute</cite> function in the controller with the appropriate label for week 3.</li>
 </ol>
+<div class="highlight-python"><div class="highlight"><pre> <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+     <span class="sd">&quot;&quot;&quot;init</span>
+<span class="sd">     @params:</span>
+
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="n">Controller</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">)</span>
+     <span class="c">#Week 3</span>
+     <span class="c">#Place any variables you would like to store here</span>
+     <span class="c">#e.g.: self.myvar1</span>
+
+     <span class="c">#End week3</span>
+
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">dt</span><span class="p">):</span>
+     <span class="sd">&quot;&quot;&quot;Executes the controller behavior</span>
+<span class="sd">     @return --&gt; unicycle model list [velocity, omega]</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c">#Week 3</span>
+     <span class="c"># Here is an example of how to get goal position</span>
+     <span class="c"># and robot pose data. Feel free to name them differently.</span>
+
+     <span class="c">#x_g, y_g = state.goal.x, state.goal.y</span>
+     <span class="c">#x_r, y_r, theta = state.pose</span>
+
+     <span class="c">#Your goal is to modify these two variables</span>
+     <span class="n">w</span> <span class="o">=</span> <span class="mi">0</span>
+     <span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+     <span class="c">#End week3 exercise</span>
+     <span class="k">return</span> <span class="p">[</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span>
+</pre></div>
+</div>
 <p>Given the following variables:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">state.goal.x</span></tt> (float) - The X coordinate of the goal</li>
@@ -215,6 +251,7 @@ avoid obstacles based on your calculations.</p>
 <li><a class="reference internal" href="#part-1-unicycle-to-differential">Part 1: Unicycle to Differential</a></li>
 <li><a class="reference internal" href="#part-2-odometry">Part 2: Odometry</a></li>
 <li><a class="reference internal" href="#part-3-ir-distance-calculation-in-meters">Part 3: IR Distance calculation (in meters)</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#week-3-go-to-goal-controller">Week 3: Go To Goal Controller</a></li>
@@ -269,7 +306,7 @@ avoid obstacles based on your calculations.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

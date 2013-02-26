@@ -14,9 +14,11 @@ class GoToGoal(Controller):
 
         """
         Controller.__init__(self,params)
+        #Week 3
+        #Place any variables you would like to store here
+        #e.g.: self.myvar1
 
-        self.E_k = 0 # integrated error
-        self.e_k_1 = 0 # last step error
+        #End week3
 
     def set_parameters(self,params):
         """Set the PID Values
@@ -30,26 +32,16 @@ class GoToGoal(Controller):
         """Executes the controller behavior
         @return --> unicycle model list [velocity, omega]
         """
-        #Calculate the goal position
-        x_g, y_g = state.goal.x, state.goal.y
-        x_r, y_r, theta = state.pose
+        #Week 3
+        # Here is an example of how to get goal position
+        # and robot pose data. Feel free to name them differently.
 
-        #Estimate the error in theta, use atan2
-        e_k = math.atan2(y_g - y_r, x_g - x_r) - theta
-        e_k = math.atan2(math.sin(e_k), math.cos(e_k))
+        #x_g, y_g = state.goal.x, state.goal.y
+        #x_r, y_r, theta = state.pose
 
-        #Integral error estimation
-        self.E_k += e_k*dt
-        
-        #Estimate first wheel speed
-        w_ = self.kp*e_k + \
-             self.ki*self.E_k + \
-             self.kd*(e_k - self.e_k_1)/dt
+        #Your goal is to modify these two variables
+        w_ = 0
+        v_ = 0 
 
-        #store error
-        self.e_k_1 = e_k
-
-        #set velocity
-        dist = math.sqrt((x_g - x_r)**2 + (y_g - y_r)**2)
-        v_ = min(state.velocity.v*(dist)+0.05, state.velocity.v)
+        #End week3 exercise
         return [v_, w_]

@@ -151,7 +151,38 @@ You can change the goal position in real-time and see the robot move to the new 
 Week 3: Go To Goal Controller
 =============================
 1. Open ``./pysimiam/controllers/gotogoal.py`` in an editor.
-2. Find the `execute` function in the controller with the appropriate label for week 3.
+2. Find the `__init__` and `execute` function in the controller with the appropriate label for week 3.
+
+.. code-block:: python
+
+    def __init__(self, params):
+        """init
+        @params: 
+
+        """
+        Controller.__init__(self,params)
+        #Week 3
+        #Place any variables you would like to store here
+        #e.g.: self.myvar1
+
+        #End week3
+
+   def execute(self,state,dt):
+        """Executes the controller behavior
+        @return --> unicycle model list [velocity, omega]
+        """
+        #Week 3
+        # Here is an example of how to get goal position
+        # and robot pose data. Feel free to name them differently.
+
+        #x_g, y_g = state.goal.x, state.goal.y
+        #x_r, y_r, theta = state.pose
+
+        #Your goal is to modify these two variables
+        w = 0
+        v = 0 
+        #End week3 exercise
+        return [v, w] 
 
 Given the following variables:
 
