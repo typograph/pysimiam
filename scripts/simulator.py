@@ -263,14 +263,12 @@ class Simulator(threading.Thread):
         self.__show_sensors = show
 
     def show_tracks(self, show = True):
+        """Show tracks for every robot on simulator view"""
         self.__show_tracks = show
 
     def show_grid(self, show=True):
         """Show gridlines on simulator view"""
         self._renderer.show_grid(show)
-        if self._robots[0] is not None and self.__state != RUN:
-            self.draw()
-            self._out_queue.join()
 
     def adjust_zoom(self,factor):
         """Set the zoom by a factor. @param: factor - float"""
