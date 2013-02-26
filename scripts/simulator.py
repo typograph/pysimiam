@@ -5,7 +5,7 @@ import Queue as queue
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
-from math import sqrt
+import math
 
 import pose
 import simobject
@@ -163,7 +163,7 @@ class Simulator(threading.Thread):
         maxsize = 0
         for robot in self._robots:
             xmin, ymin, xmax, ymax = robot.get_bounds()
-            maxsize = max(maxsize,sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
+            maxsize = max(maxsize,math.sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
         if maxsize == 0:
             self._zoom_default = 1
         else:
@@ -424,7 +424,8 @@ class Simulator(threading.Thread):
                 plots[expr] = \
                     eval(expr,{},
                          {'robot':self._robots[0],
-                          'supervisor':self._supervisors[0]})
+                          'supervisor':self._supervisors[0],
+                          'math':math})
             except Exception as e:
                 print e
                 plots[expr] = 0

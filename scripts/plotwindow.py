@@ -8,24 +8,37 @@ from matplotlib.figure import Figure
 
 from random import random
 
+#class PointLine2D(Line2D):
+    #def add_point(x,y):
+        
+    #def recache(self, always=False):
+        
 class PlotVariable:
     """
     A plot variable corresponds to one curve on the plot.
     It keeps track of the generating expression and of the
     values of the expression over time.
     """
-    def __init__(self,label,expression,axes):
+    def __init__(self,label,expression,axes,color = None):
         self.expression = expression
         self.xdata = []
         self.ydata = []
+        self.ymax = None
+        self.ymin = None
         self.curve = Line2D([],[])
         self.curve.set_label(label)
-        self.curve.set_color((random(),random(),random()))
+        if color is None:
+            color = (random(),random(),random())
+        self.curve.set_color(color)
         axes.add_line(self.curve)
         
     def add_point(self,x,y):
         self.xdata.append(x)
         self.ydata.append(y)
+        if y > self.ymax:
+            self.ymax = y
+        elif y < self.ymin or self.ymin is None:
+            self.ymin = y            
         self.curve.set_data(self.xdata, self.ydata)
 
     def clear_data(self):
@@ -42,16 +55,20 @@ class Plot:
         self.axes = axes
         self.variables = []
     
-    def add_curve(self,label,expression):
-        self.variables.append(PlotVariable(label,expression,self.axes))
+    def add_curve(self,label,expression,color=None):
+        self.variables.append(PlotVariable(label,expression,self.axes,color))
         self.axes.legend().draggable()
         
     def add_data(self,data):
+        
         for variable in self.variables:
             if variable.expression not in data:
                 print "No value for {}".format(variable.expression)
             else:
                 variable.add_point(data['time'], data[variable.expression])
+        self.axes.set_ylim(
+            min([v.ymin for v in self.variables]),
+            max([v.ymax for v in self.variables]))
                 
     def clear(self):
         for v in self.variables:
@@ -106,8 +123,9 @@ class PlotWindow(QtGui.QWidget):
     def add_data(self,data):
         for plot in self.plots:
             plot.add_data(data)
-            plot.axes.relim()
-            plot.axes.autoscale_view()
+            plot.axes.set_xlim(right=data['time'])
+            if data['time'] > 10:
+                plot.axes.set_xlim(left=data['time']-10)
         self.figure.canvas.draw()
 
 def create_plot_window(plotables):
@@ -119,6 +137,17 @@ def create_plot_window(plotables):
         # Create plots
         return dialog.expressions(), dialog.plot()
     return None
+
+def create_predefined_plot_window(plots):
+    """Create a window with plots from plot dictionary"""
+    w = PlotWindow()
+    es = []
+    for plot in plots:
+        p = w.add_plot()
+        for l,e,c in plot:
+            p.add_curve(l,e,c)        
+            es.append(e)
+    return es, w
 
 class PlotableComboBox(QtGui.QComboBox):
     def __init__(self,plotables,parent):

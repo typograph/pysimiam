@@ -8,7 +8,7 @@ from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
 from dockwindow import ParamDock, DockManager
-from plotwindow import PlotWindow, create_plot_window
+from plotwindow import create_plot_window, create_predefined_plot_window
 
 import random
 
@@ -125,6 +125,10 @@ class SimulationWidget(QtGui.QMainWindow):
         a = tbar.addAction(QtGui.QIcon("./res/image/add-graph.png"),
                            "Add graph",self._add_graph)
         a.setStatusTip("Add a new graph window")
+
+        a = tbar.addAction(QtGui.QIcon("./res/image/add-curve.png"),
+                           "Add graph",self._add_goal_graph)
+        a.setStatusTip("Show goal graph")
 
         tbar.addSeparator()
 
@@ -342,6 +346,21 @@ class SimulationWidget(QtGui.QMainWindow):
             self.plots.append(plot)
             for expr in exprs:
                 self.__sim_queue.put(('add_plotable',(expr,)))
+                
+    def _add_goal_graph(self):
+        exprs, plot = \
+        create_predefined_plot_window([
+            [("Robot X", "robot.get_pose().x", (1.,0,0)),
+             ("Goal X", "supervisor.ui_params.goal.x",(0,0,1.0))],
+            [("Robot Y", "robot.get_pose().y", (1.,0,0)),
+             ("Goal X", "supervisor.ui_params.goal.y",(0,0,1.0))],
+            [("Robot Theta", "robot.get_pose().theta", (1.,0,0)),
+             ("Angle to goal","math.atan2(supervisor.ui_params.goal.y - robot.get_pose().y,supervisor.ui_params.goal.y - robot.get_pose().x)", (0,0,1.0))]
+            ])
+        plot.show()
+        self.plots.append(plot)
+        for expr in exprs:
+            self.__sim_queue.put(('add_plotable',(expr,)))
     
     def process_events(self, process_all = False):
         while not self.__in_queue.empty():
