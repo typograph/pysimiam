@@ -115,6 +115,12 @@ class SimulationWidget(QtGui.QMainWindow):
         a.triggered[bool].connect(self._show_grid)
         a.setCheckable(True)
         a.setChecked(False)
+
+        a = tbar.addAction(QtGui.QIcon("./res/image/robot-sensors.png"),
+                           "Show/Hide sensors")
+        a.triggered[bool].connect(self._show_sensors)
+        a.setCheckable(True)
+        a.setChecked(True)
         
         zoom_group = QtGui.QActionGroup(tbar)
         a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
@@ -130,6 +136,14 @@ class SimulationWidget(QtGui.QMainWindow):
         a.setCheckable(True)
         a.setChecked(False)
         zoom_group.addAction(a)
+
+        self.act_rot_robot = \
+            tbar.addAction(QtGui.QIcon("./res/image/zoom-robot-rot.png"),
+                           "Follow robot orientation",
+                           self._rot_robot)
+        self.act_rot_robot.setCheckable(True)
+        self.act_rot_robot.setChecked(False)
+        self.act_rot_robot.setEnabled(False)
 
         self.__zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.__zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
@@ -222,17 +236,27 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot(bool)
     def _show_grid(self,show):
         self.__sim_queue.put(('show_grid',(show,)))
+
+    @QtCore.pyqtSlot(bool)
+    def _show_sensors(self,show):
+        self.__sim_queue.put(('show_sensors',(show,)))
             
     @QtCore.pyqtSlot()
     def _zoom_scene(self):
         self.__zoom_slider.setEnabled(False)
+        self.act_rot_robot.setEnabled(False)
         self.__sim_queue.put(('focus_on_world',()))
 
     @QtCore.pyqtSlot()
     def _zoom_robot(self):
         self.__zoom_slider.setEnabled(True)
-        self.__sim_queue.put(('focus_on_robot',()))
+        self.act_rot_robot.setEnabled(True)
+        self.__sim_queue.put(('focus_on_robot',(self.act_rot_robot.isChecked(),)))
         self.__sim_queue.put(('adjust_zoom',(5.0**(self.__zoom_slider.value()/100.0),)))
+
+    @QtCore.pyqtSlot()
+    def _rot_robot(self):
+        self.__sim_queue.put(('focus_on_robot',(self.act_rot_robot.isChecked(),)))
             
     @QtCore.pyqtSlot(int)
     def _scale_zoom(self,value):

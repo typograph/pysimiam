@@ -34,6 +34,9 @@ class Simulator(threading.Thread):
         self.__state = PAUSE
         self._renderer = renderer
         self.__center_on_robot = False
+        self.__orient_on_robot = False
+        self.__show_sensors = True
+        self.__show_tracks = True
         
         self._in_queue = in_queue
         self._out_queue = queue.Queue()
@@ -207,7 +210,10 @@ class Simulator(threading.Thread):
         if self._robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self._robots[0]
-            self._renderer.set_screen_center_pose(robot.get_pose())
+            if self.__orient_on_robot:
+                self._renderer.set_screen_center_pose(robot.get_pose())
+            else:
+                self._renderer.set_screen_center_pose(pose.Pose(robot.get_pose().x, robot.get_pose().y, 0.0))
 
         self._renderer.clear_screen()
 
@@ -217,11 +223,13 @@ class Simulator(threading.Thread):
             obstacle.draw(self._renderer)
 
         # Draw the robots, trackers and sensors after obstacles
-        for tracker in self._trackers:
-            tracker.draw(self._renderer)
+        if self.__show_tracks:
+            for tracker in self._trackers:
+                tracker.draw(self._renderer)
         for robot in self._robots:
             robot.draw(self._renderer)
-            robot.draw_sensors(self._renderer)
+            if self.__show_sensors:
+                robot.draw_sensors(self._renderer)
 
         # update view
         self.update_view()
@@ -246,9 +254,16 @@ class Simulator(threading.Thread):
                 yt = yto
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
 
-    def focus_on_robot(self):
+    def focus_on_robot(self, rotate = True):
         """Centers the view on the robot"""
         self.__center_on_robot = True
+        self.__orient_on_robot = rotate
+
+    def show_sensors(self, show = True):
+        self.__show_sensors = show
+
+    def show_tracks(self, show = True):
+        self.__show_tracks = show
 
     def show_grid(self, show=True):
         """Show gridlines on simulator view"""
