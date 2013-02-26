@@ -6,23 +6,32 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavToolbar
 from matplotlib.figure import Figure
 
+from random import random
+
 class PlotVariable:
     """
     A plot variable corresponds to one curve on the plot.
     It keeps track of the generating expression and of the
     values of the expression over time.
     """
-    def __init__(self,expression,axes):
+    def __init__(self,label,expression,axes):
         self.expression = expression
         self.xdata = []
         self.ydata = []
         self.curve = Line2D([],[])
+        self.curve.set_label(label)
+        self.curve.set_color((random(),random(),random()))
         axes.add_line(self.curve)
         
     def add_point(self,x,y):
         self.xdata.append(x)
         self.ydata.append(y)
         self.curve.set_data(self.xdata, self.ydata)
+
+    def clear_data(self):
+        self.xdata = []
+        self.ydata = []
+        self.curve.set_data([],[])
 
 class Plot:
     """
@@ -33,8 +42,9 @@ class Plot:
         self.axes = axes
         self.variables = []
     
-    def add_curve(self,expression):
-        self.variables.append(PlotVariable(expression,self.axes))
+    def add_curve(self,label,expression):
+        self.variables.append(PlotVariable(label,expression,self.axes))
+        self.axes.legend().draggable()
         
     def add_data(self,data):
         for variable in self.variables:
@@ -42,6 +52,10 @@ class Plot:
                 print "No value for {}".format(variable.expression)
             else:
                 variable.add_point(data['time'], data[variable.expression])
+                
+    def clear(self):
+        for v in self.variables:
+            v.clear_data()
 
 class PlotWindow(QtGui.QWidget):
     """
@@ -67,8 +81,8 @@ class PlotWindow(QtGui.QWidget):
     
     #Slots
     def clear(self):
-        self.plots = []
-        self.figure.clf()
+        for plot in self.plots:
+            plot.clear()
         
     def add_plot(self):
         """Add a new subplot with a curve given by expression"""
@@ -76,16 +90,24 @@ class PlotWindow(QtGui.QWidget):
         if n > 0:
             for i, plot in enumerate(self.plots):
                 plot.axes.change_geometry(n+1,1,i+1)
-            self.plots.append(
-                Plot(self.figure.add_subplot(n+1,1,n+1,sharex=self.plots[0].axes)))
+            axes = self.figure.add_subplot(n+1,1,n+1,sharex=self.plots[0].axes)
+            axes.autoscale(True,'y')
         else:
-            self.plots.append(Plot(self.figure.add_subplot(111)))
+            axes = self.figure.add_subplot(111)
+            axes.autoscale(True)
+            
+        #axes.legend()
+        
+        self.plots.append(Plot(axes))
+            
         self.figure.canvas.draw()
         return self.plots[-1]
     
     def add_data(self,data):
         for plot in self.plots:
             plot.add_data(data)
+            plot.axes.relim()
+            plot.axes.autoscale_view()
         self.figure.canvas.draw()
 
 def create_plot_window(plotables):
@@ -101,23 +123,20 @@ def create_plot_window(plotables):
 class PlotableComboBox(QtGui.QComboBox):
     def __init__(self,plotables,parent):
         QtGui.QComboBox.__init__(self,parent)
-        #self.plotables = plotables
-        for label, expr in plotables.items():
-            self.addItem(label,expr)
+        self.plotables = plotables
+        for label in plotables:
+            self.addItem(label)
         self.setEditable(True)
         self.setCurrentIndex(0)
     
-    def _expression(self):
-        if self.currentIndex() > -1:
-            return self.itemData(self.currentIndex()).toPyObject()
-        else:
-            return self.currentText()
-    
     def expression(self):
-        return str(self._expression())
+        text = str(self.currentText())
+        if text not in self.plotables:
+            return text
+        return self.plotables[text]
     
     def create_curve(self,plot):
-        plot.add_curve(self.expression())
+        plot.add_curve(str(self.currentText()),self.expression())
     
 class SubPlotGroup(QtGui.QGroupBox):
     def __init__(self,plotables,parent):

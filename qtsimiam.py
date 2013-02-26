@@ -22,6 +22,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.resize(700,700)
 
         self.plots = []
+        self.__clear_graph_on_start = False
         
         self.__create_toolbars()
         self.__create_menu()
@@ -125,6 +126,8 @@ class SimulationWidget(QtGui.QMainWindow):
                            "Add graph",self._add_graph)
         a.setStatusTip("Add a new graph window")
 
+        tbar.addSeparator()
+
         a = tbar.addAction(QtGui.QIcon("./res/image/grid.png"),
                            "Show/Hide grid")
         a.setStatusTip("Show/hide grid")
@@ -146,6 +149,8 @@ class SimulationWidget(QtGui.QMainWindow):
         a.setCheckable(True)
         a.setChecked(True)
         
+        tbar.addSeparator()
+
         zoom_group = QtGui.QActionGroup(tbar)
         a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
                            "Show all",
@@ -221,6 +226,8 @@ class SimulationWidget(QtGui.QMainWindow):
         while self._simulator_thread.isAlive():
             self.process_events(True)
             self._simulator_thread.join(0.1)
+        for plot in self.plots:
+            plot.close()
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
@@ -251,6 +258,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__speed_slider.setEnabled(False)
         #self.__time_label.setText("00:00.0")
         self.__sim_queue.put(('reset_simulation',()))
+        self.__clear_graph_on_start = True
 
     @QtCore.pyqtSlot()
     def _on_run(self): # Run/unpause
@@ -363,6 +371,10 @@ class SimulationWidget(QtGui.QMainWindow):
         self.revaction.setEnabled(True)
         self.pauseaction.setEnabled(True)
         self.__speed_slider.setEnabled(True)
+        if self.__clear_graph_on_start:
+            self.__clear_graph_on_start = False
+            for plot in self.plots:
+                plot.clear()
     
     def simulator_paused(self):
         self.runaction.setEnabled(True)

@@ -420,7 +420,14 @@ class Simulator(threading.Thread):
     def announce_plotables(self):
         plots = {'time':self.__time}
         for expr in self.plot_expressions:
-            plots[expr] = eval(expr,{},{'robot':self._robots[0],'supervisor':self._supervisors[0]})
+            try:
+                plots[expr] = \
+                    eval(expr,{},
+                         {'robot':self._robots[0],
+                          'supervisor':self._supervisors[0]})
+            except Exception as e:
+                print e
+                plots[expr] = 0
         self._out_queue.put(('plot_update',(plots,)))
     
     def plotables(self):
