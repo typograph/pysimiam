@@ -8,6 +8,9 @@ from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
 from dockwindow import ParamDock, DockManager
+from plotwindow import PlotWindow
+
+import random
 
 import simulator as sim
 import Queue as queue
@@ -17,6 +20,8 @@ class SimulationWidget(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
         self.resize(700,700)
+
+        self.plots = []
         
         self.__create_toolbars()
         self.__create_menu()
@@ -115,6 +120,10 @@ class SimulationWidget(QtGui.QMainWindow):
 
         tbar = QtGui.QToolBar("View",self)
         tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
+
+        a = tbar.addAction(QtGui.QIcon("./res/image/add-graph.png"),
+                           "Add graph",self._add_graph)
+        a.setStatusTip("Add a new graph window")
 
         a = tbar.addAction(QtGui.QIcon("./res/image/grid.png"),
                            "Show/Hide grid")
@@ -315,7 +324,15 @@ class SimulationWidget(QtGui.QMainWindow):
             #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
             self.status_label.setText(
                 "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
+            data = {'time':t, 'q':random.random()}
+            for plot in self.plots:
+                plot.add_data(data)
         self.process_events(True)
+
+    @QtCore.pyqtSlot()
+    def _add_graph(self):
+        self.plots.append(PlotWindow('q'))
+        self.plots[-1].show()
     
     def process_events(self, process_all = False):
         while not self.__in_queue.empty():
