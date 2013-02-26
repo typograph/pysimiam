@@ -122,6 +122,12 @@ class SimulationWidget(QtGui.QMainWindow):
         a.setCheckable(True)
         a.setChecked(True)
         
+        a = tbar.addAction(QtGui.QIcon("./res/image/robot-tracks.png"),
+                           "Show/Hide robot trajectores")
+        a.triggered[bool].connect(self._show_tracks)
+        a.setCheckable(True)
+        a.setChecked(True)
+        
         zoom_group = QtGui.QActionGroup(tbar)
         a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
                            "Show all",
@@ -240,6 +246,10 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot(bool)
     def _show_sensors(self,show):
         self.__sim_queue.put(('show_sensors',(show,)))
+            
+    @QtCore.pyqtSlot(bool)
+    def _show_tracks(self,show):
+        self.__sim_queue.put(('show_tracks',(show,)))
             
     @QtCore.pyqtSlot()
     def _zoom_scene(self):
