@@ -1,6 +1,8 @@
 To run: 
 
 > python qtsimiam.py
+or
+> ./qtsimiampy
 
 Load your own supervisors and controllers into the development folders following the supervisor and controller templates.
 
