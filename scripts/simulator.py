@@ -41,6 +41,8 @@ class Simulator(threading.Thread):
         self._in_queue = in_queue
         self._out_queue = queue.Queue()
 
+        self.plot_expressions = []
+
         # Zoom on scene - Move to read_config later
         self.__time_multiplier = 1.0
         self.__time = 0.0
@@ -205,6 +207,9 @@ class Simulator(threading.Thread):
                     print "Collision detected!"
                     self.__state = PAUSE
                     #self.__stop = True
+                    
+                if self.plot_expressions:
+                    self.announce_plotables()
 
             # Draw to buffer-bitmap
             self.draw()
@@ -408,4 +413,31 @@ class Simulator(threading.Thread):
                 print "Wrong simulator event format '{}'".format(tpl)
             self._in_queue.task_done()
     
+    def add_plotable(self,param):
+        if param is not None and param not in self.plot_expressions:
+            self.plot_expressions.append(param)
+            
+    def announce_plotables(self):
+        plots = {'time':self.__time}
+        for expr in self.plot_expressions:
+            plots[expr] = eval(expr,{},{'robot':self._robots[0],'supervisor':self._supervisors[0]})
+        self._out_queue.put(('plot_update',(plots,)))
+    
+    def plotables(self):
+        return {
+            "Robot's X coordinate":"robot.get_pose().x",
+            "Robot's Y coordinate":"robot.get_pose().y",
+            "Robot's orientation":"robot.get_pose().theta",
+            "Robot's orientation (degrees)":"robot.get_pose().theta*57.29578",
+            "Estimated X coordinate":"supervisor.pose_est.x",
+            "Estimated Y coordinate":"supervisor.pose_est.y",
+            "Estimated orientation":"supervisor.pose_est.theta",
+            "Estimated orientation (degrees)":"supervisor.pose_est.theta*57.29578",
+            "Left wheel speed":"robot.ang_velocity[0]",
+            "Right wheel speed":"robot.ang_velocity[1]",
+            "Linear velocity":"robot.diff2uni(robot.ang_velocity)[0]",
+            "Angular velocity":"robot.diff2uni(robot.ang_velocity)[1]"
+            # The possibilities are infinite
+            #"":"",
+            }
 #end class Simulator

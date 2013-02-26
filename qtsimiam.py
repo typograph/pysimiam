@@ -8,7 +8,7 @@ from PyQt4 import QtGui, QtCore
 import os
 from qtrenderer import QtRenderer
 from dockwindow import ParamDock, DockManager
-from plotwindow import PlotWindow
+from plotwindow import PlotWindow, create_plot_window
 
 import random
 
@@ -324,15 +324,16 @@ class SimulationWidget(QtGui.QMainWindow):
             #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
             self.status_label.setText(
                 "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
-            data = {'time':t, 'q':random.random()}
-            for plot in self.plots:
-                plot.add_data(data)
         self.process_events(True)
 
     @QtCore.pyqtSlot()
     def _add_graph(self):
-        self.plots.append(PlotWindow('q'))
-        self.plots[-1].show()
+        exprs, plot = create_plot_window(self._simulator_thread.plotables())
+        if exprs:
+            plot.show()
+            self.plots.append(plot)
+            for expr in exprs:
+                self.__sim_queue.put(('add_plotable',(expr,)))
     
     def process_events(self, process_all = False):
         while not self.__in_queue.empty():
@@ -387,6 +388,10 @@ class SimulationWidget(QtGui.QMainWindow):
         
     def update_view(self):
         self.__viewer.update_bitmap()
+
+    def plot_update(self,data):
+        for plot in self.plots:
+            plot.add_data(data)        
             
 #end QtSimiamFrame class
 
