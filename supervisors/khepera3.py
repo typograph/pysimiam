@@ -1,7 +1,7 @@
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
-from math import pi, sin, cos, log1p
+from math import pi, sin, cos, log
 from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
@@ -16,8 +16,10 @@ The UI may use the get_parameters function interface to create docker windows fo
         #Create conrollers
         
         # initialize memory registers
-        self.left_ticks  = robot_info.wheels.left_ticks
-        self.right_ticks = robot_info.wheels.right_ticks
+        #Week 2 exercise 
+        self.prev_left_ticks  = robot_info.wheels.left_ticks
+        self.prev_right_ticks = robot_info.wheels.right_ticks
+        #End week 2 exercise 
                     
     def get_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
@@ -38,29 +40,25 @@ The UI may use the get_parameters function interface to create docker windows fo
         if p is None:
             p = self.ui_params
         
-        return { ('pid','GoToGoal'):
-                   OrderedDict([
-                       ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
-                       ('velocity', {'v':p.velocity.v}),
-                       ('gains', OrderedDict([
-                           (('kp','Proportional gain'), p.gains.kp),
-                           (('ki','Integral gain'), p.gains.ki),
-                           (('kd','Differential gain'), p.gains.kd)]))])}
+        return OrderedDict([
+                   (('goal','Goal position'), OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
+                   (('velocity', 'Preferred velocity'), {'v':p.velocity.v}),
+                   (('gains', 'PID gains'), OrderedDict([
+                       (('kp','Proportional gain'), p.gains.kp),
+                       (('ki','Integral gain'), p.gains.ki),
+                       (('kd','Differential gain'), p.gains.kd)]))])
 
-    def get_parameters(self):
-        params = Struct()
-        params.pid = Supervisor.get_parameters(self)
-        return params
-                                  
     def set_parameters(self,params):
-        Supervisor.set_parameters(self,params.pid)
-        self.gtg.set_parameters(params.pid.gains)
+        Supervisor.set_parameters(self,params)
+        self.gtg.set_parameters(params.gains)
 
     def uni2diff(self,uni):
         """Convert between unicycle model to differential model"""
         (v,w) = uni
         # Assignment Week 2
 
+        vl = 0
+        vr = 0
 
         # End Assignment
         return (vl,vr)
@@ -68,10 +66,13 @@ The UI may use the get_parameters function interface to create docker windows fo
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
         default_value = 3960
+        
         #Assignment week2
         ir_distances = [] #populate this list
-        #self.robot.ir_sensors.readings | (may want to use this)
+        #self.robot.ir_sensors.readings (you may want to use this)
 
+        # The following code sets all sensors to out-of-range
+        ir_distances = [1]*len(self.robot.ir_sensors.readings)
 
         #End Assignment week2
         return ir_distances
@@ -93,9 +94,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         # Save the wheel encoder ticks for the next estimate
         
         #Get the present pose estimate
-        x, y, theta = self.pose_est
-
-            
+        x, y, theta = self.pose_est          
             
         #Use your math to update these variables... 
         theta_new = 0 

@@ -57,24 +57,35 @@
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="how-to-run-the-program">
-<h2>How to run the program<a class="headerlink" href="#how-to-run-the-program" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="week-1-how-to-run-the-program">
+<h1>Week 1: How to run the program<a class="headerlink" href="#week-1-how-to-run-the-program" title="Permalink to this headline">¶</a></h1>
+<p>Go to the command line and run:</p>
 <div class="highlight-python"><pre>&gt; python qtsimiam.py</pre>
 </div>
-<p>or for those with knowledge of the &#8216;nix OS</p>
+<p>or for those with knowledge of the &#8216;nix OS:</p>
 <div class="highlight-python"><pre>&gt; chmod +x qtsimiam.py
-&gt; chmod ./qtsimiam.py</pre>
+&gt; ./qtsimiam.py</pre>
 </div>
+<p>To start the simulation, you have to load a specific environment for the robot,
+by selecting <cite>File &gt; Select World.xml File</cite> in the menu, or pressing <tt class="docutils literal"><span class="pre">Ctrl+O</span></tt>
+to open the dialog. You can also specify the world name on the command line and
+run the program with:</p>
+<div class="highlight-python"><pre>&gt; python qtsimiam.py world.xml</pre>
 </div>
+<p>The <cite>play</cite> button starts the simulation. The <cite>rewind</cite> button will reset the robot&#8217;s
+position. If you have changed the supervisor or the controller code, rewinding
+will also load your new code.</p>
+<p>The simulation view can be adjusted using various buttons on the <cite>View</cite> toolbar.
+For example, you can center the view on the robot or hide the robot&#8217;s trajectory.</p>
 </div>
 <div class="section" id="week-2-unicycle-to-differential-transformation">
 <h1>Week 2: Unicycle to Differential Transformation<a class="headerlink" href="#week-2-unicycle-to-differential-transformation" title="Permalink to this headline">¶</a></h1>
-<p>Week one is about download and familiarization. So onward...</p>
 <div class="section" id="part-1-unicycle-to-differential">
 <h2>Part 1: Unicycle to Differential<a class="headerlink" href="#part-1-unicycle-to-differential" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Navigate to ./pysimiam/supervisors/khepera3.py and open it in an editor</li>
-<li>Find the function labeled <cite>uni2diff</cite> in the khepera3.K3Supervisor class.</li>
+<li>Navigate to <tt class="docutils literal"><span class="pre">./pysimiam/supervisors/khepera3.py</span></tt> and open it in an editor</li>
+<li>Find the function labeled <cite>uni2diff</cite> in the <em>khepera3.K3Supervisor</em> class.</li>
 </ol>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">uni2diff</span><span class="p">(</span><span class="n">uni</span><span class="p">):</span>
     <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="n">uni</span>
@@ -92,10 +103,10 @@
 </div>
 <p>You are given the values:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float)</li>
-<li><tt class="docutils literal"><span class="pre">omega</span></tt> (float)</li>
-<li><tt class="docutils literal"><span class="pre">velocity</span></tt> (float)</li>
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">w</span></tt> (float) - angular velocity <span class="math">\(\omega\)</span></li>
+<li><tt class="docutils literal"><span class="pre">v</span></tt> (float) - linear velocity <span class="math">\(v\)</span></li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float) - <span class="math">\(R\)</span>, the radius of robot&#8217;s wheels</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float) - <span class="math">\(L\)</span>, the distance between wheels</li>
 </ul>
 <p>Your job is to assign values to <tt class="docutils literal"><span class="pre">vl</span></tt> and <tt class="docutils literal"><span class="pre">vr</span></tt> such that the velocity and omega unicycle input correspond to the robot&#8217;s left and right wheel velocities.</p>
 <p>Recall that the equations for unicycle model are:</p>
@@ -108,11 +119,6 @@
 \[\begin{split}\frac{dx}{dt} &amp;= \frac{R}{2}(v_r + v_l)\cos(\phi) \\
 \frac{dy}{dt} &amp;= \frac{R}{2}(v_r + v_l)\sin(\phi) \\
 \frac{d\phi}{dt} &amp;= \frac{R}{L}(v_r - v_l)\end{split}\]</div>
-<p>where:</p>
-<ul class="simple">
-<li>R is the radius of the wheels <tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt></li>
-<li>L is the length of the base <tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt></li>
-</ul>
 </div>
 <div class="section" id="part-2-odometry">
 <h2>Part 2: Odometry<a class="headerlink" href="#part-2-odometry" title="Permalink to this headline">¶</a></h2>
@@ -122,19 +128,25 @@
 </ol>
 <p>You are given these variables:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float)</li>
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float)</li>
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.ticks_per_rev</span></tt> (integer)</li>
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> (integer)</li>
-<li><tt class="docutils literal"><span class="pre">self.robot.wheels.right_ticks</span></tt> (integer)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.radius</span></tt> (float) - the radius of robot&#8217;s wheels</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.base_length</span></tt> (float) - the distance between wheels</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.ticks_per_rev</span></tt> (integer) - number of ticks registered per one full wheel revolution</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> (integer) - accumulated ticks on the left wheel</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.wheels.right_ticks</span></tt> (integer) - accumulated ticks on the right wheel</li>
 </ul>
-<p><tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">.right_ticks</span></tt> are real integers representing the tick numbering of the encoder (not elapsed ticks... you have to calculate that).</p>
-<p>You will need to implement a memory variable to store previous values. One example of how to do this might be:</p>
+<p>Note that <tt class="docutils literal"><span class="pre">self.robot.wheels.left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">.right_ticks</span></tt> represent
+the tick numbering of the encoder and not the elapsed ticks. You will need
+to implement a memory variable to store previous values and to calculate
+the elapsed ticks. One example of how to do this might be:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">prev_right_ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">right_ticks</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">prev_left_ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">robot</span><span class="o">.</span><span class="n">wheels</span><span class="o">.</span><span class="n">left_ticks</span>
 </pre></div>
 </div>
-<p>Your objective is to solve for the change in <cite>x</cite>, <cite>y</cite>, and <cite>theta</cite> and from those values update the variables <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite>. The values <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite> will be used to update the estimated pose for the supervisor.</p>
+<p>The initial ticks are saved for you in <tt class="docutils literal"><span class="pre">self.left_ticks</span></tt> and <tt class="docutils literal"><span class="pre">self.right_ticks</span></tt>.</p>
+<p>Your objective is to solve for the change in <cite>x</cite>, <cite>y</cite>, and <cite>theta</cite>
+and from those values update the variables <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite>.
+The values <cite>x_new</cite>, <cite>y_new</cite>, and <cite>theta_new</cite> will be used to update
+the estimated pose for the supervisor.</p>
 <p>Recall that the equations for odometry are in lecture 2 slides.</p>
 </div>
 <div class="section" id="part-3-ir-distance-calculation-in-meters">
@@ -146,7 +158,7 @@
 </ol>
 <p>You are provided with the variable:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">self.robot.ir_sensors.readings</span></tt> (float)</li>
+<li><tt class="docutils literal"><span class="pre">self.robot.ir_sensors.readings</span></tt> (list of float) - the readings from Khepera3&#8217;s IR sensors</li>
 </ul>
 <p>Knowing that the sensitive range of distance is 0.02 meters to 0.2 meters and that the intensity as a function of distance is given by:</p>
 <div class="math">
@@ -155,7 +167,12 @@
     3960e^{-30(\delta-0.02)} & \quad 0.02m <  \delta  < 0.2m
 \end{eqnarray}\right.\]</div><p>Convert to distances for the sensors and assign them to a list called ir_distances.</p>
 <p>For the those curious to explain why IR sensors behave in an exponentially decaying manner: the intensity of the light decays in accordance to the <a class="reference external" href="http://en.wikipedia.org/wiki/Inverse-square_law">inverse square law</a>.</p>
-<p>When you have completed all these exercises, run the simulator. Ctrl+O opens the dialog to load the world environment. If you select settings.xml you can test out your odometry by changing the goal in realtime. By default, the robot only goes upward, but if you change the goal you can see the bot avoid obstacles based on your calculations.</p>
+<p>When you have completed all these exercises, run the simulator with:</p>
+<div class="highlight-python"><pre>&gt; python qtsimiam.py week2.xml</pre>
+</div>
+<p>You can test out your odometry by changing the goal in realtime. By default,
+the robot only goes right, but if you change the goal, you can see the bot
+avoid obstacles based on your calculations.</p>
 </div>
 </div>
 <div class="section" id="week-3-go-to-goal-controller">
@@ -166,9 +183,9 @@
 </ol>
 <p>Given the following variables:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">state.goal.x</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">state.goal.y</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">state.pose</span></tt>  (the robot&#8217;s pose)</li>
+<li><tt class="docutils literal"><span class="pre">state.goal.x</span></tt> (float) - The X coordinate of the goal</li>
+<li><tt class="docutils literal"><span class="pre">state.goal.y</span></tt> (float) - The Y coordinate of the goal</li>
+<li><tt class="docutils literal"><span class="pre">state.pose</span></tt> (<a class="reference internal" href="code.html#pose.Pose" title="pose.Pose"><tt class="xref py py-class docutils literal"><span class="pre">Pose</span></tt></a>) - the position and orientation of the robot</li>
 </ul>
 <p>To extract the pose data, you can use a command like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pose</span>
@@ -192,10 +209,8 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Tutorial</a><ul>
-<li><a class="reference internal" href="#how-to-run-the-program">How to run the program</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Tutorial</a></li>
+<li><a class="reference internal" href="#week-1-how-to-run-the-program">Week 1: How to run the program</a></li>
 <li><a class="reference internal" href="#week-2-unicycle-to-differential-transformation">Week 2: Unicycle to Differential Transformation</a><ul>
 <li><a class="reference internal" href="#part-1-unicycle-to-differential">Part 1: Unicycle to Differential</a></li>
 <li><a class="reference internal" href="#part-2-odometry">Part 2: Odometry</a></li>
@@ -254,7 +269,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Timofey Fuchs, Shaun Lippy, John Alexander, Vidam Govorovski, Jonathan Whitten.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

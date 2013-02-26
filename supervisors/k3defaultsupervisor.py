@@ -9,7 +9,7 @@ class K3DefaultSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
-	self.ui_params.sensor_angles = [pose.theta for pose in robot_info.ir_sensors.poses]
+        self.ui_params.sensor_angles = [pose.theta for pose in robot_info.ir_sensors.poses]
         self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params)
         self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
         self.hold = self.add_controller('hold.Hold', None)
@@ -27,7 +27,7 @@ class K3DefaultSupervisor(K3Supervisor):
             if not self.current == self.hold:
                 print "GOAL"
                 self.current = self.hold
-	else:
+        else:
             self.ui_params.sensor_distances = self.get_ir_distances()
             distmin = min(self.ui_params.sensor_distances)
             if not self.current == self.gtg:

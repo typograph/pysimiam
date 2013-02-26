@@ -10,8 +10,8 @@ class AvoidObstacles(Controller):
     """Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines."""
     def __init__(self, params):
         '''read another .xml for PID parameters?'''
-	Controller.__init__(self,params)
-	self.clear_error()
+        Controller.__init__(self,params)
+        self.clear_error()
 
     def clear_error(self):
         self.E = 0
