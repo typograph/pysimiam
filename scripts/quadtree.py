@@ -33,9 +33,13 @@ class QuadTree(object):
             bounding_rect = Rect(bounding_rect)
         else:
             # If there isn't a bounding rect, then calculate it from the items.
-            bounding_rect = Rect(items[0].get_bounding_rect())
-            for item in items[1:]:
-                bounding_rect.add(Rect(item.get_bounding_rect()))
+            if items:
+                bounding_rect = Rect(items[0].get_bounding_rect())
+                for item in items[1:]:
+                    bounding_rect.add(Rect(item.get_bounding_rect()))
+            else:
+                # in case there are no items, assume a big rect (100x100 meters)
+                bounding_rect = Rect((0.0,0.0,100.0,100.0))
         
         self.rect = bounding_rect
         self.items = []
@@ -47,6 +51,10 @@ class QuadTree(object):
     def insert_items(self, items):
         """ Insert a list of SimObject items
         """
+        # nothing to do if the list is empty or None
+        if not items:
+            return
+        
         rect_items = [(item, Rect(item.get_bounding_rect()))
                       for item in items]
         

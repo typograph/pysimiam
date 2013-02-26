@@ -240,18 +240,29 @@ class Simulator(threading.Thread):
         
     def focus_on_world(self):
         """Centers the world on the drawing rectangle"""
+        def include_bounds(bounds, o_bounds):
+            xl, yb, xr, yt = bounds
+            xlo, ybo, xro, yto = o_bounds
+            if xlo < xl: xl = xlo
+            if xro > xr: xr = xro
+            if ybo < yb: yb = ybo
+            if yto > yt: yt = yto
+            return xl, yb, xr, yt
+        
+        def bloat_bounds(bounds, factor):
+            xl, yb, xr, yt = bounds
+            w = xr-xl
+            h = yt-yb
+            factor = (factor-1)/2.0
+            return xl - w*factor, yb - h*factor, xr + w*factor, yt + h*factor
+            
         self.__center_on_robot = False
-        xl, yb, xr, yt = self._robots[0].get_bounds()
+        bounds = self._robots[0].get_bounds()
+        for robot in self._robots:
+            bounds = include_bounds(bounds, bloat_bounds(robot.get_bounds(),4))
         for obstacle in self._obstacles:
-            xlo, ybo, xro, yto = obstacle.get_bounds()
-            if xlo < xl:
-                xl = xlo
-            if xro > xr:
-                xr = xro
-            if ybo < yb:
-                yb = ybo
-            if yto > yt:
-                yt = yto
+            bounds = include_bounds(bounds, obstacle.get_bounds())
+        xl, yb, xr, yt = bounds
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
 
     def focus_on_robot(self, rotate = True):
