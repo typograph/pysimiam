@@ -201,7 +201,7 @@ To extract the pose data, you can use a command like this::
 4. Calculate the error from the present heading (`theta`) and the bearing.
 5. Calculate proportional, integral, and differential terms of the PID.
 
-You are encouraged to reuse your code from week2, but in case you don't want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ./supervisors/khepera3.py module
+You are encouraged to reuse your code from week2, but in case you don't want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the `./supervisors/khepera3.py` module.
 
 
 Week 4: Avoid Obstacles Controller
