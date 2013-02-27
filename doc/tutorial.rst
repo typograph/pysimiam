@@ -163,7 +163,9 @@ Week 3: Go To Goal Controller
         Controller.__init__(self,params)
         #Week 3
         #Place any variables you would like to store here
-        #e.g.: self.myvar1
+        #You may use this variables for convenience
+        self.E = 0 # Integrated error
+        self.e_1 = 0 # Previous error calculation
 
         #End week3
 
@@ -188,7 +190,8 @@ Given the following variables:
 
 - ``state.goal.x`` (float) - The X coordinate of the goal
 - ``state.goal.y`` (float) - The Y coordinate of the goal
-- ``state.pose`` (:class:`~pose.Pose`) - the position and orientation of the robot
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the simulation, which is usually the maximum available.
 
 To extract the pose data, you can use a command like this::
 
@@ -197,6 +200,8 @@ To extract the pose data, you can use a command like this::
 3. Calculate the bearing (angle) to the goal (``state.goal.x`` and ``state.goal.y``)
 4. Calculate the error from the present heading (`theta`) and the bearing.
 5. Calculate proportional, integral, and differential terms of the PID.
+
+You are encouraged to reuse your code from week2, but in case you don't want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ./supervisors/khepera3.py module
 
 
 Week 4: Avoid Obstacles Controller

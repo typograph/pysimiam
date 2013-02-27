@@ -16,7 +16,9 @@ class GoToGoal(Controller):
         Controller.__init__(self,params)
         #Week 3
         #Place any variables you would like to store here
-        #e.g.: self.myvar1
+        #You may use this variables for convenience
+        self.E = 0 # Integrated error
+        self.e_1 = 0 # Previous error calculation
 
         #End week3
 

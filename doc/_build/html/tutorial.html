@@ -195,7 +195,9 @@ on your calculations.</p>
      <span class="n">Controller</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">)</span>
      <span class="c">#Week 3</span>
      <span class="c">#Place any variables you would like to store here</span>
-     <span class="c">#e.g.: self.myvar1</span>
+     <span class="c">#You may use this variables for convenience</span>
+     <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># Integrated error</span>
+     <span class="bp">self</span><span class="o">.</span><span class="n">e_1</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># Previous error calculation</span>
 
      <span class="c">#End week3</span>
 
@@ -221,7 +223,8 @@ on your calculations.</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">state.goal.x</span></tt> (float) - The X coordinate of the goal</li>
 <li><tt class="docutils literal"><span class="pre">state.goal.y</span></tt> (float) - The Y coordinate of the goal</li>
-<li><tt class="docutils literal"><span class="pre">state.pose</span></tt> (<a class="reference internal" href="code.html#pose.Pose" title="pose.Pose"><tt class="xref py py-class docutils literal"><span class="pre">Pose</span></tt></a>) - the position and orientation of the robot</li>
+<li><tt class="docutils literal"><span class="pre">state.pose</span></tt> (<a class="reference internal" href="code.html#pose.Pose" title="pose.Pose"><tt class="xref py py-class docutils literal"><span class="pre">Pose</span></tt></a>) - The position and orientation of the robot</li>
+<li><tt class="docutils literal"><span class="pre">state.velocity.v</span></tt> (float) - The given target velocity of the simulation, which is usually the maximum available.</li>
 </ul>
 <p>To extract the pose data, you can use a command like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pose</span>
@@ -232,6 +235,7 @@ on your calculations.</p>
 <li>Calculate the error from the present heading (<cite>theta</cite>) and the bearing.</li>
 <li>Calculate proportional, integral, and differential terms of the PID.</li>
 </ol>
+<p>You are encouraged to reuse your code from week2, but in case you don&#8217;t want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ./supervisors/khepera3.py module</p>
 </div>
 <div class="section" id="week-4-avoid-obstacles-controller">
 <h1>Week 4: Avoid Obstacles Controller<a class="headerlink" href="#week-4-avoid-obstacles-controller" title="Permalink to this headline">¶</a></h1>

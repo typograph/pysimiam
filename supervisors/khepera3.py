@@ -1,7 +1,7 @@
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
-from math import pi, sin, cos, log
+from math import pi, sin, cos, log1p
 from collections import OrderedDict
 
 class K3Supervisor(Supervisor):
@@ -16,10 +16,8 @@ The UI may use the get_parameters function interface to create docker windows fo
         #Create conrollers
         
         # initialize memory registers
-        #Week 2 exercise 
-        self.prev_left_ticks  = robot_info.wheels.left_ticks
-        self.prev_right_ticks = robot_info.wheels.right_ticks
-        #End week 2 exercise 
+        self.left_ticks  = robot_info.wheels.left_ticks
+        self.right_ticks = robot_info.wheels.right_ticks
                     
     def get_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
@@ -40,25 +38,34 @@ The UI may use the get_parameters function interface to create docker windows fo
         if p is None:
             p = self.ui_params
         
-        return OrderedDict([
-                   (('goal','Goal position'), OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
-                   (('velocity', 'Preferred velocity'), {'v':p.velocity.v}),
-                   (('gains', 'PID gains'), OrderedDict([
-                       (('kp','Proportional gain'), p.gains.kp),
-                       (('ki','Integral gain'), p.gains.ki),
-                       (('kd','Differential gain'), p.gains.kd)]))])
+        return { ('pid','GoToGoal'):
+                   OrderedDict([
+                       ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
+                       ('velocity', {'v':p.velocity.v}),
+                       ('gains', OrderedDict([
+                           (('kp','Proportional gain'), p.gains.kp),
+                           (('ki','Integral gain'), p.gains.ki),
+                           (('kd','Differential gain'), p.gains.kd)]))])}
 
+    def get_parameters(self):
+        params = Struct()
+        params.pid = Supervisor.get_parameters(self)
+        return params
+                                  
     def set_parameters(self,params):
-        Supervisor.set_parameters(self,params)
-        self.gtg.set_parameters(params.gains)
+        Supervisor.set_parameters(self,params.pid)
+        self.gtg.set_parameters(params.pid.gains)
 
     def uni2diff(self,uni):
         """Convert between unicycle model to differential model"""
         (v,w) = uni
         # Assignment Week 2
 
-        vl = 0
-        vr = 0
+        summ = 2*v/self.robot.wheels.radius
+        diff = self.robot.wheels.base_length*w/self.robot.wheels.radius
+
+        vl = (summ-diff)/2
+        vr = (summ+diff)/2
 
         # End Assignment
         return (vl,vr)
@@ -66,13 +73,12 @@ The UI may use the get_parameters function interface to create docker windows fo
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
         default_value = 3960
-        
         #Assignment week2
         ir_distances = [] #populate this list
-        #self.robot.ir_sensors.readings (you may want to use this)
-
-        # The following code sets all sensors to out-of-range
-        ir_distances = [1]*len(self.robot.ir_sensors.readings)
+        #self.robot.ir_sensors.readings | (may want to use this)
+        for reading in self.robot.ir_sensors.readings:
+            val = max( min( (log1p(3960) - log1p(reading))/30 + 0.02 , 3960) , 0.02)
+            ir_distances.append(val) 
 
         #End Assignment week2
         return ir_distances
@@ -88,18 +94,33 @@ The UI may use the get_parameters function interface to create docker windows fo
         
         #Week 2 exercise 
         # Get tick updates
-        #self.robot.wheels.left_ticks
-        #self.robot.wheels.right_ticks
+        dtl = self.robot.wheels.left_ticks - self.left_ticks
+        dtr = self.robot.wheels.right_ticks - self.right_ticks
         
         # Save the wheel encoder ticks for the next estimate
+        self.left_ticks += dtl
+        self.right_ticks += dtr
         
-        #Get the present pose estimate
-        x, y, theta = self.pose_est          
+        x, y, theta = self.pose_est
+
+        R = self.robot.wheels.radius
+        L = self.robot.wheels.base_length
+        m_per_tick = (2*pi*R)/self.robot.wheels.ticks_per_rev
             
-        #Use your math to update these variables... 
-        theta_new = 0 
-        x_new = 0
-        y_new = 0
+        # distance travelled by left wheel
+        dl = dtl*m_per_tick
+        # distance travelled by right wheel
+        dr = dtr*m_per_tick
+            
+        theta_dt = (dr-dl)/L
+        theta_mid = theta + theta_dt/2
+        dst = (dr+dl)/2
+        x_dt = dst*cos(theta_mid)
+        y_dt = dst*sin(theta_mid)
+            
+        theta_new = theta + theta_dt
+        x_new = x + x_dt
+        y_new = y + y_dt             
         #end week2 exercise
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
