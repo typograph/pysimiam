@@ -434,24 +434,12 @@ This code is run every time the supervisor executes</p>
 <em class="property">class </em><tt class="descclassname">controllers.avoidobstacles.</tt><tt class="descname">AvoidObstacles</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/controllers/avoidobstacles.html#AvoidObstacles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.avoidobstacles.AvoidObstacles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines.</p>
 <dl class="method">
-<dt id="controllers.avoidobstacles.AvoidObstacles.calculate_new_goal">
-<tt class="descname">calculate_new_goal</tt><big>(</big><em>distances</em><big>)</big><a class="reference internal" href="_modules/controllers/avoidobstacles.html#AvoidObstacles.calculate_new_goal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.avoidobstacles.AvoidObstacles.calculate_new_goal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determines a new goal for the robot based on which sensors are active</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="controllers.avoidobstacles.AvoidObstacles.calculate_new_velocity">
-<tt class="descname">calculate_new_velocity</tt><big>(</big><em>distances</em><big>)</big><a class="reference internal" href="_modules/controllers/avoidobstacles.html#AvoidObstacles.calculate_new_velocity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.avoidobstacles.AvoidObstacles.calculate_new_velocity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjusts robot velocity based on distance to object</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="controllers.avoidobstacles.AvoidObstacles.execute">
 <tt class="descname">execute</tt><big>(</big><em>state</em>, <em>dt</em><big>)</big><a class="reference internal" href="_modules/controllers/avoidobstacles.html#AvoidObstacles.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.avoidobstacles.AvoidObstacles.execute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes avoidance behavior based on state and dt. 
-state &#8211;&gt; supevisor set ui_params</p>
-<p>dt &#8211;&gt; supervisor set timestep</p>
-<p>return &#8211;&gt; unicycle model list [velocity, omega]</p>
+state &#8211;&gt; supevisor set ui_params
+dt &#8211;&gt; supervisor set timestep
+return &#8211;&gt; unicycle model list [velocity, omega]</p>
 </dd></dl>
 
 <dl class="method">

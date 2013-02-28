@@ -235,10 +235,64 @@ on your calculations.</p>
 <li>Calculate the error from the present heading (<cite>theta</cite>) and the bearing.</li>
 <li>Calculate proportional, integral, and differential terms of the PID.</li>
 </ol>
-<p>You are encouraged to reuse your code from week2, but in case you don&#8217;t want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ./supervisors/khepera3.py module</p>
+<p>You are encouraged to reuse your code from week2, but in case you don&#8217;t want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the <tt class="docutils literal"><span class="pre">./supervisors/khepera3.py</span></tt> module.</p>
 </div>
 <div class="section" id="week-4-avoid-obstacles-controller">
 <h1>Week 4: Avoid Obstacles Controller<a class="headerlink" href="#week-4-avoid-obstacles-controller" title="Permalink to this headline">¶</a></h1>
+<ol class="arabic simple">
+<li>Open <tt class="docutils literal"><span class="pre">./controllers/avoidobstacles.py</span></tt> in an editor.</li>
+<li>Navigate to the <cite>set_parameters</cite> and <cite>execute</cite> method where the exercise comments begin</li>
+</ol>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Week 4 code</span>
+<span class="c"># These variables will be used to make calculations</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">angles</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">sensor_angles</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">[(</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="mf">1.1</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">]</span>
+<span class="c"># End week 4 code</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Executes avoidance behavior based on state and dt.</span>
+<span class="sd">    state --&gt; supevisor set ui_params</span>
+<span class="sd">    dt --&gt; supervisor set timestep</span>
+<span class="sd">    return --&gt; unicycle model list [velocity, omega]&quot;&quot;&quot;</span>
+
+    <span class="c">#Begin week 4 code</span>
+
+    <span class="c">#1. Store the state values for the robot</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">robotx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">roboty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">robottheta</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pose</span>
+
+    <span class="c">#2. Make calculations for a new goal</span>
+    <span class="c">#3. Calculate proportional error</span>
+    <span class="c">#4. Correct for angles (angle may be greater than PI) with atan2</span>
+    <span class="c">#5. Calculate integral error</span>
+    <span class="c">#6. Calculate differential error</span>
+    <span class="c"># store error in self.e_1</span>
+
+    <span class="c">#7. Calculate desired omega</span>
+    <span class="c">#Make sure you modify these variables</span>
+
+    <span class="n">v_</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">w_</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#End week 4 code</span>
+    <span class="c">#8. Return solution</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">v_</span><span class="p">,</span> <span class="n">w_</span><span class="p">]</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Add your code and methods as desired to manipulate <tt class="docutils literal"><span class="pre">v_</span></tt> and <tt class="docutils literal"><span class="pre">w_</span></tt>.</li>
+</ol>
+<p>One suggested idea is to calculate the vector to each point from the robot and weigh them according to the <tt class="docutils literal"><span class="pre">self.weight</span></tt> variable. Sum the resulting weight and drive the robot to this point.</p>
+<div class="math">
+\[\begin{split}w = [w_{120}, w_{75}, w_{42}, w_{13}, ...] \\
+r = [r_{120}, r_{75}, r_{42}, ...]^{T} \\
+D = wr\end{split}\]</div>
+<p>An alternative method is to weight the angles and use a resultant angle to drive the robot to the desired position. Not that the 180 degree sensor has no opposing sensor to counterweight it.</p>
+<div class="math">
+\[\begin{split}w = [w_{120}, w_{75}, w_{42}, w_{13}, ...] \\
+d = [d_{120}, d_{75}, d_{42}, ...] \\
+\theta = [\theta_{120}, \theta_{75}, \theta_{42}, ...] \\
+\Theta = \frac{\sum{w_{i}d_{i}\theta_{i}}}{\sum{w_{i}d_{i}}}\end{split}\]</div>
 </div>
 
 
