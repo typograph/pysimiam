@@ -84,6 +84,8 @@ class Simulator(threading.Thread):
             return
 
         helpers.unload_user_modules()
+
+        self.__state = PAUSE            
             
         self._robots = []
         self._obstacles = []
@@ -150,6 +152,10 @@ class Simulator(threading.Thread):
                 self.focus_on_world()
             self.draw()
             self.__supervisor_param_cache = None
+            
+        self.__state = PAUSE            
+
+        self._out_queue.put(('simulator_reset',()))
 
     def recalculate_default_zoom(self):
         maxsize = 0
@@ -299,6 +305,7 @@ class Simulator(threading.Thread):
         """Stops the simulator thread when the entire program is closed"""
         print 'stopping simulator thread'
         self.__stop = True
+        self._out_queue.put(('simulator_stopped',()))
 
     def start_simulation(self):
         """Starts the simulation"""
@@ -313,11 +320,11 @@ class Simulator(threading.Thread):
     def pause_simulation(self):
         """pauses the simulation"""
         self.__state = PAUSE
-        self._out_queue.put(('simulator_stopped',()))
+        self._out_queue.put(('simulator_paused',()))
 
     def reset_simulation(self):
         """resets the simulation to the start position"""
-        self.pause_simulation()
+        self.__state = PAUSE
         self.reset_world()
 
     def set_time_multiplier(self,multiplier):

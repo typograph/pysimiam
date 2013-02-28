@@ -22,11 +22,11 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__create_menu()
         self.__create_statusbar()
         # Set intro message
-        self.statusBar().showMessage("Welcome to QtSimiam") 
+        self.status_label.setText("Welcome to QtSimiam")
         
         # create XML file dialog
         self._world_dialog = QtGui.QFileDialog(self,
-                                "Select World.xml File",
+                                "Select World File",
                                 "worlds", 
                                 "WorldFile (*.xml)")
         self._world_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
@@ -72,30 +72,36 @@ class SimulationWidget(QtGui.QMainWindow):
         tbar = QtGui.QToolBar("Control",self)
         tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         
-        self.__time_label = QtGui.QLabel("00:00.0",self)
-        self.__time_label.setToolTip("Elapsed time")
-        tbar.addWidget(self.__time_label)
+        #self.__time_label = QtGui.QLabel("00:00.0",self)
+        #self.__time_label.setToolTip("Elapsed time")
+        #tbar.addWidget(self.__time_label)
         
         self.revaction = \
             tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
                         "Rewind",
                         self._on_rewind)
+        self.revaction.setStatusTip("Reset simulation")
         self.runaction = \
             tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),
                            "Run",
                            self._on_run)
+        self.runaction.setStatusTip("Run simulation")
         self.pauseaction = \
             tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
                        "Pause",
                        self._on_pause)
+        self.pauseaction.setStatusTip("Pause simulation")
+        
         self.revaction.setEnabled(False)
         self.runaction.setEnabled(False)
         self.pauseaction.setVisible(False)
+        
         self.__speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.__speed_slider.setToolTip("Adjust speed")
+        self.__speed_slider.setStatusTip("Adjust simulation speed")
         self.__speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
         self.__speed_slider.setMaximumWidth(300)
-        self.__speed_slider.setRange(-100,100)
+        self.__speed_slider.setRange(-100,0)
         self.__speed_slider.setValue(0)
         self.__speed_slider.setEnabled(False)
         self.__speed_slider.valueChanged[int].connect(self._scale_time)
@@ -112,18 +118,21 @@ class SimulationWidget(QtGui.QMainWindow):
 
         a = tbar.addAction(QtGui.QIcon("./res/image/grid.png"),
                            "Show/Hide grid")
+        a.setStatusTip("Show/hide grid")
         a.triggered[bool].connect(self._show_grid)
         a.setCheckable(True)
         a.setChecked(False)
 
         a = tbar.addAction(QtGui.QIcon("./res/image/robot-sensors.png"),
                            "Show/Hide sensors")
+        a.setStatusTip("Show/hide robot sensors")
         a.triggered[bool].connect(self._show_sensors)
         a.setCheckable(True)
         a.setChecked(True)
         
         a = tbar.addAction(QtGui.QIcon("./res/image/robot-tracks.png"),
                            "Show/Hide robot trajectores")
+        a.setStatusTip("Show/hide robot trajectores")
         a.triggered[bool].connect(self._show_tracks)
         a.setCheckable(True)
         a.setChecked(True)
@@ -132,6 +141,7 @@ class SimulationWidget(QtGui.QMainWindow):
         a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
                            "Show all",
                             self._zoom_scene)
+        a.setStatusTip("Show the whole world in view")
         a.setCheckable(True)
         a.setChecked(True)
         zoom_group.addAction(a)
@@ -139,6 +149,7 @@ class SimulationWidget(QtGui.QMainWindow):
         a = tbar.addAction(QtGui.QIcon("./res/image/zoom-robot.png"),
                            "Follow robot",
                            self._zoom_robot)
+        a.setStatusTip("Center the view on robot")
         a.setCheckable(True)
         a.setChecked(False)
         zoom_group.addAction(a)
@@ -147,6 +158,7 @@ class SimulationWidget(QtGui.QMainWindow):
             tbar.addAction(QtGui.QIcon("./res/image/zoom-robot-rot.png"),
                            "Follow robot orientation",
                            self._rot_robot)
+        self.act_rot_robot.setStatusTip("Rotate the view with the robot")
         self.act_rot_robot.setCheckable(True)
         self.act_rot_robot.setChecked(False)
         self.act_rot_robot.setEnabled(False)
@@ -154,6 +166,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.__zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
         self.__zoom_slider.setToolTip("Adjust zoom")
+        self.__zoom_slider.setStatusTip("Zoom in/out on robot")
         self.__zoom_slider.setMaximumWidth(300)
         self.__zoom_slider.setRange(-100,100)
         self.__zoom_slider.setValue(0)
@@ -173,20 +186,25 @@ class SimulationWidget(QtGui.QMainWindow):
         self.setMenuBar(menu)
         
         file_menu = menu.addMenu("&File")
-        file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
-                            "Open XML &World",
-                            self._on_open_world,
-                            QtGui.QKeySequence(QtGui.QKeySequence.Open))
+        a = file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
+                                "Open XML &World",
+                                self._on_open_world,
+                                QtGui.QKeySequence(QtGui.QKeySequence.Open))
+        a.setStatusTip("Open a new simulation")
                             
         file_menu.addSeparator()
-        file_menu.addAction(QtGui.QIcon.fromTheme("application-exit"),
-                            "E&xit",
-                            self.close,
-                            QtGui.QKeySequence(QtGui.QKeySequence.Quit)
-                            ).setToolTip("Quit the Program")
+        a = file_menu.addAction(QtGui.QIcon.fromTheme("application-exit"),
+                                "E&xit",
+                                self.close,
+                                QtGui.QKeySequence(QtGui.QKeySequence.Quit)
+                                )
+        a.setToolTip("Quit the Program")
+        a.setStatusTip("Exit QtSimiam")
                             
     def __create_statusbar(self):      
         self.setStatusBar(QtGui.QStatusBar())
+        self.status_label = QtGui.QLabel("",self.statusBar())
+        self.statusBar().addWidget(self.status_label)
 
     def closeEvent(self,event):
         self.__sim_timer.stop()
@@ -205,32 +223,41 @@ class SimulationWidget(QtGui.QMainWindow):
             filename = os.path.join('worlds',filename)
             if not os.path.exists(filename):
                 print "Cannot open file {}".format(filename)
+                return
         self.__dockmanager.clear()
-        self.revaction.setEnabled(True)
-        self.runaction.setEnabled(True)
+        #self.revaction.setEnabled(False)
+        #self.runaction.setEnabled(True)
         self.__sim_queue.put(('read_config',(filename,)))
 
     # Slots
     @QtCore.pyqtSlot()
     def _on_rewind(self): # Start from the beginning
-        #self.__sim_timer.stop()
+
         self.pauseaction.setVisible(False)
         self.runaction.setVisible(True)
+
+        self.pauseaction.setEnabled(False)
         self.revaction.setEnabled(False)
-        self.__time_label.setText("00:00.0")
+
+        self.__speed_slider.setEnabled(False)
+        #self.__time_label.setText("00:00.0")
         self.__sim_queue.put(('reset_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_run(self): # Run/unpause
         self.pauseaction.setVisible(True)
         self.runaction.setVisible(False)
-        self.revaction.setEnabled(True)
+        self.runaction.setEnabled(False)
         self.__sim_queue.put(('start_simulation',()))
 
     @QtCore.pyqtSlot()
     def _on_pause(self): # Pause
         self.pauseaction.setVisible(False)
         self.runaction.setVisible(True)
+        
+        self.pauseaction.setEnabled(False)
+        self.__speed_slider.setEnabled(False)
+        
         self.__sim_queue.put(('pause_simulation',()))
 
     @QtCore.pyqtSlot()
@@ -282,9 +309,12 @@ class SimulationWidget(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot()
     def __update_time(self):
-        t = self._simulator_thread.get_time()
-        minutes = t//60
-        self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+        if self._simulator_thread.is_running():
+            t = self._simulator_thread.get_time()
+            minutes = int(t//60)
+            #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+            self.status_label.setText(
+                "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
         self.process_events(True)
     
     def process_events(self, process_all = False):
@@ -312,15 +342,30 @@ class SimulationWidget(QtGui.QMainWindow):
 ### Queue processing
         
     def simulator_running(self):
-        #self.__sim_timer.start()
+        self.revaction.setEnabled(True)
+        self.pauseaction.setEnabled(True)
         self.__speed_slider.setEnabled(True)
     
     def simulator_paused(self):
-        #self.__sim_timer.stop()
+        self.runaction.setEnabled(True)
+        #self.revaction.setEnabled(True)
+        t = self._simulator_thread.get_time()
+        minutes = int(t//60)
+        #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+        self.status_label.setText(
+            "Simulation paused... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
         self.__speed_slider.setEnabled(False)
 
+    def simulator_reset(self):
+        self.runaction.setEnabled(True)
+        self.status_label.setText("Simulation ready")
+
     def simulator_stopped(self):
+        # FIXME this function isn't necessary
         #self.__sim_timer.stop()
+        self.runaction.setEnabled(False)
+        self.pauseaction.setEnabled(False)
+        self.revaction.setEnabled(False)
         self.__speed_slider.setEnabled(False)
         
     def update_view(self):

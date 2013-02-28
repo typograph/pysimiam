@@ -163,7 +163,9 @@ Week 3: Go To Goal Controller
         Controller.__init__(self,params)
         #Week 3
         #Place any variables you would like to store here
-        #e.g.: self.myvar1
+        #You may use this variables for convenience
+        self.E = 0 # Integrated error
+        self.e_1 = 0 # Previous error calculation
 
         #End week3
 
@@ -188,7 +190,8 @@ Given the following variables:
 
 - ``state.goal.x`` (float) - The X coordinate of the goal
 - ``state.goal.y`` (float) - The Y coordinate of the goal
-- ``state.pose`` (:class:`~pose.Pose`) - the position and orientation of the robot
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the simulation, which is usually the maximum available.
 
 To extract the pose data, you can use a command like this::
 
@@ -198,7 +201,69 @@ To extract the pose data, you can use a command like this::
 4. Calculate the error from the present heading (`theta`) and the bearing.
 5. Calculate proportional, integral, and differential terms of the PID.
 
+You are encouraged to reuse your code from week2, but in case you don't want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ``./supervisors/khepera3.py`` module.
+
 
 Week 4: Avoid Obstacles Controller
 ==================================
+1. Open ``./controllers/avoidobstacles.py`` in an editor.
+2. Navigate to the `set_parameters` and `execute` method where the exercise comments begin
+
+
+.. code-block:: python
+
+        # Week 4 code 
+        # These variables will be used to make calculations
+        self.angles = params.sensor_angles
+        self.weights = [(math.cos(a)+1.1) for a in self.angles]
+        # End week 4 code
+
+.. code-block:: python
+
+    def execute(self, state, dt):
+        """Executes avoidance behavior based on state and dt. 
+        state --> supevisor set ui_params
+        dt --> supervisor set timestep
+        return --> unicycle model list [velocity, omega]"""
+
+        #Begin week 4 code
+
+        #1. Store the state values for the robot
+        self.robotx, self.roboty, self.robottheta = state.pose
+
+        #2. Make calculations for a new goal 
+        #3. Calculate proportional error
+        #4. Correct for angles (angle may be greater than PI) with atan2
+        #5. Calculate integral error
+        #6. Calculate differential error
+        # store error in self.e_1
+
+        #7. Calculate desired omega
+        #Make sure you modify these variables
+
+        v_ = 0
+        w_ = 0 
+        
+        #End week 4 code
+        #8. Return solution
+        return [v_, w_]
+
+
+
+3. Add your code and methods as desired to manipulate ``v_`` and ``w_``.
+
+One suggested idea is to calculate the vector to each point from the robot and weigh them according to the ``self.weight`` variable. Sum the resulting weight and drive the robot to this point.
+
+.. math::
+    w = [w_{120}, w_{75}, w_{42}, w_{13}, ...] \\
+    r = [r_{120}, r_{75}, r_{42}, ...]^{T} \\
+    D = wr 
+
+An alternative method is to weight the angles and use a resultant angle to drive the robot to the desired position. Not that the 180 degree sensor has no opposing sensor to counterweight it.
+
+.. math::
+    w = [w_{120}, w_{75}, w_{42}, w_{13}, ...] \\
+    d = [d_{120}, d_{75}, d_{42}, ...] \\
+    \theta = [\theta_{120}, \theta_{75}, \theta_{42}, ...] \\
+    \Theta = \frac{\sum{w_{i}d_{i}\theta_{i}}}{\sum{w_{i}d_{i}}}
 
