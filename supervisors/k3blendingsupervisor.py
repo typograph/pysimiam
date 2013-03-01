@@ -13,6 +13,7 @@ class K3BlendingSupervisor(K3Supervisor):
         self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
 
         self.current = self.gtg
+        self.old_omega = 0
 
     def execute(self, robot_info, dt):
         """Blend the behaviour of several controllers"""
@@ -41,12 +42,12 @@ class K3BlendingSupervisor(K3Supervisor):
         distance_ratio /= 0.8
 
         weight_avo = 0.5*(1 + cos(pi*distance_ratio))
-            
+
         v_gtg, w_gtg = self.gtg.execute(self.ui_params,dt) #execute go-to-goal
         v_avo, w_avo = self.avoidobstacles.execute(self.ui_params,dt) #execute go-to-goal
 
-        v = (v_gtg + v_avo)/2
+        v = v_gtg*(1-weight_avo) + v_avo*weight_avo
         w = w_gtg*(1-weight_avo) + w_avo*weight_avo
-
+       
         vl, vr = self.uni2diff((v,w))
         return (vl, vr) 

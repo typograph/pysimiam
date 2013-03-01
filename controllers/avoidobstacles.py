@@ -26,34 +26,49 @@ class AvoidObstacles(Controller):
         self.kd = params.gains.kd
 
         self.angles = params.sensor_angles
-        self.weights = [(math.cos(a)+1.1) for a in self.angles]
-
+        self.weights = [(math.cos(a)+1.5) for a in self.angles]
     #User-defined function
     def calculate_new_goal(self, distances):
         """Determines a new goal for the robot based on which sensors are active"""
         
         angle = 0.0
         weightdist = 0.0
-        for i in range(len(distances)):
-            angle += self.angles[i]*distances[i]*self.weights[i]
-            weightdist += distances[i]*self.weights[i] 
-
-        angle = angle/weightdist #average angle to the clear
-        angle = angle + self.robottheta
-
-        #if angle < 0.0:
-        #    angle += 2*math.pi
-        #elif angle > 2*math.pi:
-        #    angle -= 2*math.pi
-
-        print angle
-        return angle
-
-    def calculate_new_velocity(self, distances):
-        """Adjusts robot velocity based on distance to object"""
+        
+        maxdist = max(distances)
         mindist = min(distances)
         
-        vel = max(min(mindist/0.29*0.4, 0.4), 0.1) 
+        # Determine the angle with most obstacles
+        
+        if maxdist == mindist: # go forward
+            angle = math.pi
+        else:
+            for s_angle, s_dist, s_weight in \
+                zip(self.angles, distances, self.weights):
+                
+                angle += s_angle*(maxdist - s_dist)*s_weight
+                weightdist += (maxdist - s_dist)*s_weight
+                
+            #angle /= maxdist - mindist
+            angle /= weightdist
+
+        print angle
+
+        # We have to escape, rotate by pi
+        angle += self.robottheta + math.pi
+
+        #angle = angle/weightdist #average angle to the clear
+
+        return (angle+math.pi)%(2*math.pi) - math.pi
+
+    def calculate_new_velocity(self, distances, vmax):
+        """Adjusts robot velocity based on distance to object"""
+        mindist = min(distances)
+        maxdist = max(distances)
+        
+        # We want the robot to slow down as it approaches the obstacles
+        # So, if mindist is real close to zero, the velocity should be
+        # minimal, and if mindist is at maxdist, it can be maximal
+        vel = math.sqrt(mindist/maxdist)*vmax
         return vel 
 
     def execute(self, state, dt):
@@ -67,7 +82,8 @@ class AvoidObstacles(Controller):
 
         #Non-global goal
         theta = self.calculate_new_goal(state.sensor_distances) #user defined function
-        v_ = self.calculate_new_velocity(state.sensor_distances) #user defined function
+        v_ = self.calculate_new_velocity(state.sensor_distances,
+                                         state.velocity.v) #user defined function
 
         #1. Calculate simple proportional error
         error = theta - self.robottheta
@@ -77,6 +93,7 @@ class AvoidObstacles(Controller):
 
         #3. Calculate integral error
         self.E += error*dt
+        self.E = (self.E + math.pi)%(2*math.pi) - math.pi
 
         #4. Calculate differential error
         dE = (error - self.error_1)/dt
