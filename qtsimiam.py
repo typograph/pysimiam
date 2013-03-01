@@ -93,7 +93,7 @@ class SimulationWidget(QtGui.QMainWindow):
                        self._on_pause)
         self.pauseaction.setStatusTip("Pause simulation")
         
-        self.revaction.setEnabled(False)
+        #self.revaction.setEnabled(False)
         self.runaction.setEnabled(False)
         self.pauseaction.setVisible(False)
         
@@ -102,7 +102,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.__speed_slider.setStatusTip("Adjust simulation speed")
         self.__speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
         self.__speed_slider.setMaximumWidth(300)
-        self.__speed_slider.setRange(-100,0)
+        self.__speed_slider.setRange(-100,100)
         self.__speed_slider.setValue(0)
         self.__speed_slider.setEnabled(False)
         self.__speed_slider.valueChanged[int].connect(self._scale_time)
@@ -238,7 +238,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.runaction.setVisible(True)
 
         self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
+        #self.revaction.setEnabled(False)
 
         self.__speed_slider.setEnabled(False)
         #self.__time_label.setText("00:00.0")
@@ -346,7 +346,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.pauseaction.setVisible(True)
         self.runaction.setVisible(False)
         self.runaction.setEnabled(False)
-        self.revaction.setEnabled(True)
+        #self.revaction.setEnabled(True)
         self.pauseaction.setEnabled(True)
         self.__speed_slider.setEnabled(True)
     
@@ -370,7 +370,7 @@ class SimulationWidget(QtGui.QMainWindow):
         self.runaction.setVisible(True)
 
         self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
+        #self.revaction.setEnabled(False)
 
         self.runaction.setEnabled(True)
         self.status_label.setText("Simulation ready")
@@ -380,7 +380,7 @@ class SimulationWidget(QtGui.QMainWindow):
         #self.__sim_timer.stop()
         self.runaction.setEnabled(False)
         self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
+        #self.revaction.setEnabled(False)
         self.__speed_slider.setEnabled(False)
         
     def update_view(self):
