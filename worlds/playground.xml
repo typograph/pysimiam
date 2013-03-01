@@ -7,7 +7,7 @@
     </robot>
     
     <robot type="Khepera3">
-        <supervisor type="k3defaultsupervisor.K3DefaultSupervisor" />
+        <supervisor type="k3blendingsupervisor.K3BlendingSupervisor" />
         <pose x="0.5" y="-0.5" theta="0" />
     </robot>
 
