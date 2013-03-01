@@ -27,9 +27,11 @@ def load_by_name(module_string, path = None):
         
     try:
         if path is not None:
+            old_modules = set(sys.modules)
             module = __import__(path, globals(), locals(), [filename]).__dict__[filename]
-            __loaded_modules.append(path)
-            __loaded_modules.append("{}.{}".format(path,filename))
+            for module_name in set(sys.modules) - old_modules:
+                __loaded_modules.append(module_name)
+            #__loaded_modules.append("{}.{}".format(path,filename))
         else:
             module = __import__(filename)
             __loaded_modules.append(filename)
