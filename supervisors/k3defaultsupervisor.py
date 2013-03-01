@@ -16,6 +16,11 @@ class K3DefaultSupervisor(K3Supervisor):
 
         self.current = self.gtg
 
+    def set_parameters(self,params):
+        K3Supervisor.set_parameters(self,params)
+        self.gtg.set_parameters(params.pid.gains)
+        self.avoidobstacles.set_parameters(self.ui_params)
+
     def process(self):
         """Selects the best controller based on ir sensor readings
         Updates ui_params.pose and ui_params.ir_readings"""
@@ -41,9 +46,3 @@ class K3DefaultSupervisor(K3Supervisor):
                    self.avoidobstacles.clear_error()
 
         return self.ui_params
-
-    def execute(self, robot_info, dt):
-        """Peforms K3Supervisor procedures and converts unicycle output into differential drive output for the Khepera3"""
-        output = Supervisor.execute(self, robot_info, dt)
-        vl, vr = self.uni2diff(output)
-        return (vl, vr) 

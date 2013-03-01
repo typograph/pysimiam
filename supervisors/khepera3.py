@@ -51,11 +51,13 @@ The UI may use the get_parameters function interface to create docker windows fo
         params = Struct()
         params.pid = Supervisor.get_parameters(self)
         return params
-                                  
-    def set_parameters(self,params):
-        Supervisor.set_parameters(self,params.pid)
-        self.gtg.set_parameters(params.pid.gains)
 
+    def set_parameters(self,params):
+        params = params.pid
+        self.ui_params.goal = params.goal
+        self.ui_params.velocity = params.velocity
+        self.ui_params.gains = params.gains
+                                  
     def uni2diff(self,uni):
         """Convert between unicycle model to differential model"""
         (v,w) = uni
@@ -87,7 +89,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Select controller and insert data into a state info structure for the controller"""
         # Controller is already selected
         # Parameters are nearly in the right format for go-to-goal
-        raise NotImplementedError('Supervisor.process') 
+        raise NotImplementedError('K3Supervisor.process') 
     
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
