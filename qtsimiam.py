@@ -11,6 +11,7 @@ from dockwindow import ParamDock, DockManager
 
 import simulator as sim
 import Queue as queue
+from traceback import format_exception
 
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
@@ -342,11 +343,20 @@ class SimulationWidget(QtGui.QMainWindow):
 ### Queue processing
         
     def simulator_running(self):
+        self.pauseaction.setVisible(True)
+        self.runaction.setVisible(False)
+        self.runaction.setEnabled(False)
         self.revaction.setEnabled(True)
         self.pauseaction.setEnabled(True)
         self.__speed_slider.setEnabled(True)
     
     def simulator_paused(self):
+        self.pauseaction.setVisible(False)
+        self.runaction.setVisible(True)
+        
+        self.pauseaction.setEnabled(False)
+        self.__speed_slider.setEnabled(False)
+
         self.runaction.setEnabled(True)
         #self.revaction.setEnabled(True)
         t = self._simulator_thread.get_time()
@@ -354,9 +364,14 @@ class SimulationWidget(QtGui.QMainWindow):
         #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
         self.status_label.setText(
             "Simulation paused... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
-        self.__speed_slider.setEnabled(False)
 
     def simulator_reset(self):
+        self.pauseaction.setVisible(False)
+        self.runaction.setVisible(True)
+
+        self.pauseaction.setEnabled(False)
+        self.revaction.setEnabled(False)
+
         self.runaction.setEnabled(True)
         self.status_label.setText("Simulation ready")
 
@@ -370,6 +385,9 @@ class SimulationWidget(QtGui.QMainWindow):
         
     def update_view(self):
         self.__viewer.update_bitmap()
+        
+    def simulator_exception(self,e_type, e_value, e_traceback):
+        QtGui.QMessageBox.critical(self,"{}: {}".format(e_type.__name__,e_value),"\n".join(format_exception(e_type,e_value,e_traceback)))
             
 #end QtSimiamFrame class
 

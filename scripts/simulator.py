@@ -6,6 +6,7 @@ from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
 from math import sqrt
+import sys
 
 import pose
 import simobject
@@ -184,30 +185,36 @@ class Simulator(threading.Thread):
 
         while not self.__stop:
 
-            sleep(time_constant/self.__time_multiplier)
+            try:
 
-            if self.__state == RUN:
+                sleep(time_constant/self.__time_multiplier)
 
-                for i, supervisor in enumerate(self._supervisors):
-                    info = self._robots[i].get_info()
-                    inputs = supervisor.execute( info, time_constant)
-                    self._robots[i].set_inputs(inputs)
+                if self.__state == RUN:
 
-                self.__time += time_constant
+                    for i, supervisor in enumerate(self._supervisors):
+                        info = self._robots[i].get_info()
+                        inputs = supervisor.execute( info, time_constant)
+                        self._robots[i].set_inputs(inputs)
 
-                for i, robot in enumerate(self._robots):
-                    robot.move(time_constant)
-                    self._trackers[i].add_point(robot.get_pose())
+                    self.__time += time_constant
 
-                # the parameters that might have been changed have no effect
-                # on collisions
-                if self.check_collisions():
-                    print "Collision detected!"
-                    self.__state = PAUSE
-                    #self.__stop = True
+                    for i, robot in enumerate(self._robots):
+                        robot.move(time_constant)
+                        self._trackers[i].add_point(robot.get_pose())
 
-            # Draw to buffer-bitmap
-            self.draw()
+                    # the parameters that might have been changed have no effect
+                    # on collisions
+                    if self.check_collisions():
+                        print "Collision detected!"
+                        self.__state = PAUSE
+                        #self.__stop = True
+
+                # Draw to buffer-bitmap
+                self.draw()
+            
+            except Exception as e:
+                self._out_queue.put(("simulator_exception",sys.exc_info()))
+                self.pause_simulation()
 
     def draw(self):
         """Draws the world and items in it."""
@@ -401,7 +408,9 @@ class Simulator(threading.Thread):
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
                         print "Wrong simulator event parameters {}{}".format(name,args)
-                        raise
+                        self._out_queue.put(("simulator_exception",sys.exc_info()))
+                    except Exception as e:
+                        self._out_queue.put(("simulator_exception",sys.exc_info()))
                 else:
                     print "Unknown simulator event '{}'".format(name)
             else:
