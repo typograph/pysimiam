@@ -4,14 +4,55 @@ from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt
 import numpy
 from random import random
 
-#from qt_plotwindow_mpl import PlotWindow
-from qt_plotwindow_qwt import PlotWindow
-#from qt_plotwindow_qtgraph import PlotWindow
+mplPlotWindow = None
+qwtPlotWindow = None
+pqgPlotWindow = None
+PlotWindow = None
+
+def use_qwt_backend():
+    global PlotWindow, qwtPlotWindow
+    if qwtPlotWindow is None:
+        qwtPlotWindow = __import__('qt_plotwindow_qwt',
+                                   globals(), locals(),
+                                   ['PlotWindow'], -1).PlotWindow
+    PlotWindow = qwtPlotWindow
+
+def use_qtgraph_backend():
+    global PlotWindow, pqgPlotWindow
+    if pqgPlotWindow is None:
+        pqgPlotWindow = __import__('qt_plotwindow_qtgraph',
+                                   globals(), locals(),
+                                   ['PlotWindow'], -1).PlotWindow
+    PlotWindow = pqgPlotWindow
+
+def use_matplotlib_backend():
+    global PlotWindow, mplPlotWindow
+    if mplPlotWindow is None:
+        mplPlotWindow = __import__('qt_plotwindow_mpl',
+                                   globals(), locals(),
+                                   ['PlotWindow'], -1).PlotWindow
+    PlotWindow = mplPlotWindow    
+
+def use_some_backend():
+    global PlotWindow
+    if PlotWindow is not None:
+        return
+    try:
+        use_qtgraph_backend()
+    except ImportError:
+        try:
+            use_qwt_backend()
+        except ImportError:
+            try:
+                use_matplotlib_backend()
+            except ImportError: 
+                raise ImportError("No suitable plot backend found")
 
 def create_plot_window(plotables):
     """Create a dialog for plot creation.
        Return selected expressions
     """
+    use_some_backend()
     dialog = PlotDialog(plotables)
     if dialog.exec_():
         # Create plots
@@ -20,6 +61,7 @@ def create_plot_window(plotables):
 
 def create_predefined_plot_window(plots):
     """Create a window with plots from plot dictionary"""
+    use_some_backend()
     w = PlotWindow()
     es = []
     for plot in plots:

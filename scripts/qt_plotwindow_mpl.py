@@ -22,7 +22,7 @@ def get_color(color):
         elif color == 'green':
             return (0,1,0)
     elif isinstance(color,tuple) or isinstance(color,list):
-        if sum(color) >= 4.0
+        if sum(color) >= 4.0:
             return [c/255. for c in color]
         else:
             return color
