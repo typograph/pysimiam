@@ -6,7 +6,7 @@ import os
 from PyQt4 import QtGui, QtCore
 from qtrenderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
-from qtgraph_plotwindow import create_plot_window, create_predefined_plot_window
+from qt_plotwindow import create_plot_window, create_predefined_plot_window
 
 import random
 
