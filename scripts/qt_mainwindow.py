@@ -6,7 +6,7 @@ import os
 from PyQt4 import QtGui, QtCore
 from qtrenderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
-from qt_plotwindow import create_plot_window, create_predefined_plot_window
+from qtgraph_plotwindow import create_plot_window, create_predefined_plot_window
 
 import random
 
@@ -224,8 +224,8 @@ class SimulationWidget(QtGui.QMainWindow):
         while self._simulator_thread.isAlive():
             self.process_events(True)
             self._simulator_thread.join(0.1)
-        for plot in self.plots:
-            plot.close()
+        while self.plots:
+            self.plots.pop().close()
         super(SimulationWidget,self).closeEvent(event)
 
     def make_param_window(self,robot_id,name,parameters):       
@@ -377,7 +377,7 @@ class SimulationWidget(QtGui.QMainWindow):
         if self.__clear_graph_on_start:
             self.__clear_graph_on_start = False
             for plot in self.plots:
-                plot.clear()
+                plot.clear_data()
     
     def simulator_paused(self):
         self.runaction.setEnabled(True)

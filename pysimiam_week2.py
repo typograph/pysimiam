@@ -13,11 +13,11 @@ if __name__ == "__main__":
     simWidget.show()
     simWidget.load_world("week2.xml")
     simWidget.add_graph([
-            [("Robot X", "robot.get_pose().x", (1.,0,0)),
-             ("Goal X", "supervisor.ui_params.goal.x",(0,0,1.0))],
-            [("Robot Y", "robot.get_pose().y", (1.,0,0)),
-             ("Goal X", "supervisor.ui_params.goal.y",(0,0,1.0))],
-            [("Robot Theta", "robot.get_pose().theta", (1.,0,0)),
-             ("Angle to goal","math.atan2(supervisor.ui_params.goal.y - robot.get_pose().y,supervisor.ui_params.goal.x - robot.get_pose().x)", (0,0,1.0))]
+            [("Robot X", "robot.get_pose().x", (255,0,0)),
+             ("Goal X", "supervisor.ui_params.goal.x",(0,0,255))],
+            [("Robot Y", "robot.get_pose().y", (255,0,0)),
+             ("Goal X", "supervisor.ui_params.goal.y",(0,0,255))],
+            [("Robot Theta", "robot.get_pose().theta", (255,0,0)),
+             ("Angle to goal","math.atan2(supervisor.ui_params.goal.y - robot.get_pose().y,supervisor.ui_params.goal.x - robot.get_pose().x)", (0,0,255))]
             ])
     app.exec_()
