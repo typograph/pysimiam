@@ -1,6 +1,9 @@
 import pyqtgraph as pg
 from random import randint
 
+pg.setConfigOption('background', 'w')
+pg.setConfigOption('foreground', 'k')
+
 def get_color(color):
     if color is None:
         color = 'random'
@@ -53,9 +56,9 @@ class Plot:
     """
     def __init__(self,plot):
         self.plot = plot
-        plot.enableAutoRange('x',1)
         plot.enableAutoRange('y',0.95)
         plot.addLegend()
+        plot.setMouseEnabled(x=False, y=True)
         self.variables = []
     
     def add_curve(self,label,expression,color=None):
@@ -68,6 +71,7 @@ class Plot:
                 print "No value for {}".format(variable.expression)
             else:
                 variable.add_point(data['time'], data[variable.expression])
+        self.plot.setXRange(max(0,data['time']-10),data['time'])
                 
     def clear_data(self):
         for v in self.variables:
