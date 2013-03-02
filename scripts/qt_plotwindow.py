@@ -4,8 +4,8 @@ from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt
 import numpy
 from random import random
 
-from qt_plotwindow_mpl import PlotWindow
-#from qt_plotwindow_qwt import PlotWindow
+#from qt_plotwindow_mpl import PlotWindow
+from qt_plotwindow_qwt import PlotWindow
 #from qt_plotwindow_qtgraph import PlotWindow
 
 def create_plot_window(plotables):
