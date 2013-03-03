@@ -297,10 +297,6 @@ class SimulationWidget(QtGui.QMainWindow):
             self.simulator_thread.join(0.1)
         super(SimulationWidget,self).closeEvent(event)
 
-    def make_param_window(self,robot_id,name,parameters):       
-        # FIXME adding to the right for no reason
-        self.dockmanager.add_dock_right(robot_id, name, parameters)
-
     def load_world(self,filename):
         self.run_action.setEnabled(False)
         if not os.path.exists(filename):
@@ -396,6 +392,8 @@ class SimulationWidget(QtGui.QMainWindow):
             tpl = self.in_queue.get()
             if isinstance(tpl,tuple) and len(tpl) == 2:
                 name, args = tpl
+                # Scramble
+                name = "simulator_{}".format(name)
                 if name in self.__class__.__dict__:
                     try:
                         self.__class__.__dict__[name](self,*args)
@@ -413,7 +411,11 @@ class SimulationWidget(QtGui.QMainWindow):
     def apply_parameters(self, robot_id, params):
         self.sim_queue.put(('apply_parameters', (robot_id, params)))
             
-### Queue processing
+### Simulator events
+
+    def simulator_make_param_window(self,robot_id,name,parameters):       
+        # FIXME adding to the right for no reason
+        self.dockmanager.add_dock_right(robot_id, name, parameters)
         
     def simulator_running(self):
         self.speed_slider.setEnabled(True)
@@ -422,7 +424,6 @@ class SimulationWidget(QtGui.QMainWindow):
         self.speed_slider.setEnabled(False)
         t = self.simulator_thread.get_time()
         minutes = int(t//60)
-        #self.time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
         self.status_label.setText(
             "Simulation paused... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
 
@@ -433,10 +434,9 @@ class SimulationWidget(QtGui.QMainWindow):
 
     def simulator_stopped(self):
         # FIXME this function isn't necessary
-        #self.sim_timer.stop()
         self.speed_slider.setEnabled(False)
         
-    def update_view(self):
+    def simulator_update_view(self):
         self.viewer.update_bitmap()
         
     def simulator_exception(self,e_type, e_value, e_traceback):

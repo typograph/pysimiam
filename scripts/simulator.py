@@ -156,7 +156,7 @@ class Simulator(threading.Thread):
             
         self.__state = PAUSE            
 
-        self._out_queue.put(('simulator_reset',()))
+        self._out_queue.put(('reset',()))
 
     def recalculate_default_zoom(self):
         maxsize = 0
@@ -213,7 +213,7 @@ class Simulator(threading.Thread):
                 self.draw()
             
             except Exception as e:
-                self._out_queue.put(("simulator_exception",sys.exc_info()))
+                self._out_queue.put(("exception",sys.exc_info()))
                 self.pause_simulation()
 
     def draw(self):
@@ -312,13 +312,13 @@ class Simulator(threading.Thread):
         """Stops the simulator thread when the entire program is closed"""
         print 'stopping simulator thread'
         self.__stop = True
-        self._out_queue.put(('simulator_stopped',()))
+        self._out_queue.put(('stopped',()))
 
     def start_simulation(self):
         """Starts the simulation"""
         if self._robots:
             self.__state = RUN
-            self._out_queue.put(('simulator_running',()))
+            self._out_queue.put(('running',()))
 
     def is_running(self):
         """A getter for simulation state"""
@@ -327,7 +327,7 @@ class Simulator(threading.Thread):
     def pause_simulation(self):
         """pauses the simulation"""
         self.__state = PAUSE
-        self._out_queue.put(('simulator_paused',()))
+        self._out_queue.put(('paused',()))
 
     def reset_simulation(self):
         """resets the simulation to the start position"""
@@ -408,9 +408,9 @@ class Simulator(threading.Thread):
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
                         print "Wrong simulator event parameters {}{}".format(name,args)
-                        self._out_queue.put(("simulator_exception",sys.exc_info()))
+                        self._out_queue.put(("exception",sys.exc_info()))
                     except Exception as e:
-                        self._out_queue.put(("simulator_exception",sys.exc_info()))
+                        self._out_queue.put(("exception",sys.exc_info()))
                 else:
                     print "Unknown simulator event '{}'".format(name)
             else:
