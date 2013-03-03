@@ -29,7 +29,7 @@ Python 2.7 --> http://www.python.org/getit/
 Website Tree
 ------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    overview
    tutorial

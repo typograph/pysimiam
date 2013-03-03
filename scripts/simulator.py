@@ -1,5 +1,3 @@
-"""Simulator Thread
-"""
 import threading
 import Queue as queue
 from time import sleep, clock
@@ -16,17 +14,27 @@ PAUSE = 0
 RUN = 1
 
 class Simulator(threading.Thread):
-    """Thread that manages simobjects and their collisions, updates, and drawing routines along with supervisor updates."""
+    """The simulator manages simobjects and their collisions, commands supervisors
+       and draws the world using the supplied *renderer*.
+       
+       The simulator runs in a separate thread. None of its functions are thread-safe,
+       and should never be called directly from other objects (except for the functions
+       inherited from `threading.Thread`). The communication with the simulator
+       should be done through its *in_queue* and *out_queue*. See :ref:`ui-sim-queue`.
+       
+       :param renderer: The renderer that will be used to draw the world.
+                        The simulator will assume control of the renderer.
+                        The renderer functions also have to be considered thread-unsafe.
+       :type renderer: :class:`~renderer.Renderer`
+       :param in_queue: The queue that is used to send events to the simulator.
+       :type in_queue: :class:`Queue.Queue`
+    """
     
     nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
                    0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
 
     def __init__(self, renderer, in_queue):
-        """
-        The viewer object supplies:
-            a Renderer (viewer.renderer),
-            a threading.Lock (viewer.lock) to lock painting
-        and a threading.Event (viewer.event) to signal the end of painting
+        """Create a simulator with *renderer* and *in_queue*
         """
         super(Simulator, self).__init__()
 
@@ -165,6 +173,8 @@ class Simulator(threading.Thread):
         self._out_queue.put(('reset',()))
 
     def recalculate_default_zoom(self):
+        """Calculate the zoom level that will show the robot at about 10% its size
+        """
         maxsize = 0
         for robot in self._robots:
             xmin, ymin, xmax, ymax = robot.get_bounds()
@@ -174,14 +184,23 @@ class Simulator(threading.Thread):
         else:
             self._zoom_default = max(self._renderer.size)/maxsize/10
             
-    def reset_world(self):
-        """Resets the world and objects to starting position"""
+    def _reset_world(self):
+        """Resets the world and objects to starting position.
+        
+           All the user's code will be reloaded.
+        """
         if self._world is None:
             return
         self.__supervisor_param_cache = [sv.get_parameters() for sv in self._supervisors ]
         self.construct_world()
 
     def run(self):
+        """Start the thread. In the beginning there's no world, no obstacles
+           and no robots.
+           
+           The simulator will try to draw the world undependently of the
+           simulation status, so that the commands from the UI get processed.
+        """
         print 'starting simulator thread'
 
         time_constant = 0.02 # 20 milliseconds
@@ -197,68 +216,77 @@ class Simulator(threading.Thread):
 
                 if self.__state == RUN:
 
-                    for i, supervisor in enumerate(self._supervisors):
-                        info = self._robots[i].get_info()
+                    for i, supervisor in enumerate(self.__supervisors):
+                        info = self.__robots[i].get_info()
                         inputs = supervisor.execute( info, time_constant)
-                        self._robots[i].set_inputs(inputs)
+                        self.__robots[i].set_inputs(inputs)
 
                     self.__time += time_constant
 
-                    for i, robot in enumerate(self._robots):
+                    for i, robot in enumerate(self.__robots):
                         robot.move(time_constant)
-                        self._trackers[i].add_point(robot.get_pose())
+                        self.__trackers[i].add_point(robot.get_pose())
 
                     # the parameters that might have been changed have no effect
                     # on collisions
-                    if self.check_collisions():
+                    if self.__check_collisions():
                         print "Collision detected!"
                         self.__state = PAUSE
                         #self.__stop = True
 
                 # Draw to buffer-bitmap
-                self.draw()
+                self.__draw()
             
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
                 self.pause_simulation()
 
-    def draw(self):
-        """Draws the world and items in it."""
-        self.process_queue()
+    def _draw(self):
+        """Draws the world and items in it.
+        
+           This will draw the markers, the obstacles,
+           the robots, their tracks and their sensors
+        """
+        self.__process_queue()
 
-        if self._robots and self.__center_on_robot:
+        if self.__robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
-            robot = self._robots[0]
+            robot = self.__robots[0]
             if self.__orient_on_robot:
-                self._renderer.set_screen_center_pose(robot.get_pose())
+                self.__renderer.set_screen_center_pose(robot.get_pose())
             else:
-                self._renderer.set_screen_center_pose(pose.Pose(robot.get_pose().x, robot.get_pose().y, 0.0))
+                self.__renderer.set_screen_center_pose(pose.Pose(robot.get_pose().x, robot.get_pose().y, 0.0))
 
-        self._renderer.clear_screen()
+        self.__renderer.clear_screen()
 
-        for bg_object in self._background:
-            bg_object.draw(self._renderer)
-        for obstacle in self._obstacles:
-            obstacle.draw(self._renderer)
+        for supervisor in self.__supervisors:
+            supervisor.draw(self.__renderer)
+        for bg_object in self.__background:
+            bg_object.draw(self.__renderer)
+        for obstacle in self.__obstacles:
+            obstacle.draw(self.__renderer)
 
         # Draw the robots, trackers and sensors after obstacles
         if self.__show_tracks:
-            for tracker in self._trackers:
-                tracker.draw(self._renderer)
-        for robot in self._robots:
-            robot.draw(self._renderer)
+            for tracker in self.__trackers:
+                tracker.draw(self.__renderer)
+        for robot in self.__robots:
+            robot.draw(self.__renderer)
             if self.__show_sensors:
-                robot.draw_sensors(self._renderer)
+                robot.draw_sensors(self.__renderer)
 
         # update view
-        self.update_view()
+        self.__update_view()
 
-    def update_view(self):
+    def _update_view(self):
+        """Signal the UI that the drawing process is finished,
+           and it is safe to access the renderer.
+        """
         self._out_queue.put(('update_view',()))
         self._out_queue.join() # wait until drawn
         
     def focus_on_world(self):
-        """Centers the world on the drawing rectangle"""
+        """Scale the view to include all of the world (including robots)"""
         def include_bounds(bounds, o_bounds):
             xl, yb, xr, yt = bounds
             xlo, ybo, xro, yto = o_bounds
@@ -285,28 +313,36 @@ class Simulator(threading.Thread):
         self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
 
     def focus_on_robot(self, rotate = True):
-        """Centers the view on the robot"""
+        """Center the view on the (first) robot and follow it.
+        
+           If *rotate* is true, also follow the robot's orientation.
+        """
         self.__center_on_robot = True
         self.__orient_on_robot = rotate
 
     def show_sensors(self, show = True):
+        """Show or hide the robots' sensors on the simulation view
+        """
         self.__show_sensors = show
 
     def show_tracks(self, show = True):
-        """Show tracks for every robot on simulator view"""
+        """Show/hide tracks for every robot on simulator view"""
         self.__show_tracks = show
 
     def show_grid(self, show=True):
-        """Show gridlines on simulator view"""
+        """Show/hide gridlines on simulator view"""
         self._renderer.show_grid(show)
 
     def adjust_zoom(self,factor):
-        """Set the zoom by a factor. @param: factor - float"""
+        """Zoom the view by *factor*"""
         self._renderer.set_zoom_level(self._zoom_default*factor)
         
     def apply_parameters(self,robot,parameters):
-        """Apply some parameters to the robot"""
-        # FIXME at the moment we could change parameters during calculation!
+        """Apply *parameters* to the supervisor of *robot*.
+        
+        The parameters have to correspond to the requirements of the supervisor,
+        as specified in :meth:`supervisor.Supervisor.get_ui_description`
+        """
         index = self._robots.index(robot)
         if index < 0:
             print "Robot not found"
@@ -315,41 +351,44 @@ class Simulator(threading.Thread):
 
     # Stops the thread
     def stop(self):
-        """Stops the simulator thread when the entire program is closed"""
+        """Stop the simulator thread when the entire program is closed"""
         print 'stopping simulator thread'
         self.__stop = True
         self._out_queue.put(('stopped',()))
 
     def start_simulation(self):
-        """Starts the simulation"""
+        """Start/continue the simulation"""
         if self._robots:
             self.__state = RUN
             self._out_queue.put(('running',()))
 
-    def is_running(self):
-        """A getter for simulation state"""
-        return self.__state == RUN
-
     def pause_simulation(self):
-        """pauses the simulation"""
+        """Pause the simulation"""
         self.__state = PAUSE
         self._out_queue.put(('paused',()))
 
     def reset_simulation(self):
-        """resets the simulation to the start position"""
+        """Reset the simulation to the start position"""
         self.__state = PAUSE
         self.reset_world()
 
     def set_time_multiplier(self,multiplier):
-        """"sets the time multiplier for speeding up simulation"""
+        """Shorten the interval between evaluation cycles by *multiplier*,
+           speeding up the simulation"""
         self.__time_multiplier = multiplier
 
+### FIXME Those two functions are not thread-safe
     def get_time(self):
-        """get the present time from the time counter for display on the UI"""
+        """Get the internal simulator time."""
         return self.__time
 
-    def check_collisions(self):
-        """updates proximity sensors and detects collisions between objects"""
+    def is_running(self):
+        """Get the simulation state as a `bool`"""
+        return self.__state == RUN
+###------------------
+
+    def _check_collisions(self):
+        """Update proximity sensors and detect collisions between objects"""
         
         collisions = []
         checked_robots = []
@@ -405,6 +444,8 @@ class Simulator(threading.Thread):
         return False
 
     def process_queue(self):
+        """Process external calls
+        """
         while not self._in_queue.empty():
             tpl = self._in_queue.get()
             if isinstance(tpl,tuple) and len(tpl) == 2:

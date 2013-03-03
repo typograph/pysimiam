@@ -1,10 +1,25 @@
 from simobject import SimObject
 
 class Robot(SimObject):
-    """The robot class inherits from the simobject and implements moving, drawing, and information functions to interface with supervisors and the world environment."""
+    """The robot is a :class:`~simobject.SimObject` that implements moving,
+       drawing, and information functions to interface with supervisor
+       and the world environment.
+       
+       To implement a new type of robot, subclass :class:`Robot` and implement
+       :meth:`~robot.Robot.get_info` and :meth:`~robot.Robot.get_external_sensors`.
+       
+       To make your robot move, implement :meth:`~robot.Robot.move`.
+       
+       To make you robot controllable, implement :meth:`~robot.Robot.set_inputs`.
+       
+       If your robot has sensors, you might need :meth:`~robot.Robot.update_sensors`.
+       If your robot has sensors that can be drawn in the view, also implement
+       :meth:`~robot.Robot.draw_sensors`.
+       """
+       
     def move(self,dt):
-        """Moves the robot with time dt"""
-        raise NotImplementedError("Robot.move")
+        """Move the robot for a time interval `dt`."""
+        pass
     
     def get_info(self):
         """Return the robot information structure, including sensor readings and
@@ -13,12 +28,18 @@ class Robot(SimObject):
 
     def set_inputs(self,inputs):
         """Set drive inputs in the format needed by this robot"""
-        raise NotImplementedError("Robot.set_inputs")
+        pass
 
     def draw_sensors(self,renderer):
         """Draw the sensors that this robot has"""
         pass
 
+    def get_external_sensors(self):
+        """Get the external sensors of the robot as a list.
+           This function is used to update the sensor readings in proximity
+           sensors."""
+        raise NotImplementedError("Robot.get_external_sensors")
+
     def update_sensors(self):
-        """Update sensor values"""
+        """Update/reset sensor values in the beginning of the cycle."""
         pass

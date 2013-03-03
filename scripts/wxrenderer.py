@@ -11,6 +11,10 @@ from renderer import Renderer
 from pose import Pose
 
 class wxGCRenderer(Renderer):
+    """An implementation of :class:`~renderer.Renderer` for wxPython.
+       
+       This renderer expects a `wxDC` as canvas.
+    """
     def __init__(self, DC):
         self._dc_grid_pen = wx.Pen(wx.Colour(128,128,128,255),1,wx.SHORT_DASH)
         Renderer.__init__(self,DC)

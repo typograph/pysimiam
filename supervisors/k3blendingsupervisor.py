@@ -1,8 +1,11 @@
 from khepera3 import K3Supervisor
-from math import sqrt, cos, pi
+from math import sqrt, sin, cos, pi, atan2
 
 class K3BlendingSupervisor(K3Supervisor):
-    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
+    """K3Blending supervisor creates two controllers: gotogoal and avoidobstacles
+       and blends their outputs instead of choosing one.
+       
+       This module is intended to be demonstration on implementing blending supervisors"""
     def __init__(self, robot_pose, robot_info):
         """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)

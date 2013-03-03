@@ -11,7 +11,7 @@ class Supervisor:
         :param robot_pose: The initial pose of the robot,
         :type robot_pose: :class:`~pose.Pose`
         :param robot_info: Info structure, the format defined by the robot's
-                           :meth:'~robot.Robot.get_info'
+                           :meth:`~robot.Robot.get_info`
         :type robot_info: :class:`~helpers.Struct`
         
         Any extension of pysimiam will require inheriting from this superclass.
@@ -36,7 +36,7 @@ class Supervisor:
         
             :type: :class:`~helpers.Struct`
 
-            Current parameter structure of the supervisor. Updated in the :py:meth:`~Supervisor.set_parameters`
+            Current parameter structure of the supervisor. Updated in :meth:`~Supervisor.set_parameters`
             
         .. attribute:: current
 
@@ -128,7 +128,8 @@ class Supervisor:
     def add_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.
 
-        :param module_string: a string specifying a class in a module. See :ref:`module-string`
+        :param module_string: a string specifying a class in a module.
+                              See :ref:`module-string`
         :type module_string: string
         :param parameters: a parameter structure to be passed to the controller constructor
         :type paramaters: :class:`~helpers.Struct`

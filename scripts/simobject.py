@@ -3,45 +3,62 @@ import pylygon
 from pose import Pose
 
 class SimObject:
-    """The base class for creating drawn objects in the simulator. 
-Posses both a Pose object and a color"""
+    """The base class for all objects that can be drawn in the simulator. 
+       Every SimObject has a pose, an envelope and a color.
+
+       :param pose: The position of the object.
+       :type pose: :class:`~pose.Pose`
+       :param color: The internal color of the object (`0xAARRGGBB` or `0xRRGGBB`).
+                     The default color is black.
+       :type color: int
+       """
 
     def __init__(self, pose, color = 0):
+        """Create an object at *pose* with *color*
+        """
         self.set_color(color)
         self.set_pose(pose)
 
     def get_color(self):
-        """gets the color"""
+        """Get the internal color of the object"""
         return self.__color
     
     def set_color(self, color):
-        """sets the color"""
+        """Set the internal color of the object"""
         self.__color = color
 
     def get_pose(self):
-        """Returns the pose of the object in world coordinates
-        """
+        """Get the pose of the object in world coordinates"""
         return self.__pose
 
     def set_pose(self,pose):
-        """Returns the pose of the object in world coordinates
-        """
+        """Set the pose of the object in world coordinates"""
         self.__world_envelope = None
         self.__pose = pose
 
-    def draw(self,dc):
-        """Draws the object on the passed DC
+    def draw(self, renderer):
+        """Draws the object using *renderer* (see :class:`~renderer.Renderer`).
+        
+        The object doesn't have to use only one color. It doesn't even
+        have to use its internal color while drawing.
         """
-        pass
+        raise NotImplementedError("SimObject.draw")
     
     def get_envelope(self):
-        """The envelope of the object in object's local coordinates
+        """Get the envelope of the object in object's local coordinates.
+        
+           The envelope is a list of *xy* pairs, describing the shape of the
+           bounding polygon.
         """
-        ## At the moment the proposed format is a list of points
-        pass
+        raise NotImplementedError("SimObject.get_envelope")
     
     def get_world_envelope(self, recalculate=False):
-        """gets the envelop for checking collision"""
+        """Get the envelope of the object in world coordinates.
+           Used for checking collision.
+           
+           The envelope is cached, and will be recalculated if *recalculate*
+           is `True`.
+        """
         if self.__world_envelope is None or recalculate:
             x,y,t = self.get_pose()
             self.__world_envelope = [(x+p[0]*cos(t)-p[1]*sin(t),
@@ -51,13 +68,12 @@ Posses both a Pose object and a color"""
     
     def get_bounding_rect(self):
         """Get the smallest rectangle that contains the object
-        Returns a tuple (x,y,width,height)
-        """
+           as a tuple (x, y, width, height)."""
         xmin, ymin, xmax, ymax = self.get_bounds()
         return (xmin,ymin,xmax-xmin,ymax-ymin)
     
     def has_collision(self, other):
-        """Check if the object has collided with other.
+        """Check if the object has collided with *other*.
         Return True or False"""
         self_poly = pylygon.Polygon(self.get_world_envelope())
         other_poly = pylygon.Polygon(other.get_world_envelope())
@@ -76,21 +92,30 @@ Posses both a Pose object and a color"""
         return True
     
     def get_contact_points(self, other):
-        """Get a list of contact points with other object
-        Retrun a list of (x, y)"""
+        """Get a list of contact points with other object.
+           Returns a list of (x, y)"""
         self_poly = pylygon.Polygon(self.get_world_envelope())
         other_poly = pylygon.Polygon(other.get_world_envelope())
         return self_poly.intersection_points(other_poly)
 
     def get_bounds(self):
-        """Get the smallest rectangle that contains the object.
-        Returns a tuple (xmin,ymin,xmax,ymax)"""
+        """Get the smallest rectangle that contains the object
+           as a tuple (xmin, ymin, xmax, ymax)"""
         xs, ys = zip(*self.get_world_envelope())
         return (min(xs), min(ys), max(xs), max(ys))
             
 
 class Polygon(SimObject):
-    """The polygon simobject is used to draw objects in the world"""
+    """The polygon is a simobject that gets the envelope supplied at construction.
+       It draws itself as a filled polygon.
+       
+       :param pose: The position of the polygon.
+       :type pose: :class:`~pose.Pose`
+       :param shape: The list of points making up the polygon.
+       :type shape: list((int,int))
+       :param color: The color of the polygon (`0xAARRGGBB` or `0xRRGGBB`).
+       :type color: int
+       """
     def __init__(self, pose, shape, color):
         SimObject.__init__(self,pose, color)
         self.__shape = shape
@@ -99,26 +124,38 @@ class Polygon(SimObject):
         return self.__shape
 
     def draw(self,r):
+        """Draw the envelope (shape) filling it with the internal color."""
         r.set_pose(self.get_pose())
         r.set_brush(self.get_color())
         r.draw_polygon(self.get_envelope())
 
 class Path(SimObject):
-    """The path is used to track the history of robot motion"""
-    def __init__(self,start,color):
+    """The path is a simobject that draws itself as a polyline.
+       The line starts at `start`, and can be continued by adding
+       points using :meth:`~simobject.Path.add_point`.
+    
+       :param start: The starting point of the polyline in world coordinates.
+       :type start: :class:`~pose.Pose`
+       :param color: The color of the line (`0xAARRGGBB` or `0xRRGGBB`).
+       :type color: int
+    
+       The path is used by the simulator to track the history of robot motion"""
+       
+    def __init__(self, start, color):
         SimObject.__init__(self, Pose(), color)
-        self.points = [(start.x,start.y)]
+        self.reset(start)
 
     def reset(self,start):
-        """sets teh start point to start.x and start.y"""
+        """Set the start point to start.x and start.y
+           and remove all other points"""
         self.points = [(start.x,start.y)]
         
     def add_point(self,pose):
-        """adds a point to the chain of lines"""
+        """Append a point at *pose* to the path. The orientation of the pose is ignored"""
         self.points.append((pose.x,pose.y))
         
     def draw(self,r):
-        """draw the polyline from the line list"""
+        """Draw a polyline with modes at all added points, using the internal color"""
         r.set_pose(self.get_pose()) # Reset everything
         r.set_pen(self.get_color())
         for i in range(1,len(self.points)):

@@ -5,13 +5,16 @@ from PyQt4.QtGui import QPainter,QColor,QPolygonF,QPen
 from PyQt4.QtCore import QPointF,QLineF,QRectF,Qt
 
 class QtRenderer(Renderer):
-    """Renderer class for PyQt4: A glue layer between SimObject and UI"""
-    def __init__(self, pd):
+    """An implementation of :class:`~renderer.Renderer` for PyQt4.
+       
+       This renderer will draw on any `QPaintDevice`
+    """
+    def __init__(self, paint_device):
         """Creates a new renderer based on a QPaintDevice pd"""
         self._grid_pen = QPen(QColor(0x808080))
         self._grid_pen.setStyle(Qt.DashLine)
         self._painter = None
-        Renderer.__init__(self, pd)
+        Renderer.__init__(self, paint_device)
 
     def set_canvas(self, canvas):
         """Tell the renderer to draw on canvas
