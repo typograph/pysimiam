@@ -12,8 +12,7 @@ class Robot(SimObject):
        
        To make you robot controllable, implement :meth:`~robot.Robot.set_inputs`.
        
-       If your robot has sensors, you might need :meth:`~robot.Robot.update_sensors`.
-       If your robot has sensors that can be drawn in the view, also implement
+       If your robot has sensors that can be drawn in the view, implement
        :meth:`~robot.Robot.draw_sensors`.
        """
        
@@ -39,7 +38,3 @@ class Robot(SimObject):
            This function is used to update the sensor readings in proximity
            sensors."""
         raise NotImplementedError("Robot.get_external_sensors")
-
-    def update_sensors(self):
-        """Update/reset sensor values in the beginning of the cycle."""
-        pass
