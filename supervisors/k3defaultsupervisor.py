@@ -52,6 +52,6 @@ class K3DefaultSupervisor(K3Supervisor):
         renderer.set_pose(self.pose_est)
         renderer.set_pen(self.robot_color)
         arrow_length = self.robot_size*5
-        renderer.draw_line(0,0,
+        renderer.draw_arrow(0,0,
             arrow_length*cos(self.avoidobstacles.away_angle),
             arrow_length*sin(self.avoidobstacles.away_angle))

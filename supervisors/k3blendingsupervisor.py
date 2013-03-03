@@ -62,7 +62,7 @@ class K3BlendingSupervisor(K3Supervisor):
         # Draw direction from obstacles
         renderer.set_pen(0xFF0000)
         arrow_length = self.robot_size*5
-        renderer.draw_line(0,0,
+        renderer.draw_arrow(0,0,
             arrow_length*cos(self.avoidobstacles.away_angle),
             arrow_length*sin(self.avoidobstacles.away_angle))
 
@@ -71,7 +71,7 @@ class K3BlendingSupervisor(K3Supervisor):
         goal_angle = atan2(self.ui_params.goal.y - self.pose_est.y,
                            self.ui_params.goal.x - self.pose_est.x) \
                      - self.pose_est.theta
-        renderer.draw_line(0,0,
+        renderer.draw_arrow(0,0,
             arrow_length*cos(goal_angle),
             arrow_length*sin(goal_angle))
                            
