@@ -12,6 +12,7 @@ class AvoidObstacles(Controller):
         '''read another .xml for PID parameters?'''
         Controller.__init__(self,params)
         self.clear_error()
+        self.away_angle = 0
 
     def clear_error(self):
         self.E = 0
@@ -26,7 +27,9 @@ class AvoidObstacles(Controller):
         self.kd = params.gains.kd
 
         self.angles = params.sensor_angles
+        #self.weights = [1]*len(self.angles)
         self.weights = [(math.cos(a)+1.5) for a in self.angles]
+        
     #User-defined function
     def calculate_new_goal(self, distances):
         """Determines a new goal for the robot based on which sensors are active"""
@@ -51,7 +54,7 @@ class AvoidObstacles(Controller):
             #angle /= maxdist - mindist
             angle /= weightdist
 
-        print angle
+        self.away_angle = angle + math.pi
 
         # We have to escape, rotate by pi
         angle += self.robottheta + math.pi

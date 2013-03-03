@@ -18,6 +18,8 @@ The UI may use the get_parameters function interface to create docker windows fo
         # initialize memory registers
         self.left_ticks  = robot_info.wheels.left_ticks
         self.right_ticks = robot_info.wheels.right_ticks
+        
+        self.robot_size = robot_info.wheels.base_length
                     
     def get_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
@@ -131,3 +133,10 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
         return self.uni2diff(output)
+
+    def draw(self, renderer):
+        """Draw a circular goal"""
+        renderer.set_pose(Pose(self.ui_params.goal.x, self.ui_params.goal.y))
+        renderer.set_brush(self.robot_color)
+        r = self.robot_size/2
+        renderer.draw_ellipse(0,0,r,r)

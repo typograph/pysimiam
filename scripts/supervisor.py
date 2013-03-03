@@ -51,6 +51,12 @@ class Supervisor:
             :type: :class:`~helpers.Struct`
         
             The robot information structure given by the robot.
+
+        .. attribute:: robot_color
+        
+            :type: int
+        
+            The color of the robot in the view (useful for drawing).
     """
     def __init__(self, robot_pose, robot_info):
         """
@@ -64,6 +70,7 @@ class Supervisor:
         self.ui_params = self.get_default_parameters()
         self.current = None
         self.robot = None
+        self.robot_color = robot_info.color
 
     def get_parameters(self):
         """Get the parameter structure of the supervisor.
@@ -162,6 +169,16 @@ class Supervisor:
         params = self.process() #User-defined algorithm
         output = self.current.execute(params,dt) #execute the current controller
         return output
+
+    def draw(self, renderer):
+        """Draw anything in the view.
+        
+        This will be called before anything else is drawn (except the grid)
+        
+        :param renderer: A renderer to draw with
+        :type renderer: :class:`~renderer.Renderer`
+        """
+        pass
 
     def process(self):
         """Evaluate the information about the robot and select a controller.
