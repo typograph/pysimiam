@@ -30,8 +30,8 @@ class Simulator(threading.Thread):
        :type in_queue: :class:`Queue.Queue`
     """
     
-    nice_colors = [0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
-                   0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88]
+    __nice_colors = (0x55AAEE, 0x66BB22, 0xFFBB22, 0xCC66AA,
+                     0x77CCAA, 0xFF7711, 0xFF5555, 0x55CC88)
 
     def __init__(self, renderer, in_queue):
         """Create a simulator with *renderer* and *in_queue*
@@ -41,13 +41,13 @@ class Simulator(threading.Thread):
         #Attributes
         self.__stop = False
         self.__state = PAUSE
-        self._renderer = renderer
+        self.__renderer = renderer
         self.__center_on_robot = False
         self.__orient_on_robot = False
         self.__show_sensors = True
         self.__show_tracks = True
         
-        self._in_queue = in_queue
+        self.__in_queue = in_queue
         self._out_queue = queue.Queue()
 
         # Zoom on scene - Move to read_config later
@@ -55,55 +55,55 @@ class Simulator(threading.Thread):
         self.__time = 0.0
 
         # World objects
-        self._robots = []
-        self._trackers = []
-        self._obstacles = []
-        self._supervisors = []
-        self._background = []
-        self._zoom_default = 1
+        self.__robots = []
+        self.__trackers = []
+        self.__obstacles = []
+        self.__supervisors = []
+        self.__background = []
+        self.__zoom_default = 1
 
-        self._world = None
+        self.__world = None
         
         # Internal objects
         self.__qtree = None
 
-    #def __delete__(self):
-        #self.__state = PAUSE
-        #self.__stop = True
-        #self._render_lock.acquire()
-        #self._render_lock.release()
-
-    def read_config(self, config):
-        ''' Read in the objects from the XML configuration file '''
+    def read_config(self, filename):
+        '''Load in the objects from the world XML file '''
 
         print 'reading initial configuration'
         try:
-            self._world = XMLReader(config, 'simulation').read()
+            self.__world = XMLReader(config, 'simulation').read()
         except Exception, e:
             raise Exception('[Simulator.read_config] Failed to parse ' + config \
                 + ': ' + str(e))
         else:
             self.__supervisor_param_cache = None
             self.__center_on_robot = False
-            self.construct_world()
+            self.__construct_world()
 
-    def construct_world(self):
-        """Creates objects from the xml settings configuration file"""
-        if self._world is None:
+    def _construct_world(self):
+        """Creates objects previously loaded from the world xml file.
+           
+           This function uses the world in ``self.__world``.
+           
+           All the objects will be created anew, including robots and supervisors.
+           All of the user's code is reloaded.
+        """
+        if self.__world is None:
             return
 
         helpers.unload_user_modules()
 
         self.__state = PAUSE            
             
-        self._robots = []
-        self._obstacles = []
-        self._supervisors = []
-        self._background = []
-        self._trackers = []
+        self.__robots = []
+        self.__obstacles = []
+        self.__supervisors = []
+        self.__background = []
+        self.__trackers = []
         self.__qtree = None
         
-        for thing in self._world:
+        for thing in self.__world:
             thing_type = thing[0]
             if thing_type == 'robot':
                 robot_type, supervisor_type, robot_pose, robot_color  = thing[1:5]
@@ -113,27 +113,27 @@ class Simulator(threading.Thread):
                     robot = robot_class(pose.Pose(robot_pose))
                     if robot_color is not None:
                         robot.set_color(robot_color)
-                    elif len(self._robots) < 8:
-                        robot.set_color(self.nice_colors[len(self._robots)])
+                    elif len(self.__robots) < 8:
+                        robot.set_color(self.__nice_colors[len(self.__robots)])
                         
                     # Create supervisor
                     sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     
                     supervisor = sup_class(robot.get_pose(), robot.get_info)
-                    name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
+                    name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
-                        supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
+                        supervisor.set_parameters(self.__supervisor_param_cache[len(self.__supervisors)])
                     self._out_queue.put(("make_param_window",
                                             (robot, name,
                                              supervisor.get_ui_description())))
-                    self._supervisors.append(supervisor)
+                    self.__supervisors.append(supervisor)
                     
                     # append robot after supervisor for the case of exceptions
-                    self._robots.append(robot)
+                    self.__robots.append(robot)
                     
                     # Create trackers
-                    self._trackers.append(simobject.Path(robot.get_pose(),robot))
-                    self._trackers[-1].set_color(robot.get_color())
+                    self.__trackers.append(simobject.Path(robot.get_pose(),robot))
+                    self.__trackers[-1].set_color(robot.get_color())
                 except:
                     print "[Simulator.construct_world] Robot creation failed!"
                     raise
@@ -142,7 +142,7 @@ class Simulator(threading.Thread):
                 obstacle_pose, obstacle_coords, obstacle_color = thing[1:4]
                 if obstacle_color is None:
                     obstacle_color = 0xFF0000
-                self._obstacles.append(
+                self.__obstacles.append(
                     simobject.Polygon(pose.Pose(obstacle_pose),
                                       obstacle_coords,
                                       obstacle_color))
@@ -150,7 +150,7 @@ class Simulator(threading.Thread):
                 obj_pose, obj_coords, obj_color = thing[1:4]
                 if obj_color is None:
                     obj_color = 0x00FF00
-                self._background.append(
+                self.__background.append(
                     simobject.Polygon(pose.Pose(obj_pose),
                                       obj_coords,
                                       obj_color))
@@ -159,40 +159,40 @@ class Simulator(threading.Thread):
                                 + str(thing_type))
                                 
         self.__time = 0.0
-        if not self._robots:
+        if not self.__robots:
             raise Exception('[Simulator.construct_world] No robot specified!')
         else:
-            self.recalculate_default_zoom()
+            self.__recalculate_default_zoom()
             if not self.__center_on_robot:
                 self.focus_on_world()
-            self.draw()
+            self.__draw()
             self.__supervisor_param_cache = None
             
         self.__state = PAUSE            
 
         self._out_queue.put(('reset',()))
 
-    def recalculate_default_zoom(self):
+    def _recalculate_default_zoom(self):
         """Calculate the zoom level that will show the robot at about 10% its size
         """
         maxsize = 0
-        for robot in self._robots:
+        for robot in self.__robots:
             xmin, ymin, xmax, ymax = robot.get_bounds()
             maxsize = max(maxsize,sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
         if maxsize == 0:
-            self._zoom_default = 1
+            self.__zoom_default = 1
         else:
-            self._zoom_default = max(self._renderer.size)/maxsize/10
+            self.__zoom_default = max(self.__renderer.size)/maxsize/10
             
     def _reset_world(self):
         """Resets the world and objects to starting position.
         
            All the user's code will be reloaded.
         """
-        if self._world is None:
+        if self.__world is None:
             return
-        self.__supervisor_param_cache = [sv.get_parameters() for sv in self._supervisors ]
-        self.construct_world()
+        self.__supervisor_param_cache = [sv.get_parameters() for sv in self.__supervisors ]
+        self.__construct_world()
 
     def run(self):
         """Start the thread. In the beginning there's no world, no obstacles
@@ -205,8 +205,8 @@ class Simulator(threading.Thread):
 
         time_constant = 0.02 # 20 milliseconds
         
-        self._renderer.clear_screen() #create a white screen
-        self.update_view()
+        self.__renderer.clear_screen() #create a white screen
+        self.__update_view()
 
         while not self.__stop:
 
@@ -304,13 +304,13 @@ class Simulator(threading.Thread):
             return xl - w*factor, yb - h*factor, xr + w*factor, yt + h*factor
             
         self.__center_on_robot = False
-        bounds = self._robots[0].get_bounds()
-        for robot in self._robots:
+        bounds = self.__robots[0].get_bounds()
+        for robot in self.__robots:
             bounds = include_bounds(bounds, bloat_bounds(robot.get_bounds(),4))
-        for obstacle in self._obstacles:
+        for obstacle in self.__obstacles:
             bounds = include_bounds(bounds, obstacle.get_bounds())
         xl, yb, xr, yt = bounds
-        self._renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
+        self.__renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
 
     def focus_on_robot(self, rotate = True):
         """Center the view on the (first) robot and follow it.
@@ -331,11 +331,11 @@ class Simulator(threading.Thread):
 
     def show_grid(self, show=True):
         """Show/hide gridlines on simulator view"""
-        self._renderer.show_grid(show)
+        self.__renderer.show_grid(show)
 
     def adjust_zoom(self,factor):
         """Zoom the view by *factor*"""
-        self._renderer.set_zoom_level(self._zoom_default*factor)
+        self.__renderer.set_zoom_level(self.__zoom_default*factor)
         
     def apply_parameters(self,robot,parameters):
         """Apply *parameters* to the supervisor of *robot*.
@@ -343,11 +343,11 @@ class Simulator(threading.Thread):
         The parameters have to correspond to the requirements of the supervisor,
         as specified in :meth:`supervisor.Supervisor.get_ui_description`
         """
-        index = self._robots.index(robot)
+        index = self.__robots.index(robot)
         if index < 0:
             print "Robot not found"
         else:
-            self._supervisors[index].set_parameters(parameters)
+            self.__supervisors[index].set_parameters(parameters)
 
     # Stops the thread
     def stop(self):
@@ -358,7 +358,7 @@ class Simulator(threading.Thread):
 
     def start_simulation(self):
         """Start/continue the simulation"""
-        if self._robots:
+        if self.__robots:
             self.__state = RUN
             self._out_queue.put(('running',()))
 
@@ -370,7 +370,7 @@ class Simulator(threading.Thread):
     def reset_simulation(self):
         """Reset the simulation to the start position"""
         self.__state = PAUSE
-        self.reset_world()
+        self.__reset_world()
 
     def set_time_multiplier(self,multiplier):
         """Shorten the interval between evaluation cycles by *multiplier*,
@@ -394,14 +394,14 @@ class Simulator(threading.Thread):
         checked_robots = []
         
         if self.__qtree is None:
-            self.__qtree = QuadTree(self._obstacles)
+            self.__qtree = QuadTree(self.__obstacles)
             
-        if len(self._robots) > 1:
-            rqtree = QuadTree(self._robots)
+        if len(self.__robots) > 1:
+            rqtree = QuadTree(self.__robots)
         else: rqtree = None
         
         # check each robot
-        for robot in self._robots:
+        for robot in self.__robots:
                 
             # update proximity sensors
             for sensor in robot.get_external_sensors():
@@ -443,11 +443,11 @@ class Simulator(threading.Thread):
                 
         return False
 
-    def process_queue(self):
+    def _process_queue(self):
         """Process external calls
         """
-        while not self._in_queue.empty():
-            tpl = self._in_queue.get()
+        while not self.__in_queue.empty():
+            tpl = self.__in_queue.get()
             if isinstance(tpl,tuple) and len(tpl) == 2:
                 name, args = tpl
                 if name in self.__class__.__dict__:
@@ -462,6 +462,6 @@ class Simulator(threading.Thread):
                     print "Unknown simulator event '{}'".format(name)
             else:
                 print "Wrong simulator event format '{}'".format(tpl)
-            self._in_queue.task_done()
+            self.__in_queue.task_done()
     
 #end class Simulator
