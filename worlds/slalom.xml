@@ -10,9 +10,9 @@
             <point x="0.15388418" y="0.1118034"/>
         </geometry>
     </marker>
-    <robot type="khepera3">
+    <robot type="Khepera3">
         <pose theta="-1.57079632679" x="0.0" y="2.5"/>
-        <supervisor type="k3blendingsupervisor.K3BlendingSupervisor"/>
+        <supervisor type="K3BlendingSupervisor"/>
     </robot>
     <obstacle>
         <pose theta="0" x="-1.0" y="-3.7"/>

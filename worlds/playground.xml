@@ -2,22 +2,22 @@
     <app type="ControlApp" />
 
     <robot type="Khepera3" color="#55AAFF">
-        <supervisor type="k3defaultsupervisor.K3DefaultSupervisor" />
+        <supervisor type="K3DefaultSupervisor" />
         <pose x="-0.5" y="-0.5" theta="0" />
     </robot>
     
     <robot type="Khepera3">
-        <supervisor type="k3blendingsupervisor.K3BlendingSupervisor" />
+        <supervisor type="K3BlendingSupervisor" />
         <pose x="0.5" y="-0.5" theta="0" />
     </robot>
 
 <!--    <robot type="Khepera3" color="#FFCC00">
-        <supervisor type="k3defaultsupervisor.K3DefaultSupervisor" />
+        <supervisor type="K3DefaultSupervisor" />
         <pose x="4" y="0" theta="1" />
     </robot>
 
     <robot type="Khepera3">
-        <supervisor type="k3defaultsupervisor.K3DefaultSupervisor" />
+        <supervisor type="K3DefaultSupervisor" />
         <pose x="5" y="5" theta="1.5708" />
     </robot>-->
     

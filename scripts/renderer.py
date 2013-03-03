@@ -236,21 +236,16 @@ class Renderer:
         """
         raise NotImplementedError("Renderer.draw_line")
 
-    def draw_ellipse(self, x, y, w, h):
+    def draw_ellipse(self, cx, cy, ra, rb=None):
         """Draws an ellipse with current pen and fills it with current brush.
         """
         raise NotImplementedError("Renderer.draw_ellipse")
 
     def draw_rectangle(self, x, y, w, h):
-        """Draws a rectangle.
+        """Draws a rectangle with current pen and fills it with current brush
         """
         raise NotImplementedError("Renderer.draw_rectangle")
 
-    def fill_rectangle(self, x, y, w, h):
-        """Draws a rectangle with current pen and fills it with current brush
-        """
-        raise NotImplementedError("Renderer.fill_rectangle")
-        
     def draw_polygon(self, points):
         """Draws a polygon with current pen and fills it with current brush
         Expects a list of points as a list of tuples or as a numpy array.

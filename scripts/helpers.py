@@ -1,6 +1,23 @@
 import sys
 
 class Struct:
+    """This class describes structures with arbitrary fields.
+       It is used, e.g. for the communication between the supervisor and the UI.
+       
+       Example::
+       
+            p = Struct()
+            p.goal = Struct()
+            p.goal.x = 0.0
+            p.goal.y = 0.5
+            p.velocity = Struct()
+            p.velocity.v = 0.2
+            p.gains = Struct()
+            p.gains.kp = 10.0
+            p.gains.ki = 2.0
+            p.gains.kd = 0.0
+                   
+    """
     def __str__(self):
         def str_field(key,value):
             indent = " "*(len(str(key)) + 3)
@@ -16,6 +33,7 @@ class Struct:
 __loaded_modules = set()
 
 def unload_user_modules():
+    """Unload all modules loaded so far with :func:`~helpers.load_by_name`"""
     global __loaded_modules
     while __loaded_modules:
         module = __loaded_modules.pop()
@@ -26,28 +44,42 @@ def unload_user_modules():
             del sys.modules[module]
         
 def load_by_name(module_string, path = None):
-    """Loads a module to the code by name string.
-    @params: module_string - module.ModuleName, 
-    path - path to module"""
+    """Load a class from a module, specified by *module_string*.
+    
+       The *path* is an additional path that is prepended to the module string.
+       
+       E.g. ``C = load_by_name('mymodule.MyClass','path.to.module')`` is equivalent to
+       ``from path.to.module.mymodule import MyClass as C``.
+    """
     global __loaded_modules
-    try:
-        filename, class_name = module_string.split(".")
-    except ValueError:
-        # either too many or too few dots
-        # fallback to capitalization
+    pieces = module_string.split('.')
+    if len(pieces) == 1: # No dot
         filename = module_string.lower()
-        class_name = module_string.capitalize()
+        class_name = module_string
+    else:
+        filename = pieces[-2]
+        class_name = pieces[-1]
+        if len(pieces) > 2: # Many dots
+            if path is None:
+                path = ".".join(pieces[:-2])
+            else:
+                path = ".".join([path] + pieces[:-2])
         
     try:
+        # Cache already loaded modules
+        old_modules = set(sys.modules)
+
+        # Load module
         if path is not None:
-            old_modules = set(sys.modules)
             module = __import__(path, globals(), locals(), [filename]).__dict__[filename]
-            __loaded_modules = __loaded_modules.union(set(sys.modules) - old_modules)
         else:
             module = __import__(filename)
-            __loaded_modules.add(filename)
-        controller_class = module.__dict__[class_name]
-        return (module, controller_class)
+
+        # Store the difference
+        __loaded_modules = __loaded_modules.union(set(sys.modules) - old_modules)
+        
+        return module.__dict__[class_name]
+
     except ImportError:
         print "Module {} failed to load".format(filename)
         raise

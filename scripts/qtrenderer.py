@@ -2,7 +2,7 @@ from numpy import degrees
 from pose import Pose
 from renderer import Renderer
 from PyQt4.QtGui import QPainter,QColor,QPolygonF,QPen
-from PyQt4.QtCore import QPointF,QLineF,Qt
+from PyQt4.QtCore import QPointF,QLineF,QRectF,Qt
 
 class QtRenderer(Renderer):
     """Renderer class for PyQt4: A glue layer between SimObject and UI"""
@@ -130,13 +130,15 @@ class QtRenderer(Renderer):
         Expects a list of points as a list of tuples or as a numpy array."""
         self._painter.drawPolygon(QPolygonF([QPointF(*point[:2]) for point in points]))
 
-    def draw_ellipse(self, x, y, w, h):
+    def draw_ellipse(self, cx, cy, ra, rb = None):
         """Draws an ellipse."""
-        self._painter.drawEllipse(x,y,w,h)
+        if rb is None:
+            rb = ra
+        self._painter.drawEllipse(QRectF(cx-ra,cy-ra,2*ra,2*rb))
 
     def draw_rectangle(self, x, y, w, h):
         """Draws a rectangle."""
-        self._painter.drawRect(x,y,w,h)
+        self._painter.drawRect(QRectF(x,y,w,h))
 
     def draw_text(self, text, x, y, bgcolor = 0):
         """Draws a text string at the defined position."""

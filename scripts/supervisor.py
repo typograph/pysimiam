@@ -134,7 +134,7 @@ class Supervisor:
         :type paramaters: :class:`~helpers.Struct`
 
         """
-        module, controller_class = helpers.load_by_name(module_string, 'controllers')
+        controller_class = helpers.load_by_name(module_string, 'controllers')
         return controller_class(parameters)
 
     def execute(self, robot_info, dt):

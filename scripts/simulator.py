@@ -100,15 +100,18 @@ class Simulator(threading.Thread):
             if thing_type == 'robot':
                 robot_type, supervisor_type, robot_pose, robot_color  = thing[1:5]
                 try:
-                    robot_module, robot_class = helpers.load_by_name(robot_type,'robots')
+                    # Create robot
+                    robot_class = helpers.load_by_name(robot_type,'robots')
                     robot = robot_class(pose.Pose(robot_pose))
                     if robot_color is not None:
                         robot.set_color(robot_color)
                     elif len(self._robots) < 8:
                         robot.set_color(self.nice_colors[len(self._robots)])
-                    sup_module, sup_class = helpers.load_by_name(supervisor_type,'supervisors')
-                    supervisor = sup_class(robot.get_pose(),
-                                           robot.get_info())
+                        
+                    # Create supervisor
+                    sup_class = helpers.load_by_name(supervisor_type,'supervisors')
+                    
+                    supervisor = sup_class(robot.get_pose(), robot.get_info)
                     name = "Robot {}: {}".format(len(self._robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
                         supervisor.set_parameters(self.__supervisor_param_cache[len(self._supervisors)])
@@ -116,8 +119,11 @@ class Simulator(threading.Thread):
                                             (robot, name,
                                              supervisor.get_ui_description())))
                     self._supervisors.append(supervisor)
+                    
                     # append robot after supervisor for the case of exceptions
                     self._robots.append(robot)
+                    
+                    # Create trackers
                     self._trackers.append(simobject.Path(robot.get_pose(),robot))
                     self._trackers[-1].set_color(robot.get_color())
                 except:
