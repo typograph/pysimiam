@@ -2,8 +2,16 @@ import sys
 
 class Struct:
     def __str__(self):
-        return "{{{}}}".format(", ".join(["{} : {}".format(k,v) for k,v in self.__dict__.items()]))
-        #return str(self.__dict__)
+        def str_field(key,value):
+            indent = " "*(len(str(key)) + 3)
+            str_value = str(value)
+            if isinstance(value,Struct):
+                # create indent
+                str_value = str_value.replace('\n','\n'+indent)
+            return "{}: {}".format(key,str_value)
+        
+        
+        return "Struct\n {}".format("\n ".join((str_field(k,v) for k,v in self.__dict__.items())))
 
 __loaded_modules = set()
 
