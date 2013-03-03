@@ -47,21 +47,32 @@ def use_some_backend():
                 use_matplotlib_backend()
             except ImportError: 
                 raise ImportError("No suitable plot backend found")
+    if PlotWindow is None:
+        raise ImportError("No suitable plot backend found")
+        
 
 def create_plot_window(plotables):
     """Create a dialog for plot creation.
        Return selected expressions
     """
-    use_some_backend()
+    try:
+        use_some_backend()
+    except ImportError as e:
+        print e
+        return None, None
     dialog = PlotDialog(plotables)
     if dialog.exec_():
         # Create plots
         return dialog.expressions(), dialog.plot()
-    return None
+    return None, None
 
 def create_predefined_plot_window(plots):
     """Create a window with plots from plot dictionary"""
-    use_some_backend()
+    try:
+        use_some_backend()
+    except ImportError as e:
+        print e
+        return None, None
     w = PlotWindow()
     es = []
     for plot in plots:

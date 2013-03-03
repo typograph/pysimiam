@@ -6,11 +6,11 @@ import sys
 sys.path.insert(0, './scripts')
 from PyQt4.QtGui import QApplication
 from qt_mainwindow import SimulationWidget
-from qt_plotwindow import use_matplotlib_backend
+#from qt_plotwindow import use_matplotlib_backend
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    use_matplotlib_backend()
+    #use_matplotlib_backend()
     simWidget = SimulationWidget()
     simWidget.show()
     simWidget.load_world("week2.xml")
