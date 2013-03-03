@@ -72,16 +72,16 @@ class Simulator(threading.Thread):
 
         print 'reading initial configuration'
         try:
-            self.__world = XMLReader(config, 'simulation').read()
+            self.__world = XMLReader(filename, 'simulation').read()
         except Exception, e:
-            raise Exception('[Simulator.read_config] Failed to parse ' + config \
+            raise Exception('[Simulator.read_config] Failed to parse ' + filename \
                 + ': ' + str(e))
         else:
             self.__supervisor_param_cache = None
             self.__center_on_robot = False
             self.__construct_world()
 
-    def _construct_world(self):
+    def __construct_world(self):
         """Creates objects previously loaded from the world xml file.
            
            This function uses the world in ``self.__world``.
@@ -174,7 +174,7 @@ class Simulator(threading.Thread):
 
         self._out_queue.put(('reset',()))
 
-    def _recalculate_default_zoom(self):
+    def __recalculate_default_zoom(self):
         """Calculate the zoom level that will show the robot at about 10% its size
         """
         maxsize = 0
@@ -186,7 +186,7 @@ class Simulator(threading.Thread):
         else:
             self.__zoom_default = max(self.__renderer.size)/maxsize/10
             
-    def _reset_world(self):
+    def __reset_world(self):
         """Resets the world and objects to starting position.
         
            All the user's code will be reloaded.
@@ -243,7 +243,7 @@ class Simulator(threading.Thread):
                 self._out_queue.put(("exception",sys.exc_info()))
                 self.pause_simulation()
 
-    def _draw(self):
+    def __draw(self):
         """Draws the world and items in it.
         
            This will draw the markers, the obstacles,
@@ -280,7 +280,7 @@ class Simulator(threading.Thread):
         # update view
         self.__update_view()
 
-    def _update_view(self):
+    def __update_view(self):
         """Signal the UI that the drawing process is finished,
            and it is safe to access the renderer.
         """
@@ -389,7 +389,7 @@ class Simulator(threading.Thread):
         return self.__state == RUN
 ###------------------
 
-    def _check_collisions(self):
+    def __check_collisions(self):
         """Update proximity sensors and detect collisions between objects"""
         
         collisions = []
@@ -445,7 +445,7 @@ class Simulator(threading.Thread):
                 
         return False
 
-    def _process_queue(self):
+    def __process_queue(self):
         """Process external calls
         """
         while not self.__in_queue.empty():
