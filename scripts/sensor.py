@@ -12,7 +12,6 @@ from math import sin, cos, sqrt
 
 from robot import Robot
 
-
 class Sensor:
     """Base superclass for sensor objects"""
     @classmethod
@@ -23,14 +22,18 @@ class Sensor:
         """
         return random.gauss(value,sigma)
   
-class MountedSensor(SimObject):
-    """A subclass of sensor for skirt sensors"""
-    def __init__(self,pose,frame):
+class MountedSensor(SimObject, Sensor):
+    """A sensor that moves together with its parent object.
+    
+       The sensor is assumed to be attached to *parent* at *pose* in local
+       coordinates.
+    """
+    def __init__(self,pose,parent):
         SimObject.__init__(self,pose)
-        self.__frame = frame
+        self.__frame = parent
 
     def get_internal_pose(self):
-        """Get the pose of the sensor from simobject inheritance"""
+        """Get the pose of the sensor in the parent (robot) coordinates."""
         return SimObject.get_pose(self)
        
     def get_pose(self):
@@ -39,8 +42,8 @@ class MountedSensor(SimObject):
         return Pose(rx+x*cos(rt)-y*sin(rt),ry+x*sin(rt)+y*cos(rt),t+rt)
     
 class ProximitySensor(MountedSensor):
-    """Create a proximity sensor mounted on robot at pose. The geometry
-    is a (rmin, rmax, angle) tuple
+    """Create a proximity sensor mounted on robot at *pose*. The geometry
+       is a (rmin, rmax, angle) tuple.
     """
     def __init__(self,pose,robot,geometry):
         """Create a proximity sensor mounted on robot at pose. The geometry

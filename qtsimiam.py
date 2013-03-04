@@ -13,316 +13,387 @@ import simulator as sim
 import Queue as queue
 from traceback import format_exception
 
+class PlayPauseAction(QtGui.QAction):
+    def __init__(self, parent, run_slot, pause_slot):
+        QtGui.QAction.__init__(self, parent)
+        self.playset = (QtGui.QIcon.fromTheme("media-playback-start",
+                            QtGui.QIcon("./res/image/arrow-right.png")),
+                        "Run",
+                        run_slot,
+                        "Run simulation")
+        self.pauseset = (QtGui.QIcon.fromTheme("media-playback-pause",
+                            QtGui.QIcon("./res/image/media-playback-pause-7.png")),
+                         "Pause",
+                         pause_slot,
+                         "Pause simulation")
+        self.triggered.connect(self.__on_click)
+        self.reset()
+        
+    def __on_click(self):
+        self.callback()
+        self.set_state()
+
+    def reset(self):
+        self.click_to_run = False
+        self.set_state(self.playset)
+        
+    def set_state(self, actset = None):
+        if actset is None:
+            if self.click_to_run:
+                actset = self.pauseset
+            else:
+                actset = self.playset
+        self.click_to_run = not self.click_to_run
+        self.setIcon(actset[0])
+        self.setText(actset[1])
+        self.callback = actset[2]
+        self.setStatusTip(actset[3])
+
 class SimulationWidget(QtGui.QMainWindow):
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
+        self.setWindowIcon(QtGui.QIcon("./res/image/appicon.png"))
         self.resize(700,700)
         
-        self.__create_toolbars()
-        self.__create_menu()
-        self.__create_statusbar()
+        self.create_actions()
+        self.create_toolbars()
+        self.create_menu()
+        self.create_statusbar()
         # Set intro message
         self.status_label.setText("Welcome to QtSimiam")
         
         # create XML file dialog
-        self._world_dialog = QtGui.QFileDialog(self,
+        self.world_dialog = QtGui.QFileDialog(self,
                                 "Select World File",
                                 "worlds", 
                                 "WorldFile (*.xml)")
-        self._world_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
-        self._world_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
+        self.world_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
+        self.world_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
 
         # create supervisor file dialog
-        self._supervisor_dialog = QtGui.QFileDialog(self,
+        self.supervisor_dialog = QtGui.QFileDialog(self,
                                      "Select Supervisor File",
                                      "supervisors", 
                                      "Supervisor (*.py)")
-        self._supervisor_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
-        self._supervisor_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
+        self.supervisor_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
+        self.supervisor_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
         
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
-        self.__viewer = SimulatorViewer()
-        scrollArea.setWidget(self.__viewer)
+        self.viewer = SimulatorViewer()
+        scrollArea.setWidget(self.viewer)
         scrollArea.setWidgetResizable(True)
 
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
 
-        self.__sim_timer = QtCore.QTimer(self)
-        self.__sim_timer.setInterval(10)
-        self.__sim_timer.timeout.connect(self.__update_time)
+        self.sim_timer = QtCore.QTimer(self)
+        self.sim_timer.setInterval(10)
+        self.sim_timer.timeout.connect(self.update_time)
         
-        self.__sim_queue = queue.Queue()
+        self.sim_queue = queue.Queue()
         
         # create the simulator thread
-        self._simulator_thread = sim.Simulator(self.__viewer.renderer,
-                                               self.__sim_queue)
+        self.simulator_thread = sim.Simulator(self.viewer.renderer,
+                                               self.sim_queue)
 
-        self.__in_queue = self._simulator_thread._out_queue
+        self.in_queue = self.simulator_thread._out_queue
                                                
-        self.__dockmanager = DockManager(self)
-        self.__dockmanager.apply_request.connect(self.apply_parameters)
+        self.dockmanager = DockManager(self)
+        self.dockmanager.apply_request.connect(self.apply_parameters)
 
-        self._simulator_thread.start()
-        self.__sim_timer.start()
+        self.simulator_thread.start()
+        self.sim_timer.start()
+
+    def create_actions(self):
         
-    def __create_toolbars(self):
+        self.open_world_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("document-open",
+                            QtGui.QIcon("./res/image/open.png")),
+                          "Open XML &World",
+                          self)
+        self.open_world_action.triggered.connect(self.on_open_world)
+        self.open_world_action.setShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Open))
+
+        self.open_world_action.setStatusTip("Open a new simulation")
+                            
+        self.exit_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("application-exit"),
+                    "E&xit",
+                    self)
+        self.exit_action.triggered.connect(self.close)
+        self.exit_action.setShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Quit))
+        self.exit_action.setToolTip("Quit the Program")
+        self.exit_action.setStatusTip("Exit QtSimiam")
+        
+        self.rev_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("media-seek-backward",
+                            QtGui.QIcon("./res/image/arrow-left-double.png")),
+                          "Rewind", self)
+        self.rev_action.triggered.connect(self.on_rewind)
+        self.rev_action.setStatusTip("Reset simulation")
+        
+        self.run_action = PlayPauseAction(self, self.on_run,self.on_pause)        
+        self.run_action.setEnabled(False)
+
+        self.grid_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/grid.png"),
+                          "Show/Hide grid", self)
+        self.grid_action.setStatusTip("Show/hide grid")
+        self.grid_action.triggered[bool].connect(self.show_grid)
+        self.grid_action.setCheckable(True)
+        self.grid_action.setChecked(False)
+
+        self.sens_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/robot-sensors.png"),
+                          "Show/Hide sensors", self)
+        self.sens_action.setStatusTip("Show/hide robot sensors")
+        self.sens_action.triggered[bool].connect(self.show_sensors)
+        self.sens_action.setCheckable(True)
+        self.sens_action.setChecked(True)
+
+        self.trace_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/robot-tracks.png"),
+                          "Show/Hide robot trajectores", self)
+        self.trace_action.setStatusTip("Show/hide robot trajectores")
+        self.trace_action.triggered[bool].connect(self.show_tracks)
+        self.trace_action.setCheckable(True)
+        self.trace_action.setChecked(True)
+
+        zoom_group = QtGui.QActionGroup(self)
+
+        self.zoom_world_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/zoom-scene.png"),
+                          "Show all", self)
+        self.zoom_world_action.triggered.connect(self.zoom_scene)
+        self.zoom_world_action.setStatusTip("Show the whole world in view")
+        self.zoom_world_action.setCheckable(True)
+        self.zoom_world_action.setChecked(True)
+        zoom_group.addAction(self.zoom_world_action)
+        
+        self.zoom_robot_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/zoom-robot.png"),
+                          "Follow robot", self)
+        self.zoom_robot_action.triggered.connect(self.zoom_robot)
+        self.zoom_robot_action.setStatusTip("Center the view on robot")
+        self.zoom_robot_action.setCheckable(True)
+        self.zoom_robot_action.setChecked(False)
+        zoom_group.addAction(self.zoom_robot_action)
+
+        self.rotate_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/zoom-robot-rot.png"),
+                          "Follow robot orientation", self)
+        self.rotate_action.triggered.connect(self.rot_robot)
+        self.rotate_action.setStatusTip("Rotate the view with the robot")
+        self.rotate_action.setCheckable(True)
+        self.rotate_action.setChecked(False)
+        self.rotate_action.setEnabled(False)
+        
+        self.about_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("help-about",
+                            self.windowIcon()),
+                          "About",self)
+        self.about_action.setStatusTip("About QtSimiam")
+        self.about_action.triggered.connect(self.about)
+        
+    def create_toolbars(self):
         
         tbar = QtGui.QToolBar("Control",self)
         tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         
-        #self.__time_label = QtGui.QLabel("00:00.0",self)
-        #self.__time_label.setToolTip("Elapsed time")
-        #tbar.addWidget(self.__time_label)
+        tbar.addAction(self.open_world_action)
+        tbar.addSeparator()
         
-        self.revaction = \
-            tbar.addAction(QtGui.QIcon("./res/image/arrow-left-double.png"),
-                        "Rewind",
-                        self._on_rewind)
-        self.revaction.setStatusTip("Reset simulation")
-        self.runaction = \
-            tbar.addAction(QtGui.QIcon("./res/image/arrow-right.png"),
-                           "Run",
-                           self._on_run)
-        self.runaction.setStatusTip("Run simulation")
-        self.pauseaction = \
-            tbar.addAction(QtGui.QIcon("./res/image/media-playback-pause-7.png"),
-                       "Pause",
-                       self._on_pause)
-        self.pauseaction.setStatusTip("Pause simulation")
+        tbar.addAction(self.rev_action)
+        tbar.addAction(self.run_action)
         
-        self.revaction.setEnabled(False)
-        self.runaction.setEnabled(False)
-        self.pauseaction.setVisible(False)
+        self.speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
+        self.speed_slider.setToolTip("Adjust speed")
+        self.speed_slider.setStatusTip("Adjust simulation speed")
+        self.speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
+        self.speed_slider.setMaximumWidth(300)
+        self.speed_slider.setRange(-100,100)
+        self.speed_slider.setValue(0)
+        self.speed_slider.setEnabled(False)
+        self.speed_slider.valueChanged[int].connect(self.scale_time)
+        tbar.addWidget(self.speed_slider)
         
-        self.__speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
-        self.__speed_slider.setToolTip("Adjust speed")
-        self.__speed_slider.setStatusTip("Adjust simulation speed")
-        self.__speed_slider.setTickPosition(QtGui.QSlider.NoTicks)
-        self.__speed_slider.setMaximumWidth(300)
-        self.__speed_slider.setRange(-100,0)
-        self.__speed_slider.setValue(0)
-        self.__speed_slider.setEnabled(False)
-        self.__speed_slider.valueChanged[int].connect(self._scale_time)
-        tbar.addWidget(self.__speed_slider)
-        
-        self.__speed_label = QtGui.QLabel(" Speed: 1.0x",self)
-        self.__speed_label.setToolTip("Current speed multiplier")
-        tbar.addWidget(self.__speed_label)
+        self.speed_label = QtGui.QLabel(" Speed: 1.0x ",self)
+        self.speed_label.setToolTip("Current speed multiplier")
+        tbar.addWidget(self.speed_label)
                        
         self.addToolBar(tbar)
 
         tbar = QtGui.QToolBar("View",self)
         tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
 
-        a = tbar.addAction(QtGui.QIcon("./res/image/grid.png"),
-                           "Show/Hide grid")
-        a.setStatusTip("Show/hide grid")
-        a.triggered[bool].connect(self._show_grid)
-        a.setCheckable(True)
-        a.setChecked(False)
-
-        a = tbar.addAction(QtGui.QIcon("./res/image/robot-sensors.png"),
-                           "Show/Hide sensors")
-        a.setStatusTip("Show/hide robot sensors")
-        a.triggered[bool].connect(self._show_sensors)
-        a.setCheckable(True)
-        a.setChecked(True)
+        tbar.addAction(self.grid_action)        
+        tbar.addAction(self.sens_action)
+        tbar.addAction(self.trace_action)
+        tbar.addSeparator()
         
-        a = tbar.addAction(QtGui.QIcon("./res/image/robot-tracks.png"),
-                           "Show/Hide robot trajectores")
-        a.setStatusTip("Show/hide robot trajectores")
-        a.triggered[bool].connect(self._show_tracks)
-        a.setCheckable(True)
-        a.setChecked(True)
+        tbar.addAction(self.zoom_world_action)
+        tbar.addAction(self.zoom_robot_action)
+        tbar.addAction(self.rotate_action)
         
-        zoom_group = QtGui.QActionGroup(tbar)
-        a = tbar.addAction(QtGui.QIcon("./res/image/zoom-scene.png"),
-                           "Show all",
-                            self._zoom_scene)
-        a.setStatusTip("Show the whole world in view")
-        a.setCheckable(True)
-        a.setChecked(True)
-        zoom_group.addAction(a)
+        self.zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
+        self.zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
+        self.zoom_slider.setToolTip("Adjust zoom")
+        self.zoom_slider.setStatusTip("Zoom in/out on robot")
+        self.zoom_slider.setMaximumWidth(300)
+        self.zoom_slider.setRange(-100,100)
+        self.zoom_slider.setValue(0)
+        self.zoom_slider.setEnabled(False)
+        self.zoom_slider.valueChanged[int].connect(self.scale_zoom)
+        tbar.addWidget(self.zoom_slider)
+        self.zoom_label = QtGui.QLabel(" Zoom: 1.0x ",self)
+        self.zoom_label.setToolTip("Current zoom factor")
+        tbar.addWidget(self.zoom_label)
         
-        a = tbar.addAction(QtGui.QIcon("./res/image/zoom-robot.png"),
-                           "Follow robot",
-                           self._zoom_robot)
-        a.setStatusTip("Center the view on robot")
-        a.setCheckable(True)
-        a.setChecked(False)
-        zoom_group.addAction(a)
-
-        self.act_rot_robot = \
-            tbar.addAction(QtGui.QIcon("./res/image/zoom-robot-rot.png"),
-                           "Follow robot orientation",
-                           self._rot_robot)
-        self.act_rot_robot.setStatusTip("Rotate the view with the robot")
-        self.act_rot_robot.setCheckable(True)
-        self.act_rot_robot.setChecked(False)
-        self.act_rot_robot.setEnabled(False)
-
-        self.__zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
-        self.__zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
-        self.__zoom_slider.setToolTip("Adjust zoom")
-        self.__zoom_slider.setStatusTip("Zoom in/out on robot")
-        self.__zoom_slider.setMaximumWidth(300)
-        self.__zoom_slider.setRange(-100,100)
-        self.__zoom_slider.setValue(0)
-        self.__zoom_slider.setEnabled(False)
-        self.__zoom_slider.valueChanged[int].connect(self._scale_zoom)
-        tbar.addWidget(self.__zoom_slider)
-        self.__zoom_label = QtGui.QLabel(" Zoom: 1.0x",self)
-        self.__zoom_label.setToolTip("Current zoom factor")
-        tbar.addWidget(self.__zoom_label)
-        
-        self.__zoom_factor = 0
+        self.zoom_factor = 0
                        
         self.addToolBar(tbar)
 
-    def __create_menu(self):
+    def create_menu(self):
         menu = QtGui.QMenuBar(self)
         self.setMenuBar(menu)
         
         file_menu = menu.addMenu("&File")
-        a = file_menu.addAction(QtGui.QIcon.fromTheme("document-open"),
-                                "Open XML &World",
-                                self._on_open_world,
-                                QtGui.QKeySequence(QtGui.QKeySequence.Open))
-        a.setStatusTip("Open a new simulation")
-                            
+        
+        file_menu.addAction(self.open_world_action)
         file_menu.addSeparator()
-        a = file_menu.addAction(QtGui.QIcon.fromTheme("application-exit"),
-                                "E&xit",
-                                self.close,
-                                QtGui.QKeySequence(QtGui.QKeySequence.Quit)
-                                )
-        a.setToolTip("Quit the Program")
-        a.setStatusTip("Exit QtSimiam")
-                            
-    def __create_statusbar(self):      
+        file_menu.addAction(self.exit_action)
+        
+        view_menu = menu.addMenu("&View")
+        
+        view_menu.addAction(self.zoom_world_action)
+        view_menu.addAction(self.zoom_robot_action)
+        view_menu.addAction(self.rotate_action)
+        view_menu.addSeparator()
+        
+        view_menu.addAction(self.grid_action)
+        view_menu.addAction(self.sens_action)
+        view_menu.addAction(self.trace_action)
+        
+        run_menu = menu.addMenu("&Simulation")
+        
+        run_menu.addAction(self.run_action)
+        run_menu.addAction(self.rev_action)
+        
+        help_menu = menu.addMenu("&Help")
+        help_menu.addAction(self.about_action)
+        
+    def create_statusbar(self):      
         self.setStatusBar(QtGui.QStatusBar())
         self.status_label = QtGui.QLabel("",self.statusBar())
         self.statusBar().addWidget(self.status_label)
 
     def closeEvent(self,event):
-        self.__sim_timer.stop()
-        self.__sim_queue.put(('stop',()))
-        while self._simulator_thread.isAlive():
+        self.sim_timer.stop()
+        self.sim_queue.put(('stop',()))
+        while self.simulator_thread.isAlive():
             self.process_events(True)
-            self._simulator_thread.join(0.1)
+            self.simulator_thread.join(0.1)
         super(SimulationWidget,self).closeEvent(event)
 
-    def make_param_window(self,robot_id,name,parameters):       
-        # FIXME adding to the right for no reason
-        self.__dockmanager.add_dock_right(robot_id, name, parameters)
-
     def load_world(self,filename):
+        self.run_action.setEnabled(False)
         if not os.path.exists(filename):
             filename = os.path.join('worlds',filename)
             if not os.path.exists(filename):
                 print "Cannot open file {}".format(filename)
                 return
-        self.__dockmanager.clear()
-        #self.revaction.setEnabled(False)
-        #self.runaction.setEnabled(True)
-        self.__sim_queue.put(('read_config',(filename,)))
+        self.dockmanager.clear()
+        self.sim_queue.put(('read_config',(filename,)))
 
     # Slots
+    def about(self):
+        QtGui.QMessageBox.about(self,"About QtSimiam",
+        """<b>PySimiam (Qt)</b><br>
+        Robot simulator<br>
+        &copy; Pysimiam Team
+        """)
+    
     @QtCore.pyqtSlot()
-    def _on_rewind(self): # Start from the beginning
-
-        self.pauseaction.setVisible(False)
-        self.runaction.setVisible(True)
-
-        self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
-
-        self.__speed_slider.setEnabled(False)
-        #self.__time_label.setText("00:00.0")
-        self.__sim_queue.put(('reset_simulation',()))
-
-    @QtCore.pyqtSlot()
-    def _on_run(self): # Run/unpause
-        self.pauseaction.setVisible(True)
-        self.runaction.setVisible(False)
-        self.runaction.setEnabled(False)
-        self.__sim_queue.put(('start_simulation',()))
+    def on_rewind(self): # Start from the beginning
+        self.speed_slider.setEnabled(False)
+        #self.time_label.setText("00:00.0")
+        self.sim_queue.put(('reset_simulation',()))
 
     @QtCore.pyqtSlot()
-    def _on_pause(self): # Pause
-        self.pauseaction.setVisible(False)
-        self.runaction.setVisible(True)
-        
-        self.pauseaction.setEnabled(False)
-        self.__speed_slider.setEnabled(False)
-        
-        self.__sim_queue.put(('pause_simulation',()))
+    def on_run(self): # Run/unpause
+        self.sim_queue.put(('start_simulation',()))
 
     @QtCore.pyqtSlot()
-    def _on_open_world(self):
-        self._on_pause()
-        if self._world_dialog.exec_():
-            self.load_world(self._world_dialog.selectedFiles()[0])
+    def on_pause(self): # Pause
+        self.speed_slider.setEnabled(False)        
+        self.sim_queue.put(('pause_simulation',()))
+
+    @QtCore.pyqtSlot()
+    def on_open_world(self):
+        self.on_pause()
+        if self.world_dialog.exec_():
+            self.load_world(self.world_dialog.selectedFiles()[0])
             
     @QtCore.pyqtSlot(bool)
-    def _show_grid(self,show):
-        self.__sim_queue.put(('show_grid',(show,)))
+    def show_grid(self,show):
+        self.sim_queue.put(('show_grid',(show,)))
 
     @QtCore.pyqtSlot(bool)
-    def _show_sensors(self,show):
-        self.__sim_queue.put(('show_sensors',(show,)))
+    def show_sensors(self,show):
+        self.sim_queue.put(('show_sensors',(show,)))
             
     @QtCore.pyqtSlot(bool)
-    def _show_tracks(self,show):
-        self.__sim_queue.put(('show_tracks',(show,)))
+    def show_tracks(self,show):
+        self.sim_queue.put(('show_tracks',(show,)))
             
     @QtCore.pyqtSlot()
-    def _zoom_scene(self):
-        self.__zoom_slider.setEnabled(False)
-        self.act_rot_robot.setEnabled(False)
-        self.__sim_queue.put(('focus_on_world',()))
+    def zoom_scene(self):
+        self.zoom_slider.setEnabled(False)
+        self.rotate_action.setEnabled(False)
+        self.sim_queue.put(('focus_on_world',()))
 
     @QtCore.pyqtSlot()
-    def _zoom_robot(self):
-        self.__zoom_slider.setEnabled(True)
-        self.act_rot_robot.setEnabled(True)
-        self.__sim_queue.put(('focus_on_robot',(self.act_rot_robot.isChecked(),)))
-        self.__sim_queue.put(('adjust_zoom',(5.0**(self.__zoom_slider.value()/100.0),)))
+    def zoom_robot(self):
+        self.zoom_slider.setEnabled(True)
+        self.rotate_action.setEnabled(True)
+        self.sim_queue.put(('focus_on_robot',(self.rotate_action.isChecked(),)))
+        self.sim_queue.put(('adjust_zoom',(5.0**(self.zoom_slider.value()/100.0),)))
 
     @QtCore.pyqtSlot()
-    def _rot_robot(self):
-        self.__sim_queue.put(('focus_on_robot',(self.act_rot_robot.isChecked(),)))
+    def rot_robot(self):
+        self.sim_queue.put(('focus_on_robot',(self.rotate_action.isChecked(),)))
             
     @QtCore.pyqtSlot(int)
-    def _scale_zoom(self,value):
+    def scale_zoom(self,value):
         zoom = 5.0**(value/100.0)
-        self.__sim_queue.put(('adjust_zoom',(zoom,)))
-        self.__zoom_label.setText(" Zoom: %.1fx"%(zoom))
+        self.sim_queue.put(('adjust_zoom',(zoom,)))
+        self.zoom_label.setText(" Zoom: %.1fx "%(zoom))
 
     @QtCore.pyqtSlot(int)
-    def _scale_time(self,value):
-        m = 10.0**((value-self.__zoom_factor)/100.0)
-        self.__sim_queue.put(('set_time_multiplier',(m,)))
-        self.__speed_label.setText(" Speed: %.1fx"%m)
+    def scale_time(self,value):
+        m = 10.0**((value-self.zoom_factor)/100.0)
+        self.sim_queue.put(('set_time_multiplier',(m,)))
+        self.speed_label.setText(" Speed: %.1fx "%m)
 
     @QtCore.pyqtSlot()
-    def __update_time(self):
-        if self._simulator_thread.is_running():
-            t = self._simulator_thread.get_time()
+    def update_time(self):
+        if self.simulator_thread.is_running():
+            t = self.simulator_thread.get_time()
             minutes = int(t//60)
-            #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
+            #self.time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
             self.status_label.setText(
                 "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
         self.process_events(True)
     
     def process_events(self, process_all = False):
-        while not self.__in_queue.empty():
-            tpl = self.__in_queue.get()
+        while not self.in_queue.empty():
+            tpl = self.in_queue.get()
             if isinstance(tpl,tuple) and len(tpl) == 2:
                 name, args = tpl
+                # Scramble
+                name = "simulator_{}".format(name)
                 if name in self.__class__.__dict__:
                     try:
                         self.__class__.__dict__[name](self,*args)
@@ -333,71 +404,54 @@ class SimulationWidget(QtGui.QMainWindow):
                     print "Unknown UI event '{}'".format(name)
             else:
                 print "Wrong UI event format '{}'".format(tpl)
-            self.__in_queue.task_done()
+            self.in_queue.task_done()
             if not process_all:
                 return
     
     def apply_parameters(self, robot_id, params):
-        self.__sim_queue.put(('apply_parameters', (robot_id, params)))
+        self.sim_queue.put(('apply_parameters', (robot_id, params)))
             
-### Queue processing
+### Simulator events
+
+    def simulator_make_param_window(self,robot_id,name,parameters):       
+        # FIXME adding to the right for no reason
+        self.dockmanager.add_dock_right(robot_id, name, parameters)
         
     def simulator_running(self):
-        self.pauseaction.setVisible(True)
-        self.runaction.setVisible(False)
-        self.runaction.setEnabled(False)
-        self.revaction.setEnabled(True)
-        self.pauseaction.setEnabled(True)
-        self.__speed_slider.setEnabled(True)
+        self.speed_slider.setEnabled(True)
     
     def simulator_paused(self):
-        self.pauseaction.setVisible(False)
-        self.runaction.setVisible(True)
-        
-        self.pauseaction.setEnabled(False)
-        self.__speed_slider.setEnabled(False)
-
-        self.runaction.setEnabled(True)
-        #self.revaction.setEnabled(True)
-        t = self._simulator_thread.get_time()
+        self.speed_slider.setEnabled(False)
+        t = self.simulator_thread.get_time()
         minutes = int(t//60)
-        #self.__time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
         self.status_label.setText(
             "Simulation paused... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
 
     def simulator_reset(self):
-        self.pauseaction.setVisible(False)
-        self.runaction.setVisible(True)
-
-        self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
-
-        self.runaction.setEnabled(True)
+        self.run_action.reset()
+        self.run_action.setEnabled(True)
         self.status_label.setText("Simulation ready")
 
     def simulator_stopped(self):
         # FIXME this function isn't necessary
-        #self.__sim_timer.stop()
-        self.runaction.setEnabled(False)
-        self.pauseaction.setEnabled(False)
-        self.revaction.setEnabled(False)
-        self.__speed_slider.setEnabled(False)
+        self.speed_slider.setEnabled(False)
         
-    def update_view(self):
-        self.__viewer.update_bitmap()
+    def simulator_update_view(self):
+        self.viewer.update_bitmap()
         
     def simulator_exception(self,e_type, e_value, e_traceback):
         QtGui.QMessageBox.critical(self,"{}: {}".format(e_type.__name__,e_value),"\n".join(format_exception(e_type,e_value,e_traceback)))
+        self.run_action.setEnabled(False)
             
 #end QtSimiamFrame class
 
 class SimulatorViewer(QtGui.QFrame):
     def __init__(self, parent = None):
         super(SimulatorViewer, self).__init__(parent)
-        self.__bitmap = QtGui.QPixmap()
-        self.__blt_bitmap = QtGui.QImage(self.size(), QtGui.QImage.Format_ARGB32)
-        self.renderer = QtRenderer(self.__blt_bitmap)
-        self.__resize_on_paint = False
+        self.bitmap = QtGui.QPixmap()
+        self.blt_bitmap = QtGui.QImage(self.size(), QtGui.QImage.Format_ARGB32)
+        self.renderer = QtRenderer(self.blt_bitmap)
+        self.resize_on_paint = False
         # code for async calling of update
         self.update_ = self.metaObject().method(self.metaObject().indexOfMethod('update()'))
 
@@ -405,27 +459,27 @@ class SimulatorViewer(QtGui.QFrame):
         super(SimulatorViewer, self).paintEvent(event)
         painter = QtGui.QPainter(self)
         painter.fillRect(self.rect(),QtCore.Qt.white)
-        s = self.__bitmap.rect().size()
+        s = self.bitmap.rect().size()
         s.scale(self.rect().size(),QtCore.Qt.KeepAspectRatio)
         dx = (self.width() - s.width())/2
         dy = (self.height() - s.height())/2
-        painter.drawPixmap(QtCore.QRect(QtCore.QPoint(dx,dy),s),self.__bitmap,self.__bitmap.rect())
+        painter.drawPixmap(QtCore.QRect(QtCore.QPoint(dx,dy),s),self.bitmap,self.bitmap.rect())
         
     def update_bitmap(self):
-        self.__bitmap = QtGui.QPixmap.fromImage(self.__blt_bitmap)
+        self.bitmap = QtGui.QPixmap.fromImage(self.blt_bitmap)
         # resize the canvas - at this point nothing is being drawn
-        if self.__resize_on_paint:
-            self.__blt_bitmap = QtGui.QImage(self.width(),
+        if self.resize_on_paint:
+            self.blt_bitmap = QtGui.QImage(self.width(),
                                             self.height(),
                                             QtGui.QImage.Format_ARGB32)
-            self.renderer.set_canvas(self.__blt_bitmap)          
-            self.__resize_on_paint = False
+            self.renderer.set_canvas(self.blt_bitmap)          
+            self.resize_on_paint = False
         self.update()
 
     def resizeEvent(self,event):
         """Resize panel and canvas"""
         # use cached size and flag
-        self.__resize_on_paint = True
+        self.resize_on_paint = True
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

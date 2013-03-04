@@ -5,7 +5,16 @@
 from pose import Pose
 
 class Renderer:
-    """Superclass for interfacing the python simulator to different UI graphics context"""
+    """
+        The Renderer class is an abstract class describing a generalized drawing engine.
+        It has to be subclassed to implement the drawing in a way specific
+        to the UI that the program is using.
+        
+        The base class does not impose any restrictions on the type of
+        the *canvas* parameter. It is up to a specific implementation to
+        interpret this parameter correctly.
+    """
+    
     def __init__(self, canvas):
         """Create a Renderer on canvas of size _size_.
         The default pen and brush are transparent
@@ -25,17 +34,19 @@ class Renderer:
         self.pop_state()
     
     def show_grid(self, show=True):
-        """Draw the grid on the canvas background.
+        """Draw the grid on the canvas background by default.
         
         The grid is adaptive, with minimum interline distance of 20 px,
-        and a maximum of 80 px.
+        and a maximum of 80 px. In the case the interline distance has to
+        be smaller or larger, it is scaled by a factor of 2.
+        
         This method will clear the canvas
         """
         self._show_grid = show
         self.clear_screen()
     
     def set_canvas(self, canvas):
-        """Tell the renderer to draw on canvas
+        """Tell the renderer to draw on *canvas*.
         
         The type of canvas is implementation-dependent
         """
@@ -48,6 +59,7 @@ class Renderer:
    
     def reset_canvas_size(self,size):
         """Change canvas size
+        
         On canvas rescale the zoom factor will be recalculated:
         If the view rect was set, the view will be rescaled to fit the rect.
         If the view rect was not set, the zoom factor and default pose will
@@ -59,6 +71,7 @@ class Renderer:
     
     def _get_canvas_size(self,canvas):
         """Return the canvas size tuple (width,height)
+        
         To be implemented in subclasses
         """
         raise NotImplementedError("Renderer._get_canvas_size")
@@ -67,6 +80,7 @@ class Renderer:
         """Store the current state on the stack.
         
         Current state includes default pose, pen and brush.
+        
         To be implemented in subclasses.
         """
         raise NotImplementedError("Renderer.push_state")
@@ -75,26 +89,27 @@ class Renderer:
         """Restore the last saved state from the stack
 
         The state includes default pose, pen and brush.
+        
         To be implemented in subclasses.
         """
         raise NotImplementedError("Renderer.pop_state")
     
     def scale(self,factor):
-        """Scale drawing operations by factor
+        """Scale all drawing operations by *factor*
         
         To be implemented in subclasses.
         """
         raise NotImplementedError("Renderer.scale")
     
     def rotate(self, angle):
-        """Rotate canvas by angle (in radians)
+        """Rotate canvas by *angle* (in radians)
         
         To be implemented in subclasses.
         """
         raise NotImplementedError("Renderer.rotate")
     
     def translate(self, dx, dy):
-        """Translate canvas by dx, dy
+        """Translate canvas by *dx*, *dy*
         
         To be implemented in subclasses.
         """
@@ -103,7 +118,7 @@ class Renderer:
    
     def _calculate_bounds(self):
         """Store the bounds of the smallest rectangle containing the view \
-        in self._bounds.
+        in ``self._bounds``.
         
         To be implemented in subclasses.
         """
@@ -117,9 +132,13 @@ class Renderer:
         raise NotImplementedError("Renderer._draw_grid")
 
     def set_screen_pose(self, pose):
-        """ Set the pose of lower-left corner of the canvas
+        """ Set the pose of the lower-left corner of the canvas.
         
-        Will automatically switch zoom center to said corner.
+        The zoom center will switch to that corner.
+        
+        :param pose: The new pose of the lower-left corner.
+        :type pose: :class:`~pose.Pose`
+        
         """
         self._zoom_c = False
         self.__view_rect = None
@@ -129,7 +148,10 @@ class Renderer:
     def set_screen_center_pose(self, pose):
         """ Set the pose of center of the canvas
         
-        Will automatically switch zoom center to canvas center.
+        The zoom center will switch to canvas center.
+
+        :param pose: The new pose of the lower-left corner.
+        :type pose: :class:`~pose.Pose`
         """
         self._zoom_c = True
         self.__view_rect = None
@@ -137,6 +159,8 @@ class Renderer:
         self._update_default_state()
    
     def _adjust_grid(self, zoom_level):
+        """Calculate the right interline distance for *zoom_level*
+        """
         self._grid_spacing *= zoom_level
         while self._grid_spacing > 80:
             self._grid_spacing /= 2
@@ -145,9 +169,10 @@ class Renderer:
         self._grid_spacing /= zoom_level
    
     def set_zoom_level(self, zoom_level):
-        """Zoom up the drawing by a factor of zoom_level
+        """Zoom up the drawing by a factor of *zoom_level*
         
         The zoom center is at the last set screen pose.
+        
         This method will clear the canvas.
         """
         self._adjust_grid(zoom_level)
@@ -156,6 +181,10 @@ class Renderer:
         self._update_default_state()
         
     def _update_default_state(self):
+        """Calculate the default state with the current zoom level and pose
+        
+        This method will clear the canvas.
+        """
         self.pop_state() # Reset state
         self.pop_state() # Set zoom to 1     
         self.push_state() # Re-save the zoom-1
@@ -170,7 +199,9 @@ class Renderer:
         self.clear_screen()
 
     def scale_zoom_level(self, factor):
-        """Zoom up the drawing by a factor of zoom_level
+        """Zoom up the drawing by an additional *factor*
+        
+        Equivalent to ``set_zoom_level(zoom_level*factor)``
         
         The zoom center is at the last set screen pose.
         This method will clear the canvas.
@@ -191,13 +222,13 @@ class Renderer:
         self._update_default_state()
        
     def reset_pose(self):
-        """Resets the renderer to default pose
+        """Resets the renderer to default pose and zoom level
         """
         self.pop_state()
         self.push_state()
     
     def set_pose(self, pose):
-        """Set a coordinate transformation based on the pose
+        """Set a coordinate transformation based on *pose*
         """
         self.reset_pose()
         self.add_pose(pose)
@@ -210,23 +241,28 @@ class Renderer:
 
     def set_pen(self, color):
         """Sets the line color.
-        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
+        
+        Color is interpreted as `0xAARRGGBB`. In case `AA == 0` the color
         is considered fully opaque.
-        Use None to unset a pen
+        
+        Use None to unset a pen.
         """
         raise NotImplementedError("Renderer.set_pen")
 
     def set_brush(self, color):
         """Sets the fill color.
 
-        Color is interpreted as 0xAARRGGBB. In case AA == 0 the color
-        is considered fully opaque.
-        Use None to unset a brush
+        The color is an integer, interpreted as `0xAARRGGBB`.
+        In the case `AA == 0` the color is considered fully opaque.
+        
+        Use `None` to unset a brush.
         """
         raise NotImplementedError("Renderer.set_brush")
 
     def clear_screen(self):
-        """Clears the canvas using the current brush
+        """Clears the canvas and draws the grid if necessary
+        
+        To be implemented in subclasses.
         """
         if self._show_grid:
             self._draw_grid()
@@ -236,28 +272,31 @@ class Renderer:
         """
         raise NotImplementedError("Renderer.draw_line")
 
-    def draw_ellipse(self, x, y, w, h):
+    def draw_ellipse(self, cx, cy, ra, rb=None):
         """Draws an ellipse with current pen and fills it with current brush.
+        
+        The center of the ellipse is at (*cx*, *cy*),
+        the half-axes are *ra* and *rb*. In the case *rb* is not specified, 
+        the method draws a circle of radius *ra*.
         """
         raise NotImplementedError("Renderer.draw_ellipse")
 
-    def draw_rectangle(self, x, y, w, h):
-        """Draws a rectangle.
+    def draw_rectangle(self, x, y, width, height):
+        """Draws a rectangle with current pen and fills it with current brush
+        
+        The bottom-left corner of the rectangle is at (*x*, *y*),
+        if the width and height are positive.
         """
         raise NotImplementedError("Renderer.draw_rectangle")
 
-    def fill_rectangle(self, x, y, w, h):
-        """Draws a rectangle with current pen and fills it with current brush
-        """
-        raise NotImplementedError("Renderer.fill_rectangle")
-        
     def draw_polygon(self, points):
         """Draws a polygon with current pen and fills it with current brush
+        
         Expects a list of points as a list of tuples or as a numpy array.
         """
         raise NotImplementedError("Renderer.draw_polygon")
 
-    def draw_text(self, text, x, y, bgcolor = 0):
-        """Draws a text string at the defined position.
-        """
-        raise NotImplementedError("Renderer.draw_text")
+    #def draw_text(self, text, x, y, bgcolor = 0):
+        #"""Draws a text string at the defined position using the current brush
+        #"""
+        #raise NotImplementedError("Renderer.draw_text")

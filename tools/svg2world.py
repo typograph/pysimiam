@@ -23,8 +23,8 @@ from the fill color. The stroke color is ignored.
 """
 
 # Change those to get other robots
-robot_class = "khepera3"
-robot_supervisor = "k3blendingsupervisor.K3BlendingSupervisor"
+robot_class = "Khepera3"
+robot_supervisor = "K3BlendingSupervisor"
 
 color_re = re.compile('fill:(#[0-9a-fA-F]{6})')
 ns_re = re.compile('^(\{[^\}]*\})?(.*)$')

@@ -11,6 +11,10 @@ from renderer import Renderer
 from pose import Pose
 
 class wxGCRenderer(Renderer):
+    """An implementation of :class:`~renderer.Renderer` for wxPython.
+       
+       This renderer expects a `wxDC` as canvas.
+    """
     def __init__(self, DC):
         self._dc_grid_pen = wx.Pen(wx.Colour(128,128,128,255),1,wx.SHORT_DASH)
         Renderer.__init__(self,DC)
@@ -156,10 +160,12 @@ class wxGCRenderer(Renderer):
         xy_pts.append(xy_pts[0])
         self._gc.DrawLines(xy_pts)
 
-    def draw_ellipse(self, x, y, w, h):
+    def draw_ellipse(self, cx, cy, ra, rb=None):
         """Draws an ellipse.
         """
-        self._gc.DrawEllipse(x,y,w,h)
+        if rb is None:
+            rb = ra
+        self._gc.DrawEllipse(cx-ra,cy-rb,2*ra,2*rb)
 
     def draw_rectangle(self, x, y, w, h):
         """Draws a rectangle.
