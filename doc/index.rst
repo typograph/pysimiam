@@ -33,6 +33,7 @@ Website Tree
 
    overview
    tutorial
+   coursera
    project
    code
 
