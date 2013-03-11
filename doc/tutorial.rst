@@ -267,3 +267,13 @@ An alternative method is to weight the angles and use a resultant angle to drive
     \theta = [\theta_{120}, \theta_{75}, \theta_{42}, ...] \\
     \Theta = \frac{\sum{w_{i}d_{i}\theta_{i}}}{\sum{w_{i}d_{i}}}
 
+Week 5: Avoid Obstacles Controller
+==================================
+1. Open ``./supervisors/k3defaultsupervisor.py``.
+2. Find the `process` method with the indicated week 5 exercise
+
+Your objective is to create an arbitration schema for selecting the appropriate controller using switches. Feel free modify any of the controllers to fit your needs. A good suggestion might be to pass the present state conditions into the controller when it changes over. Also, it would be reasonable to pass or clear the error in the present controller memory. To compare your results to one of the team member's results, you may look at the dualing robot worlds like ``playground.xml``.
+
+Remember that the guards (switch conditions) are recommended to have some epsilon to avoid the Zeno case 1 problem. 
+
+If you choose to implement a hybrid controller to further smooth transition, you will need to write one. Feel free to copy one of the the other controllers. We suggest naming the file ``./controllers/hybrid.py`` and naming the controller class ``Hybrid``. However, you are free to choose your own naming convention.
