@@ -3,6 +3,7 @@ from helpers import Struct
 from pose import Pose
 from math import pi, sin, cos, log1p
 from collections import OrderedDict
+from simobject import Path
 
 class K3Supervisor(Supervisor):
     """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the k3defaultsupervisor.K3DefaultSupervisor class in which this class is used to reduce noisy code interactions.
@@ -18,6 +19,10 @@ The UI may use the get_parameters function interface to create docker windows fo
         # initialize memory registers
         self.left_ticks  = robot_info.wheels.left_ticks
         self.right_ticks = robot_info.wheels.right_ticks
+        
+        self.robot_size = robot_info.wheels.base_length
+        
+        self.tracker = Path(robot_pose, 0)
                     
     def get_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
@@ -130,4 +135,15 @@ The UI may use the get_parameters function interface to create docker windows fo
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
+        self.tracker.add_point(self.pose_est)
         return self.uni2diff(output)
+
+    def draw(self, renderer):
+        """Draw a circular goal and path"""
+        # Draw goal
+        renderer.set_pose(Pose(self.ui_params.goal.x, self.ui_params.goal.y))
+        renderer.set_brush(self.robot_color)
+        r = self.robot_size/2
+        renderer.draw_ellipse(0,0,r,r)
+        # Draw robot path
+        self.tracker.draw(renderer)

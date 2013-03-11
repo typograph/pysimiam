@@ -54,3 +54,24 @@ class K3BlendingSupervisor(K3Supervisor):
        
         vl, vr = self.uni2diff((v,w))
         return (vl, vr) 
+
+    def draw(self, renderer):
+        K3Supervisor.draw(self,renderer)
+        renderer.set_pose(self.pose_est)
+
+        # Draw direction from obstacles
+        renderer.set_pen(0xFF0000)
+        arrow_length = self.robot_size*5
+        renderer.draw_arrow(0,0,
+            arrow_length*cos(self.avoidobstacles.away_angle),
+            arrow_length*sin(self.avoidobstacles.away_angle))
+
+        # Draw direction to goal
+        renderer.set_pen(0x444444)
+        goal_angle = atan2(self.ui_params.goal.y - self.pose_est.y,
+                           self.ui_params.goal.x - self.pose_est.x) \
+                     - self.pose_est.theta
+        renderer.draw_arrow(0,0,
+            arrow_length*cos(goal_angle),
+            arrow_length*sin(goal_angle))
+                           

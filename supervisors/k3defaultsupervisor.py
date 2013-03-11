@@ -1,6 +1,6 @@
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
-from math import sqrt
+from math import sqrt, sin, cos
 
 class K3DefaultSupervisor(K3Supervisor):
     """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
@@ -46,3 +46,12 @@ class K3DefaultSupervisor(K3Supervisor):
                    self.avoidobstacles.clear_error()
 
         return self.ui_params
+    
+    def draw(self, renderer):
+        K3Supervisor.draw(self,renderer)
+        renderer.set_pose(self.pose_est)
+        renderer.set_pen(self.robot_color)
+        arrow_length = self.robot_size*5
+        renderer.draw_arrow(0,0,
+            arrow_length*cos(self.avoidobstacles.away_angle),
+            arrow_length*sin(self.avoidobstacles.away_angle))

@@ -3,6 +3,7 @@
 #
 # A glue layer between SimObject and UI
 from pose import Pose
+from math import tan, sqrt, atan2
 
 class Renderer:
     """
@@ -271,6 +272,28 @@ class Renderer:
         """Draw a line using the current pen from (x1,y1) to (x2, y2)
         """
         raise NotImplementedError("Renderer.draw_line")
+    
+    def draw_arrow(self, x1, y1, x2, y2, angle=0.3, ratio=0.1, close=False):
+        """Draw an arrow from (x1, y1) to (x2, y2).
+           You can also specify the arrowhead angle (in radians), the ratio
+           between arrowhead and arrow length and the triangular (close=True)
+           or linear (close=False) arrowhead shape.
+        """
+        self.push_state()
+        self.rotate(atan2(y2-y1,x2-x1))
+        self.scale(sqrt((x1-x2)**2 + (y1-y2)**2))
+        
+        xe = 1-ratio
+        ye = tan(angle)*ratio
+        self.draw_line(0,0,1,0)
+        self.draw_line(1,0,xe,-ye)
+        self.draw_line(1,0,xe,ye)
+        if close:
+            self.draw_line(xe,-ye,xe,ye)
+            
+        self.pop_state()
+        
+        
 
     def draw_ellipse(self, cx, cy, ra, rb=None):
         """Draws an ellipse with current pen and fills it with current brush.

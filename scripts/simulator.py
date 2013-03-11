@@ -119,7 +119,9 @@ class Simulator(threading.Thread):
                     # Create supervisor
                     sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     
-                    supervisor = sup_class(robot.get_pose(), robot.get_info())
+                    info = robot.get_info()
+                    info.color = robot.get_color()
+                    supervisor = sup_class(robot.get_pose(), info)                    
                     name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
                         supervisor.set_parameters(self.__supervisor_param_cache[len(self.__supervisors)])
@@ -258,6 +260,9 @@ class Simulator(threading.Thread):
                 self.__renderer.set_screen_center_pose(pose.Pose(robot.get_pose().x, robot.get_pose().y, 0.0))
 
         self.__renderer.clear_screen()
+
+        for supervisor in self.__supervisors:
+            supervisor.draw(self.__renderer)
 
         for bg_object in self.__background:
             bg_object.draw(self.__renderer)

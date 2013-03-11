@@ -4,23 +4,21 @@ Using PySimiam in Coursera 'Control of mobile robots course'
 Introduction
 ============
 
-This manual is going to be your resource for using the simulator in the programming exercises for this course. It will be updated throughout the course, so make sure to check it on a regular basis. You can access it anytime from the course page on Coursera under ``Programming Exercises``.
+This manual is going to be your resource for using the simulator in the programming exercises for this course. 
 
 Installation
 ------------
 
-Download ``simiam-coursera-week-X.zip`` (where X is the corresponding week for the exercise) from the course page on Coursera under ``Programming Exercises``. Make sure to download a new copy of the simulator \textbf{before} you start a new week's programming exercises, or whenever an announcement is made that a new version is available. It is important to stay up-to-date, since new versions may contain important bug fixes or features required for the programming exercises.
-
-Unzip the ``.zip`` file to any directory.
+Checkout the project source from ``https://github.com/whittenjaw85/pysimiam/tree/weekX`` (where X is the corresponding week for the exercise). Make sure to download a new copy of the simulator *before* you start a new week's programming exercises, or whenever an announcement is made that a new version is available. It is important to stay up-to-date, since new versions may contain important bug fixes or features required for the programming exercises.
 
 Requirements
 ^^^^^^^^^^^^
 
-You will need a reasonably modern computer to run the robot simulator. While the simulator will run on hardware older than a Pentium 4, it will probably be a very slow experience. You will also need a copy of MATLAB. The simulator has been tested with MATLAB R2009a, so it is recommended that you use that version or higher. No additional toolboxes are needed to run the simulator.
+You will need a reasonably modern computer to run the robot simulator. While the simulator will run on hardware older than a Pentium 4, it will probably be a very slow experience. You will also need Python 2.7 (http://www.python.org/getit/) and two libraries - Numpy for mathematics (http://www.scipy.org/Download) and PyQT for the GUI (http://www.riverbankcomputing.com/software/pyqt/download).
 
 Bug Reporting
 ^^^^^^^^^^^^^
-If you run into a bug (issue) with the simulator, please leave a message in the discussion forums with a detailed description. The bug will get fixed and a new version of the simulator will be uploaded to the course page on Coursera.
+If you run into a bug (issue) with the simulator, please leave a message in the discussion forums with a detailed description. The bug will get fixed and a new version of the simulator will be available at github.
 
 Mobile Robot
 ------------
@@ -29,176 +27,242 @@ The mobile robot platform you will be using in the programming exercises is the 
 
 .. image:: k3sensors.png
 
+.. _coursera-irsensors:
+
 IR Range Sensors
 ^^^^^^^^^^^^^^^^
-For the purpose of the programming exercises in the course, you will have access to the array of nine IR sensors that encompass the K3. IR range sensors are effective in the range :math:`0.02` m to :math:`0.2` m only. However, the IR sensors return raw values in the range of :math:`[18,3960]` instead of the measured distances. Figure \ref{fig:irvalues} demonstrates the function that maps these sensors values to distances.
+For the purpose of the programming exercises in the course, you will have access to the array of nine IR sensors that encompass the K3. IR range sensors are effective in the range 0.02 m to 0.2 m only. However, the IR sensors return raw values in the range of [18, 3960] instead of the measured distances. The figure below demonstrates the function that maps these sensors values to distances.
 
-.. image:: ir_actual.eps
+.. image:: ir_actual.png
 
-The green plot represents the sensor model used in the simulator, while the blue and red plots show the sensor response of two different IR sensors (under different ambient lighting levels). The effect of ambient lighting (and other sources of noise) are \textbf{not} modelled in the simulator, but will be apparent on the actual hardware.
+The green plot represents the sensor model used in the simulator, while the blue and red plots show the sensor response of two different IR sensors (under different ambient lighting levels). The effect of ambient lighting (and other sources of noise) are *not* modelled in the simulator, but will be apparent on the actual hardware.
 
-The function that maps distances, denoted by :math:`\Delta`, to sensor values is the following piecewise function:
+The function that maps distances, denoted by :math:`\delta`, to sensor values is the following piecewise function:
 
 .. math::
-    f(\Delta) =
-    \begin{cases}
-    3960, & \text{if } 0\text{m} \leq \Delta \leq 0.02\text{m} \\
-    \lfloor3960e^{-30(\Delta-0.02)}\rfloor, & \text{if } 0.02\text{m} \leq \Delta \leq 0.2\text{m}
-    \end{cases}
+    :nowrap:
 
-Your controller can access the IR array through the ``robot`` object that is passed into the ``execute`` function. For example::
+    f(\delta) = \left\{\begin{eqnarray}
+        3960 & \quad 0m <  \delta  < 0.02m\\ 
+        3960e^{-30(\delta-0.02)} & \quad 0.02m <  \delta  < 0.2m
+    \end{eqnarray}\right.
 
-    for i=1:9
-        fprintf('IR #%d has a value of %d.\n', i, robot.ir_array(i).get_range());
-    end
+For the those curious to explain why IR sensors behave in an exponentially decaying manner: the intensity of the light decays in accordance to the `inverse square law`_. 
 
-The orientation (relative to the body of the K3, as shown in figure) of IR sensors 1 through 9 is :math:`128^\circ, 75^\circ, 42^\circ`, :math:`13^\circ, -13^\circ, -42^\circ, -75^\circ, -128^\circ`, and :math:`180^\circ`, respectively.
+.. _inverse square law: http://en.wikipedia.org/wiki/Inverse-square_law
+
+Your supervisor can access the IR array through the ``robot_info`` object that is passed into the ``execute`` function. For example::
+
+    for i, reading in enumerate(robot_info.ir_sensors.readings)
+        print 'IR {} has a value of {}'.format(i, reading)
+
+The orientation (relative to the body of the K3, as shown in figure) of IR sensors 1 through 9 is 128°, 75°, 42°, 13°, -13°, -42°, -75°, -128°, and 180°, respectively.
+
+
 
 Ultrasonic Range Sensors
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The ultrasonice range sensors have a sensing range of 0.2 m to 4 m, but are not available in the simulator.
+
+.. _coursera-diffdrivedyn:
 
 Differential Wheel Drive
 ^^^^^^^^^^^^^^^^^^^^^^^^
 Since the K3 has a differential wheel drive (i.e., is not a unicyle), it has to be controlled by specifying the angular velocities of the right and left wheel :math:`(v_r,v_l)`, instead of the linear and angular velocities of a unicycle :math:`(v,\omega)`. These velocities are computed by a transformation from :math:`(v,\omega)` to :math:`(v_r,v_\ell)`. Recall that the dynamics of the unicycle are defined as,
 
 .. math::
-    \begin{split}
-        \dot{x} &= vcos(\theta) \\
-        \dot{y} &= vsin(\theta) \\
-        \dot{\theta} &= \omega.
-    \end{split}
+    \frac{dx}{dt} &= v\cos(\phi) \\
+    \frac{dy}{dt} &= v\sin(\phi) \\
+    \frac{d\phi}{dt} &= \omega
 
 The dynamics of the differential drive are defined as,
 
 .. math::
-    \begin{split}
-        \dot{x} &= \frac{R}{2}(v_r+v_\ell)cos(\theta) \\
-        \dot{y} &= \frac{R}{2}(v_r+v_\ell)sin(\theta) \\
-        \dot{\theta} &= \frac{R}{L}(v_r-v_\ell),
-    \end{split}
+    \frac{dx}{dt} &= \frac{R}{2}(v_r + v_l)\cos(\phi) \\
+    \frac{dy}{dt} &= \frac{R}{2}(v_r + v_l)\sin(\phi) \\
+    \frac{d\phi}{dt} &= \frac{R}{L}(v_r - v_l)
 
 where :math:`R` is the radius of the wheels and :math:`L` is the distance between the wheels.
 
 The speed of the K3 can be set in the following way assuming that you have implemented the ``uni_to_diff`` function, which transforms :math:`(v,\omega)` to :math:`(v_r,v_\ell)`::
 
-    v = 0.15; % m/s
-    w = pi/4; % rad/s
-    % Transform from v,w to v_r,v_l and set the speed of the robot
-    [vel_r, vel_l] = obj.robot.dynamics.uni_to_diff(robot,v,w);
+    v = 0.15 # m/s
+    w = pi/4 # rad/s
+    # Transform from v,w to v_r,v_l
+    vel_r, vel_l = self.uni2diff(v,w);
 
 Wheel Encoders
 ^^^^^^^^^^^^^^
-Each of the wheels is outfitted with a wheel encoder that increments or decrements a tick counter depending on whether the wheel is moving forward or backwards, respectively. Wheel encoders may be used to infer the relative pose of the robot. This inference is called \textbf{odometry}. The relevant information needed for odometry is the radius of the wheel, the distance between the wheels, and the number of ticks per revolution of the wheel. For example::
+Each of the wheels is outfitted with a wheel encoder that increments or decrements a tick counter depending on whether the wheel is moving forward or backwards, respectively. Wheel encoders may be used to infer the relative pose of the robot. This inference is called *odometry*. The relevant information needed for odometry is the radius of the wheel, the distance between the wheels, and the number of ticks per revolution of the wheel. For example::
 
-    R = robot.wheel_radius; % radius of the wheel
-    L = robot.wheel_base_length; % distance between the wheels
-    tpr = robot.encoders(1).ticks_per_rev; % ticks per revolution for the right wheel
+    R = robot_info.wheels.radius; % radius of the wheel
+    L = robot_info.wheels.base_length; % distance between the wheels
+    tpr = robot_info.wheels.ticks_per_rev; % ticks per revolution for the wheels
 
-    fprintf('The right wheel has a tick count of %d\n', robot.encoders(1).state);
-    fprintf('The left wheel has a tick count of %d\n', robot.encoders(2).state);
+    print 'The right wheel has a tick count of {}'.format(robot_info.wheels.right_ticks)
+    print 'The left wheel has a tick count of {}'.format(robot_info.wheels.left_ticks)
 
 
 Simulator
 ---------
 
-Start the simulator with the ``launch`` command in MATLAB from the command window. It is important that this command is executed inside the unzipped folder (but not inside any of its subdirectories).
+--- This section has to go to the manual ---
+
+Start the simulator with the ``python qtsimiam.py`` command. It is important that this command is executed inside the downloaded folder (but not inside any of its subdirectories).
+
+Here is a screenshot of the graphical user interface (GUI) of the simulator:
 
 .. image:: simiam.png
 
-Figure is a screenshot of the graphical user interface (GUI) of the simulator. The GUI can be controlled by the bottom row of buttons (or their equivalent keyboard shortcuts). The first button is the `Home` button ``[h]`` and returns you to the home screen. The second button is the `Rewind` button and resets the simulation. The third button is the `Play` button ``[p]``, which can be used to play and pause the simulation. The set of `Zoom` buttons ``[[,]]`` or the mouse scroll wheel allows you to zoom in and out to get a better view of the simulation. The set of `Pan` buttons ``[left,right,up,down]`` can be used to pan around the environment, or alternatively, Clicking, holding, and moving the mouse allows you to pan too. `Track` button ``[c]`` can be used to toggle between a fixed camera view and a view that tracks the movement of the robot. You can also simply click on a robot to follow it.
+The GUI can be controlled by the menu or the toolbar buttons (or their equivalent keyboard shortcuts). The first button is the `Open` button ``Ctrl-O`` and lets you open a world with the robots. The second button is the `Rewind` button and resets the simulation. The third button is the `Play` button, which can be used to play and pause the simulation. The speed of the simulation can be controlled with the slider to the right. The set of `Zoom` buttons allows you to zoom in and out to get a better view of the simulation.
 
 Week 1
 ======
 
-This week's exercises will help you learn about MATLAB and robot simulator:
+This week's exercises will help you learn about Python and the robot simulator:
 
+#. Since the programming exercises involve programming in Python, you should familiarize yourself with this language. Point your browser to ``http://docs.python.org/2/tutorial/`` to get an introduction to basic concepts.
 
-#. Since the programming exercises involve programming in MATLAB, you should familiarize yourself with MATLAB and its language. Point your browser to ``http://www.mathworks.com/academia/student_center/tutorials``, and watch the interactive MATLAB tutorial.
-
-#. Familiarize yourself with the simulator by reading this manual and downloading the robot simulator posted on the `Programming Exercises` section on the Coursera page.
-
+#. Familiarize yourself with the simulator by reading the section on the GUI, this manual and running the simulator with different worlds/robots.
 
 Week 2
 ======
 
-Start by downloading the robot simulator for this week from the `Programming Exercises` tab on Coursera course page. Before you can design and test controllers in the simulator, you will need to implement three components of the simulator:
+Start by downloading the robot simulator for this week from ``https://github.com/whittenjaw85/pysimiam/tree/week2``. Before you can design and test controllers in the simulator, you will need to implement three components of the Khepera3 supervisor, located in ``pysimiam/supervisors/khepera3.py``.
 
-#. Implement the transformation from unicycle dynamics to differential drive dynamics, i.e. convert from :math:`(v,\omega)` to the right and left \textbf{angular} wheel speeds :math:`(v_r,v_l)`.
+Transformation from unicycle to differential drive dynamics
+--------------------------------------------------------------------
+
+The function used by the supervisor to convert from unicycle dynamics :math:`(v,\omega)` to differential drive dynamics (left and right *angular* wheel speeds :math:`(v_\ell,v_r)`) is named ``uni2diff``::
+
+   def uni2diff(uni):
+      (v,w) = uni
+
+      #Insert Week 2 Assignment Code Here
+
+      #End Week 2 Assignment Code
+
+      return (vl, vr)
+
+This function get as its input ``uni``, a python tuple with two values. The function has to return left and right wheel speeds also as a tuple.
+
+You are given the values:
+
+- ``w`` (float) - angular velocity :math:`\omega`
+- ``v`` (float) - linear velocity :math:`v`
+- ``self.robot.wheels.radius`` (float) - :math:`R`, the radius of robot's wheels
+- ``self.robot.wheels.base_length`` (float) - :math:`L`, the distance between wheels
+
+You have to set the values:
+
+- ``vl`` (float) - angular velocity of the left wheel :math:`v_\ell`
+- ``vr`` (float) - angular velocity of the right wheel :math:`v_r`
+
+Your job is to assign values to ``vl`` and ``vr`` such that the velocity and omega unicycle input correspond to the robot's left and right wheel velocities. Please refer to section on :ref:`coursera-diffdrivedyn` for the mathematical formulae.
+
+Odometry
+--------
  
-   In the simulator, :math:`(v,\omega)` corresponds to the variables ``v`` and ``w``, while :math:`(v_r,v_l)` correspond to the variables ``vel_r`` and ``vel_l``. The function used by the controllers to convert from unicycle dynamics to differential drive dynamics is located in ``+simiam/+robot/+dynamics/DifferentialDrive.m``. The function is named ``uni_to_diff``, and inside of this function you will need to define ``vel_r`` (:math:`v_r` ) and ``vel_l`` (:math:`v_l` ) in terms of ``v``, ``w``, ``R``, and ``L``. ``R`` is the radius of a wheel, and ``L`` is the distance separating the two wheels. Make sure to refer to Section on `Differential Wheel Drive` for the dynamics.
+Implement odometry for the robot, such that as the robot moves around, its pose :math:`(x,y,\theta)` is estimated based on how far each of the wheels have turned. Assume that the robot starts at (0,0,0).
  
-#. Implement odometry for the robot, such that as the robot moves around, its pose :math:`(x,y,\theta)` is estimated based on how far each of the wheels have turned. Assume that the robot starts at (0,0,0).
+The video lectures and, for example the tutorial located at `www.orcboard.org/wiki/images/1/1c/OdometryTutorial.pdf`, cover how odometry is computed. The general idea behind odometry is to use wheel encoders to measure the distance the wheels have turned over a small period of time, and use this information to approximate the change in pose of the robot.
+
+.. note:: the video lecture may refer to robot's orientation as :math:`\phi`.
+
+The pose of the robot is composed of its position :math:`(x,y)` and its orientation :math:`\theta` on a 2 dimensional plane. The currently estimated pose is stored in the variable ``pose_est``, which bundles ``x`` (:math:`x`), ``y`` (:math:`y`), and ``theta`` (:math:`\theta`). The supervisor updates the estimate of its pose by calling the ``estimate_pose`` function. This function is called every ``dt`` seconds, where ``dt`` is 0.02 s (or a little more if the simulation is running slower)::
+
+   def estimate_pose(self):
+      
+      #Week 2 exercise 
+      # Get tick updates
+      #self.robot.wheels.left_ticks
+      #self.robot.wheels.right_ticks
+      
+      # Save the wheel encoder ticks for the next estimate
+      
+      #Get the present pose estimate
+      x, y, theta = self.pose_est          
+            
+      #Use your math to update these variables... 
+      theta_new = 0 
+      x_new = 0
+      y_new = 0
+      #end week2 exercise
+         
+      return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
+
+You are given these variables:
+
+- ``self.robot.wheels.radius`` (float) - the radius of robot's wheels
+- ``self.robot.wheels.base_length`` (float) - the distance between wheels
+- ``self.robot.wheels.ticks_per_rev`` (integer) - number of ticks registered per one full wheel revolution
+- ``self.robot.wheels.left_ticks`` (integer) - accumulated ticks on the left wheel
+- ``self.robot.wheels.right_ticks`` (integer) - accumulated ticks on the right wheel
+
+Note that ``self.robot.wheels.left_ticks`` and ``.right_ticks`` represent
+the tick numbering of the encoder and not the elapsed ticks. You will need
+to implement a memory variable to store previous values and to calculate
+the elapsed ticks. One example of how to do this might be::
+
+   self.prev_right_ticks = self.robot.wheels.right_ticks
+   self.prev_left_ticks = self.robot.wheels.left_ticks
+
+Note that ``self.prev_left_ticks`` and ``self.prev_right_ticks`` have to be initialized
+in the constructor. The code is already in place for you in the ``__init__()`` method.
+
+Your objective is to solve for the change in `x`, `y`, and `theta`
+and from those values update the variables `x_new`, `y_new`, and `theta_new`.
+The values `x_new`, `y_new`, and `theta_new` will be used to update
+the estimated pose for the supervisor. 
+
+Recall that the equations for odometry are in lecture 2 slides.
+
+Convertion from raw IR values to distances in meters
+----------------------------------------------------
+
+The IR sensors return not the distance in meters, but a `reading`. To retrieve the distances measured by the IR proximity sensor, you will need to implement a conversion from the raw IR values to distances in the ``get_ir_distances`` function::
+
+   def get_ir_distances(self):
+        """Converts the IR distance readings into a distance in meters"""
+        default_value = 3960
+        
+        #Assignment week2
+        ir_distances = [] #populate this list
+        #self.robot.ir_sensors.readings (you may want to use this)
+
+        # The following code sets all sensors to out-of-range
+        ir_distances = [1]*len(self.robot.ir_sensors.readings)
+
+        #End Assignment week2
+        return ir_distances
+
+
+You are provided with the variable:
+
+- ``self.robot.ir_sensors.readings`` (list of float) - the readings from Khepera3's IR sensors
+
+The section on :ref:`coursera-irsensors` defines a function :math:`f(\delta)` that converts from distances to raw values. Find the inverse, so that raw values in the range [18,3960] are converted to distances in the range [0.02,0.2] m. Then convert the sensor readings to distances and assign them to a list called ir_distances. 
  
-   The video lectures and, for example the tutorial located at `www.orcboard.org/wiki/images/1/1c/OdometryTutorial.pdf`, cover how odometry is computed. The general idea behind odometry is to use wheel encoders to measure the distance the wheels have turned over a small period of time, and use this information to approximate the change in pose of the robot.
-
-   .. note:: the video lecture may refer to robot's orientation as :math:`\phi`.
-
-   The pose of the robot is composed of its position :math:`(x,y)` and its orientation :math:`\theta` on a 2 dimensional plane. The currently estimated pose is stored in the variable ``state_estimate``, which bundles ``x`` (:math:`x`), ``y`` (:math:`y`), and ``theta`` (:math:`\theta`). The robot updates the estimate of its pose by calling the ``update_odometry`` function, which is located in ``+simiam/+controller/+khepera3/K3Supervisor.m``. This function is called every ``dt`` seconds, where ``dt`` is 0.01 s (or a little more if the simulation is running slower)::
-   
-        % Get wheel encoder ticks from the robot
-        right_ticks = obj.robot.encoders(1).ticks;
-        left_ticks = obj.robot.encoders(2).ticks;
-
-        % Recall the wheel encoder ticks from the last estimate
-        prev_right_ticks = obj.prev_ticks.right;
-        prev_left_ticks = obj.prev_ticks.left;
-
-        % Previous estimate 
-        [x, y, theta] = obj.state_estimate.unpack();
-
-        % Compute odometry here
-        R = obj.robot.wheel_radius;
-        L = obj.robot.wheel_base_length;
-        m_per_tick = (2*pi*R)/obj.robot.encoders(1).ticks_per_rev;
-
-   The above code is already provided so that you have all of the information needed to estimate the change in pose of the robot. ``right_ticks`` and ``left_ticks`` are the accumulated wheel encoder ticks of the right and left wheel. ``prev_right_ticks`` and ``prev_left_ticks`` are the wheel encoder ticks of the right and left wheel saved during the last call to ``update_odometry``. ``R`` is the radius of each wheel, and ``L`` is the distance separating the two wheels. ``m_per_tick`` is a constant that tells you how many meters a wheel covers with each tick of the wheel encoder. So, if you were to multiply ``m_per_tick`` by (``right_ticks``-``prev_right_ticks``), you would get the distance travelled by the right wheel since the last estimate.
-  
-   Once you have computed the change in :math:`(x,y,\theta)` (let us denote the changes as ``x_dt``, ``y_dt``, and ``theta_dt``) , you need to update the estimate of the pose::
-
-        theta_new = theta + theta_d;
-        x_new = x + x_dt;
-        y_new = y + y_dt;
- 
-#. Read the "IR Range Sensors" section in the manual and take note of the function :math:`f(\Delta)`, which maps distances (in meters) to raw IR values. Implement code that converts raw IR values to distances (in meters).
- 
-   To retrieve the distances (in meters) measured by the IR proximity sensor, you will need to implement a conversion from the raw IR values to distances in the ``get_ir_distances`` function located in ``+simiam/+robot/Khepera3.m``::
-
-        ir_distances = ir_array_values.*1;
-        % OR
-        ir_distances = zeros(1,9);
-        for i = 1:9
-            ir_distances(i) = ir_array_values(i)*1;
-        end
-
-   The variable ``ir_array_values`` is an array of the IR raw values. The section on `IR Range Sensors` defines a function :math:`f(\Delta)` that converts from distances to raw values. Find the inverse, so that raw values in the range :math:`[18,3960]` are converted to distances in the range :math:`[0.02,0.2]` m. You can either do it by applying the conversion to the whole array (and thus apply it all at once), or using a ``for`` loop to convert each raw IR value individually. Pick one and comment the other one out.
- 
-How to test it all
+Testing
 ------------------
 
-To test your code, the simulator will is set to run a single P-regulator that will steer the robot to a particular angle (denoted :math:`\theta_d` or, in code, ``theta_d``). This P-regulator is implemented in ``+simiam/+controller/`` ``GoToAngle.m``. If you want to change the linear velocity of the robot, or the angle to which it steers, edit the following two lines in ``+simiam/+controller/+khepera3/K3Supervisor.m``::
+When you have completed all these exercises, run the simulator with::
 
-  obj.theta_d = pi/4
-  obj.v = 0.1 %m/s
+> python qtsimiam.py week2.xml
 
-#. To test the transformation from unicycle to differential drive, first set ``obj.theta_d=0``. The robot should drive straight forward. Now, set ``obj.theta_d`` to positive or negative :math:`\frac{\pi}{4}`. If positive, the robot should start off by turning to its left, if negative it should start off by turning to its right. .. note:: If you haven't implemented odometry yet, the robot will just keep on turning in that direction.
+You can change the linear velocity of the robot, or the point to which it steers directly in the GUI by setting the appropriate values in the ``Robot 1: K3DefaultSupervisor`` dock on the right.
+In the beginning, your robot will not move, independently on how you set the goal.
 
-#. To test the odometry, first make sure that the transformation from unicycle to differential drive works correctly. If so, set ``obj.theta_d`` to some value, for example :math:`\frac{\pi}{4}`, and the robot's P-regulator should steer the robot to that angle. You may also want to uncomment the ``fprintf`` statement in the ``update_odometry`` function to print out the current estimate position to see if it make sense. Remember, the robot starts at :math:`(x,y,\theta)=(0,0,0)`.
+After you have implemented the unicycle to differential transformation, first set the goal to (1,0). The robot should drive straight forward. Now, set it to (1,1) or (1,-1). If the `y` coordinate of the goal is positive, the robot should start off by turning to its left, if negative it should start off by turning to its right. If you haven't implemented odometry yet, the robot will just keep on turning in that direction.
 
-#. To test the IR raw to distances conversion, edit ``+simiam/+controller/````GoToAngle.m`` and uncomment the following section::
+With the odometry and the transformation from unicycle to differential drive implemented, set the goal to some value, for example (0.5,0.5), and the robot's go-to-goal controller should steer the robot towards that goal. The supervisor will automatically draw the estimated robot trajectory using ``self.pose_est`` that you have calculated in ``estimate_pose``. You may also want to print ``self.pose_est`` in the beginning of ``estimate_pose`` to better see if it make sense. Remember, the robot starts at :math:`(x,y,\theta)=(0,0,0)`.
 
-        // for i=1:9
-        //   fprintf('IR %d: %0.3fm\n', i, ir_distances(i));
-        // end
-
-    This ``for`` loop will print out the IR distances. If there are no obstacles (for example, walls) around the robot, these values should be close (if not equal to) 0.2 m. Once the robot gets within range of a wall, these values should decrease for some of the IR sensors (depending on which ones can sense the obstacle).
-
-    .. note:: The robot will eventually collide with the wall, because we have not designed an obstacle avoidance controller yet!
+When you have implemented the IR raw to distances conversion, set the goal to a value behind the wall, e.g. (2,1). If the conversion works, the robot will not collide with the wall, but will try to avoid it. In the case the conversion doesn't work as expected, try printing the ``ir_distances`` array at the end of the ``get_ir_distances`` function and watch for errors.
 
 Week 3
 ======
 
-Start by downloading the new robot simulator for this week from the `Programming Exercises` tab on the Coursera course page. This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior:
+Start by downloading the new robot simulator for this week from GitHub. This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior:
 
 #. Calculate the heading (angle), :math:`\theta_g`, to the goal location :math:`(x_g,y_g)`. Let :math:`u` be the vector from the robot located at :math:`(x,y)` to the goal located at :math:`(x_g,y_g)`, then :math:`\theta_g` is the angle :math:`u` makes with the :math:`x`-axis (positive :math:`\theta_g` is in the counterclockwise direction).
 
@@ -327,7 +391,7 @@ Here are some tips on how to test the three parts:
   #. Once you have implemented the third part, the robot should be able to successfully navigate the world without colliding with the walls (obstacles). If no obstacles are in range of the sensors, the red line (representing :math:`u_o`) should just point forward (i.e., in the direction the robot is driving). In the presence of obstacles, the red line should point away from the obstacles in the direction of free space.
 
 
-You can also tune the parameters of the PID regulator for :math:`\omega` by editing ``obj.Kp``, ``obj.Ki``, and ``obj.Kd`` in ``AvoidObstacles.m``. The PID regulator should steer the robot in the direction of :math:`u_o`, so you should see that the blue line tracks the red line. \textbf{Note:} The red and blue lines (as well as, the black crosses) will likely deviate from their positions on the robot. The reason is that they are drawn with information derived from the odometry of the robot. The odometry of the robot accumulates error over time as the robot drives around the world. This odometric drift can be seen when information based on odometry is visualized via the lines and crosses. 
+You can also tune the parameters of the PID regulator for :math:`\omega` by editing ``obj.Kp``, ``obj.Ki``, and ``obj.Kd`` in ``AvoidObstacles.m``. The PID regulator should steer the robot in the direction of :math:`u_o`, so you should see that the blue line tracks the red line. *Note:* The red and blue lines (as well as, the black crosses) will likely deviate from their positions on the robot. The reason is that they are drawn with information derived from the odometry of the robot. The odometry of the robot accumulates error over time as the robot drives around the world. This odometric drift can be seen when information based on odometry is visualized via the lines and crosses. 
 
 How to migrate your solutions from last week
 --------------------------------------------
@@ -442,7 +506,7 @@ How to migrate your solutions from last week
 Here are a few pointers to help you migrate your own solutions from last week to this week's simulator code. You only need to pay attention to this section if you want to use your own solutions, otherwise you can use what is provided for this week and skip this section.
 
 
-#. The simulator has seen a significant amount of changes from last week to support this week's programming exercises. It is \textbf{recommended} that you do not overwrite any of the files this week with your solutions from last week.
+#. The simulator has seen a significant amount of changes from last week to support this week's programming exercises. It is *recommended* that you do not overwrite any of the files this week with your solutions from last week.
 #. However, you can selectively replace the sections delimited last week (by ``START/END CODE BLOCK``) in ``GoToGoal.m`` and ``AvoidObstacles.m``, as well as the sections that were copied from each into ``AOandGTG.m``.
 
 
