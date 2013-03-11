@@ -58,8 +58,6 @@ Your supervisor can access the IR array through the ``robot_info`` object that i
 
 The orientation (relative to the body of the K3, as shown in figure) of IR sensors 1 through 9 is 128°, 75°, 42°, 13°, -13°, -42°, -75°, -128°, and 180°, respectively.
 
-
-
 Ultrasonic Range Sensors
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The ultrasonice range sensors have a sensing range of 0.2 m to 4 m, but are not available in the simulator.
@@ -262,68 +260,92 @@ When you have implemented the IR raw to distances conversion, set the goal to a 
 Week 3
 ======
 
-Start by downloading the new robot simulator for this week from GitHub. This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior:
+Start by downloading the new robot simulator for this week from GitHub. You are encouraged to reuse your code from week2, but in case you don't want to reuse your code from week2, we placed a default uni2diff and get_ir_distances function within the ``./supervisors/khepera3.py`` module.
 
-#. Calculate the heading (angle), :math:`\theta_g`, to the goal location :math:`(x_g,y_g)`. Let :math:`u` be the vector from the robot located at :math:`(x,y)` to the goal located at :math:`(x_g,y_g)`, then :math:`\theta_g` is the angle :math:`u` makes with the :math:`x`-axis (positive :math:`\theta_g` is in the counterclockwise direction).
+This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior. The controller that has to implement this behaviour is located at ``pysimiam/controllers/gotogoal.py``. The important functions to implement are the `__init__` and `execute` function::
 
-   All parts of the PID regulator will be implemented in the file ``+simiam/+controller/GoToGoal.m``. Take note that each of the three parts is commented to help you figure out where to code each part. The vector :math:`u` can be expressed in terms of its :math:`x`-component, :math:`u_x`, and its :math:`y`-component, :math:`u_y`. :math:`u_x` should be assigned to ``u_x`` and :math:`u_y` to ``u_y`` in the code. Use these two components and the ``atan2`` function to compute the angle to the goal, :math:`\theta_g` (``theta_g`` in the code).
+   def __init__(self, params):
+      """init
+      @params: 
 
+      """
+      Controller.__init__(self,params)
+      #Week 3
+      #Place any variables you would like to store here
+      #You may use these variables for convenience
+      self.E = 0 # Integrated error
+      self.e_1 = 0 # Previous error calculation
 
-#. Calculate the error between :math:`\theta_g` and the current heading of the robot, :math:`\theta`.
+      #End week3
+
+   def execute(self,state,dt):
+      """Executes the controller behavior
+      @return --> unicycle model list [velocity, omega]
+      """
+      #Week 3
+      # Here is an example of how to get goal position
+      # and robot pose data. Feel free to name them differently.
+
+      #x_g, y_g = state.goal.x, state.goal.y
+      #x_r, y_r, theta = state.pose
+
+      #Your goal is to modify these two variables
+      w = 0
+      v = 0 
+      #End week3 exercise
+      return [v, w] 
+
+In the `__init__` function, the controller variables are initialized with the default values. It is called once at the creation of the controller. The `execute` function is called every time the supervisor uses the go-to-goal behaviour. The following variables are available inside `execute`:
+
+- ``state.goal.x`` (float) - The X coordinate of the goal
+- ``state.goal.y`` (float) - The Y coordinate of the goal
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the robot, which is usually the maximum available.
+
+To extract the pose data, you can use a command like this::
+
+   (x, y, theta) = state.pose
+
+First, calculate the heading (angle), :math:`\theta_g`, to the goal location :math:`(x_g,y_g)`. Let :math:`u` be the vector from the robot located at :math:`(x,y)` to the goal located at :math:`(x_g,y_g)`, then :math:`\theta_g` is the angle :math:`u` makes with the :math:`x`-axis (positive :math:`\theta_g` is in the counterclockwise direction).
+
+The vector :math:`u` can be expressed in terms of its :math:`x`-component, :math:`u_x`, and its :math:`y`-component, :math:`u_y`. :math:`u_x` should be assigned to ``u_x`` and :math:`u_y` to ``u_y`` in the code. Use these two components and the ``atan2`` function to compute the angle to the goal, :math:`\theta_g` (``theta_g`` in the code).
+
+Second, calculate the error between :math:`\theta_g` and the current heading of the robot, :math:`\theta`.
  
-   The error ``e_k`` should represent the error between the heading to the goal ``theta_g`` and the current heading of the robot ``theta``. Make sure to use ``atan2`` and/or other functions to keep the error between :math:`[-\pi,\pi]`.
+The error ``e_k`` should represent the error between the heading to the goal ``theta_g`` and the current heading of the robot ``theta``. Make sure to use ``atan2`` and/or other functions to keep the error between :math:`[-\pi,\pi]`.
  
-#. Calculate the proportional, integral, and derivative terms for the PID regulator that steers the robot to the goal.
+Third, calculate the proportional, integral, and derivative terms for the PID regulator that steers the robot to the goal.
  
-   As before, the robot will drive at a constant linear velocity ``v``, but it is up to the PID regulator to steer the robot to the goal, i.e compute the correct angular velocity ``w``. The PID regulator needs three parts implemented:
+As before, the robot will drive at a constant linear velocity ``v``, but it is up to the PID regulator to steer the robot to the goal, i.e compute the correct angular velocity ``w``. The PID regulator needs three parts implemented:
  
-    #. The first part is the proportional term ``e_P``. It is simply the current error ``e_k``. ``e_P`` is multiplied by the proportional gain ``obj.Kp`` when computing ``w``.
+    #. The first part is the proportional term ``e_P``. It is simply the current error ``e_k``. ``e_P`` is multiplied by the proportional gain ``self.kp`` when computing ``w``.
 
-    #. The second part is the integral term ``e_I``. The integral needs to be approximated in discrete time using the total accumulated error ``obj.E_k``, the current error ``e_k``, and the time step ``dt``. ``e_I`` is multiplied by the integral gain ``obj.Ki`` when computing ``w``, and is also saved as ``obj.E_k`` for the next time step.
+    #. The second part is the integral term ``e_I``. The integral needs to be approximated in discrete time using the total accumulated error ``self.E_k``, the current error ``e_k``, and the time step ``dt``. ``e_I`` is multiplied by the integral gain ``self.ki`` when computing ``w``, and is also saved as ``self.E_k`` for the next time step.
 
-    #. The third part is the derivative term ``e_D``. The derivative needs to be approximated in discrete time using the current error ``e_k``, the previous error ``obj.e_k_1``, and the the time step ``dt``. ``e_D`` is multiplied by the derivative gain ``obj.Kd`` when computing ``w``, and the current error ``e_k`` is saved as the previous error ``obj.e_k_1`` for the next time step.
+    #. The third part is the derivative term ``e_D``. The derivative needs to be approximated in discrete time using the current error ``e_k``, the previous error ``self.e_k_1``, and the the time step ``dt``. ``e_D`` is multiplied by the derivative gain ``self.kd`` when computing ``w``, and the current error ``e_k`` is saved as the previous error ``self.e_k_1`` for the next time step.
   
 
-How to test it all
-------------------
+Testing
+-------
 
-To test your code, the simulator is set up to use the PID regulator in ``GoToGoal.m`` to drive the robot to a goal location and stop. If you want to change the linear velocity of the robot, the goal location, or the distance from the goal the robot will stop, then edit the following three lines in ``+simiam/+controller/`` ``+khepera3/K3Supervisor.m``::
-
-    obj.goal = [-1,0.5];
-    obj.v = 0.1;
-    obj.d_stop = 0.02;
+To test your code, the simulator is set up to use the PID regulator in ``gotogoal.py`` to drive the robot to a goal location and stop. You can change the linear velocity of the robot and the goal location using the dock window on the right.
 
 Make sure the goal is located inside the walls, i.e. the :math:`x` and :math:`y` coordinates of the goal should be in the range :math:`[-1,1]`. Otherwise the robot will crash into a wall on its way to the goal!
 
+#. To test the heading to the goal, set the goal location to (1,1). ``theta_g`` should be approximately :math:`\frac{\pi}{4} \approx 0.785` initially, and as the robot moves forward (since :math:`v=0.1` and :math:`\omega=0`) ``theta_g`` should increase. Check it using a ``print`` statement.
 
-#. To test the heading to the goal, set the goal location to ``obj.goal = [1,1]``. ``theta_g`` should be approximately :math:`\frac{\pi}{4} \approx 0.785` initially, and as the robot moves forward (since :math:`v=0.1` and :math:`\omega=0`) ``theta_g`` should increase. Check it using a ``fprintf`` statment or the plot that pops up. ``theta_g`` corresponds to the red dashed line (i.e., it is the reference signal for the PID regulator).
-
-#. Test this part with the implementation of the third part.
-
-#. To test the third part, run the simulator and check if the robot drives to the goal location and stops. In the plot, the blue solid line (``theta``) should match up with the red dashed line (``theta_g``). You may also use ``fprintf`` statements to verify that the robot stops within ``obj.d_stop`` meters of the goal location.
-
-
-How to migrate your solutions from last week.
----------------------------------------------
-
-Here are a few pointers to help you migrate your own solutions from last week to this week's simulator code. You only need to pay attention to this section if you want to use your own solutions, otherwise you can use what is provided for this week and skip this section.
-
-
-#. You may overwrite ``+simiam/+robot/+dynamics/DifferentialDrive.m`` with your own version from last week.
-
-#. You may overwrite ``+simiam/+robot/Khepera3.m`` with your own version from last week.
-
-#. You should not overwrite ``+simiam/+controller/+khepera3/K3Supervisor.m``! However, to use your own solution to the odometry, you can replace the provided ``update_odometry`` function in ``K3Supervisor.m`` with your own version from last week.
+#. To test the error calculation and the PID math, run the simulator and check if the robot drives to the goal location and stops. The trajectory of the robot can be shown using the `View > Show/hide robot trajectories` menu.
 
 Week 4
 ======
 
-Start by downloading the new robot simulator for this week from the `Programming Exercises` tab on the Coursera course page. This week you will be implementing the different parts of a controller that steers the robot successfully away from obstacles to avoid a collision. This is known as the avoid-obstacles behavior. The IR sensors allow us to measure the distance to obstacles in the environment, but we need to compute the points in the world to which these distances correspond.
+Start by downloading the new robot simulator for this week from GitHub. You should also familiarize youself with the Numpy scientific library, specifically with the ``array`` object and with the ``dot(a,b)`` function implementing the dot product (`http://docs.scipy.org/doc/numpy/`).
+
+This week you will be implementing the different parts of a controller that steers the robot successfully away from obstacles to avoid a collision. This is known as the avoid-obstacles behavior. The IR sensors allow us to measure the distance to obstacles in the environment, but we need to compute the points in the world to which these distances correspond.
 
 .. image:: week-4-ir-points.png
 
 The figure illustrates these points with a black cross. The strategy for obstacle avoidance that we will use is as follows:
-
 
 #. Transform the IR distances to points in the world.
 
@@ -335,12 +357,19 @@ The figure illustrates these points with a black cross. The strategy for obstacl
 
 #. Use this vector to compute a heading and steer the robot to this angle.
 
-This strategy will steer the robot in a direction with the most free space (i.e., it is a direction `away` from obstacles). For this strategy to work, you will need to implement three crucial parts of the strategy for the obstacle avoidance behavior:
+This strategy will steer the robot in a direction with the most free space (i.e., it is a direction `away` from obstacles). For this strategy to work, you will need to implement three crucial parts of the strategy for the obstacle avoidance behavior in ``controllers/avoidobstacles.py`` using the following information:
 
+- ``self.poses`` (list of :class:`~pose.Pose`) - The positions and orientations of IR sensors in the reference frame of the robot
+- ``self.kp``, ``self.ki`` and ``self.kd`` - The PID gains of this controller
+- ``state.sensor_distances`` (float) - The IR distances measured by each sensor
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the simulation, which is usually the maximum available.
+
+Those are the three parts:
 
 #. Transform the IR distance (which you converted from the raw IR values in Week 2) measured by each sensor to a point in the reference frame of the robot.
   
-   A point :math:`p_i` that is measured to be :math:`d_i` meters away by sensor :math:`i` can be written as the vector (coordinate) :math:`v_i=\begin{bmatrix}d_i \\ 0\end{bmatrix}` in the reference frame of sensor :math:`i`. We first need to transform this point to be in the reference frame of the robot. To do this transformation, we need to use the pose (location and orientation) of the sensor in the reference frame of the robot: :math:`(x_{s_i},y_{s_i},\theta_{s_i})` or in code, ``(x_s,y_s,theta_s)``. The transformation is defined as:
+   A point :math:`p_i` that is measured to be :math:`d_i` meters away by sensor :math:`i` can be written as the vector (coordinate) :math:`v_i=\begin{bmatrix}d_i \\ 0\end{bmatrix}` in the reference frame of sensor :math:`i`. We first need to transform this point to be in the reference frame of the robot. To do this transformation, we need to use the pose (location and orientation) of the sensor in the reference frame of the robot: :math:`(x_{s_i},y_{s_i},\theta_{s_i})`. The transformation is defined as:
     
    .. math::
        v'_i = R(x_{s_i},y_{s_i},\theta_{s_i})\begin{bmatrix}v_i \\ 1\end{bmatrix}
@@ -350,12 +379,11 @@ This strategy will steer the robot in a direction with the most free space (i.e.
    .. math::
        R(x,y,\theta) = \begin{bmatrix}\cos(\theta) & -\sin(\theta) & x \\ 
                                     \sin(\theta) &  \cos(\theta) & y \\
-                                                0 &            0 & 1\end{bmatrix},
+                                                0 &            0 & 1\end{bmatrix}.
 
-   which you need to implement in the function ``obj.get_transformation_matrix``.
-    
-   In ``+simiam/+controller/+AvoidObstacles.m``, implement the transformation in the ``apply_sensor`` ``_geometry`` function. The objective is to store the transformed points in ``ir_distances_sf``, such that this matrix has :math:`v'_1` as its first column, :math:`v'_2` as its second column, and so on.
-  
+   This matrix for a particular sensor can be obtained by calling the method ``get_transformation`` on the sensor's pose. To construct the coordinates of
+   the point in the sensor reference frame, use the ``numpy.array`` constructor.
+      
 #. Transform the point in the robot's reference frame to the world's reference frame.
   
    A second transformation is needed to determine where a point :math:`p_i` is located in the world that is measured by sensor :math:`i`. We need to use the pose of the robot, :math:`(x,y,\theta)`, to transform the robot from the robot's reference frame to the world's reference frame. This transformation is defined as:
@@ -363,24 +391,25 @@ This strategy will steer the robot in a direction with the most free space (i.e.
    .. math::
        v''_i = R(x,y,\theta)v'_i
     
-   In ``+simiam/+controller/+AvoidObstacles.m``, implement this transformation in the ``apply_sensor`` ``_geometry`` function. The objective is to store the transformed points in ``ir_distances_rf``, such that this matrix has :math:`v''_1` as its first column, :math:`v''_2` as its second column, and so on. This matrix now contains the coordinates of the points illustrated in Figure \ref{fig:week4irpoints} by the black crosses. Note how these points `approximately` correspond to the distances measured by each sensor (Note: `approximately`, because of how we converted from raw IR values to meters in Week 2).
+   Implement this transformation in the ``apply_sensor`` ``_geometry`` function. The objective is to store the transformed points in ``ir_distances_rf``, such that this matrix has :math:`v''_1` as its first column, :math:`v''_2` as its second column, and so on. This matrix now contains the coordinates of the points illustrated in Figure \ref{fig:week4irpoints} by the black crosses. Note how these points `approximately` correspond to the distances measured by each sensor (Note: `approximately`, because of how we converted from raw IR values to meters in Week 2).
   
 #. Use the set of transformed points to compute a vector that points away from the obstacle. The robot will steer in the direction of this vector and successfully avoid the obstacle.
   
   In the function ``execute`` implement parts 2.-4. of the obstacle avoidance strategy.
 
-    #. Compute a vector :math:`u_i` to each point (corresponding to a particular sensor) from the robot. Use a point's coordinate from ``ir_distances_rf`` and the robot's location (``x``,``y``) for this computation.
-    #. Pick a weight :math:`\alpha_i` for each vector according to how important you think a particular sensor is for obstacle avoidance. For example, if you were to multiply the vector from the robot to point :math:`i` (corresponding to sensor :math:`i`) by a small value (e.g., :math:`0.1`), then sensor :math:`i` will not impact obstacle avoidance significantly. Set the weights in ``sensor_gains``. .. note:: Make sure to that the weights are symmetric with respect to the left and right sides of the robot. Without any obstacles around, the robot should not steer left or right.
+    #. Compute a vector :math:`u_i` to each point (corresponding to a particular sensor) from the robot. Use a point's coordinate from ``ir_distances_rf`` and the robot's location ( ``x``, ``y`` ) for this computation.
+    #. Pick a weight :math:`\alpha_i` for each vector according to how important you think a particular sensor is for obstacle avoidance. For example, if you were to multiply the vector from the robot to point :math:`i` (corresponding to sensor :math:`i`) by a small value (e.g., :math:`0.1`), then sensor :math:`i` will not impact obstacle avoidance significantly. Set the weights in ``sensor_gains``.
+    .. note:: Make sure to that the weights are symmetric with respect to the left and right sides of the robot. Without any obstacles around, the robot should not steer left or right.
     #. Sum up the weighted vectors, :math:`\alpha_iu_i`, into a single vector :math:`u_o`.
-    #. Use :math:`u_o` and the pose of the robot to compute a heading that steers the robot away from obstacles (i.e., in a direction with free space, because the vectors that correspond to directions with large IR distances will contribute the most to :math:`u_o`).    
+    #. Use :math:`u_o` and the pose of the robot to compute a heading that steers the robot away from obstacles (i.e., in a direction with free space, because the vectors that correspond to directions with large IR distances will contribute the most to :math:`u_o`).
+    #. Use your code from the go-to-goal controller to calculate the necessary velocities    in the unicycle model.
    
-
-How to test it all
-------------------
+Testing
+-------
 
 To test your code, the simulator is set up to use load the ``AvoidObstacles.m`` controller to drive the robot around the environment without colliding with any of the walls. If you want to change the linear velocity of the robot, then edit the following line in ``+simiam/+controller/`` ``+khepera3/K3Supervisor.m``::
 
-    obj.v = 0.1;
+    self.v = 0.1;
 
 Here are some tips on how to test the three parts:
 
@@ -391,7 +420,7 @@ Here are some tips on how to test the three parts:
   #. Once you have implemented the third part, the robot should be able to successfully navigate the world without colliding with the walls (obstacles). If no obstacles are in range of the sensors, the red line (representing :math:`u_o`) should just point forward (i.e., in the direction the robot is driving). In the presence of obstacles, the red line should point away from the obstacles in the direction of free space.
 
 
-You can also tune the parameters of the PID regulator for :math:`\omega` by editing ``obj.Kp``, ``obj.Ki``, and ``obj.Kd`` in ``AvoidObstacles.m``. The PID regulator should steer the robot in the direction of :math:`u_o`, so you should see that the blue line tracks the red line. *Note:* The red and blue lines (as well as, the black crosses) will likely deviate from their positions on the robot. The reason is that they are drawn with information derived from the odometry of the robot. The odometry of the robot accumulates error over time as the robot drives around the world. This odometric drift can be seen when information based on odometry is visualized via the lines and crosses. 
+You can also tune the parameters of the PID regulator for :math:`\omega` by editing ``self.Kp``, ``self.Ki``, and ``self.Kd`` in ``AvoidObstacles.m``. The PID regulator should steer the robot in the direction of :math:`u_o`, so you should see that the blue line tracks the red line. *Note:* The red and blue lines (as well as, the black crosses) will likely deviate from their positions on the robot. The reason is that they are drawn with information derived from the odometry of the robot. The odometry of the robot accumulates error over time as the robot drives around the world. This odometric drift can be seen when information based on odometry is visualized via the lines and crosses. 
 
 How to migrate your solutions from last week
 --------------------------------------------
@@ -442,14 +471,14 @@ Start by downloading the new robot simulator for this week from the `Programming
     
    The tools that you should will need to implement the switching logic:
 
-   #. Four events can be checked with the ``obj.check_event(name)`` function, where ``name`` is the name of the state:
+   #. Four events can be checked with the ``self.check_event(name)`` function, where ``name`` is the name of the state:
 
-      * ```at_obstacle'`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than ``obj.d_at_obs``. Return ``true`` if this is the case, ``false`` otherwise.
-      * ```at_goal'`` checks to see if the robot is within ``obj.d_stop`` meters of the goal location.
-      * ```unsafe'`` checks to see if any of the front sensors detect an obstacle at a distance less than ``obj.d_unsafe``.
-      * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than ``obj.d_at_obs`` meters.
+      * ```at_obstacle'`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than ``self.d_at_obs``. Return ``true`` if this is the case, ``false`` otherwise.
+      * ```at_goal'`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
+      * ```unsafe'`` checks to see if any of the front sensors detect an obstacle at a distance less than ``self.d_unsafe``.
+      * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than ``self.d_at_obs`` meters.
 
-   #. The ``obj.switch_state(name)`` function switches between the states/controllers. There currently are four possible values that ``name`` can be:
+   #. The ``self.switch_state(name)`` function switches between the states/controllers. There currently are four possible values that ``name`` can be:
 
       * ```go_to_goal'`` for the go-to-goal controller.
       * ```avoid_obstacles'`` for the avoid-obstacles controller.
@@ -471,7 +500,7 @@ Start by downloading the new robot simulator for this week from the `Programming
 How to test it all
 ------------------
 
-To test your code, the simulator is set up to either use the blending arbitration mechanism or the switching arbitration mechanism. If ``obj.is_blending`` is ``true``, then blending is used, otherwise switching is used. 
+To test your code, the simulator is set up to either use the blending arbitration mechanism or the switching arbitration mechanism. If ``self.is_blending`` is ``true``, then blending is used, otherwise switching is used. 
 
 Here are some tips to the test the four parts:
 
@@ -482,11 +511,11 @@ Here are some tips to the test the four parts:
 
    It is located with the code for the blending, which you will test in the next part. Watch ``(v,w)`` to make sure that when one increases, the other decreases.
 
-#. Test the second part by setting ``obj.is_blending`` to ``true``. The robot should successfully navigate to the goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop (you can adjust the stopping distance with ``obj.d_stop``). The output plot will likely look something similar to:
+#. Test the second part by setting ``self.is_blending`` to ``true``. The robot should successfully navigate to the goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop (you can adjust the stopping distance with ``self.d_stop``). The output plot will likely look something similar to:
 
    .. image:: week-5-part-2.png
 
-#. Test the third part by setting ``obj.is_blending`` to ``false``. The robot should successfully navigate to the same goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
+#. Test the third part by setting ``self.is_blending`` to ``false``. The robot should successfully navigate to the same goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
 
    .. image:: week-5-part-3.png
     
@@ -496,7 +525,7 @@ Here are some tips to the test the four parts:
 
    .. figure:: week-5-part-4.png
     
-   Notice that the controller still switches, but less often than before. Also, it now switches to the blended controller (cyan line). Depending on how you set ``obj.d_unsafe`` and ``obj.d_at_obs``, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
+   Notice that the controller still switches, but less often than before. Also, it now switches to the blended controller (cyan line). Depending on how you set ``self.d_unsafe`` and ``self.d_at_obs``, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
    
 
 
@@ -584,7 +613,7 @@ The robot is set up near the obstacle, so that it can start following it immedia
     
     .. note:: Recall that we are computing :math:`u_{fw,p}` (the blue line) as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` (the red line) were infinitely long. In the figure above, the red line is not drawn infinitely long, so the blue line does not touch the red line in this situation. However, if we were to extend the red line, we would see that the blue line correctly points to the closest point on the red line to the robot.
     
-    #. Set ``obj.d_fw`` to some distance in :math:`[0.02,0.2]` m. The robot should follow the wall at approximately the distance specified by ``obj.d_fw``. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).
+    #. Set ``self.d_fw`` to some distance in :math:`[0.02,0.2]` m. The robot should follow the wall at approximately the distance specified by ``self.d_fw``. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).
     
 
 
@@ -632,7 +661,7 @@ Start by downloading the new robot simulator for this week from the `Programming
       #. If in state ``follow_wall``, check whether ``progress_made`` and the robot does not need to slide ``slide_left`` (or ``slide_right`` depending on ``inputs.direction``). If so, switch to state ``go_to_goal``, otherwise keep following wall.
    
    
-   You can check an event using ``obj.check_event(`name-of-event')`` and switch to a different state using ``obj.switch_to_state(`name-of-state')``.
+   You can check an event using ``self.check_event(`name-of-event')`` and switch to a different state using ``self.switch_to_state(`name-of-state')``.
 
 
 How to test it all

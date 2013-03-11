@@ -13,6 +13,7 @@ class AvoidObstacles(Controller):
         Controller.__init__(self,params)
         self.clear_error()
         self.away_angle = 0
+        self.vectors = []
 
     def clear_error(self):
         self.E = 0
@@ -26,54 +27,32 @@ class AvoidObstacles(Controller):
         self.ki = params.gains.ki
         self.kd = params.gains.kd
 
-        self.angles = params.sensor_angles
-        #self.weights = [1]*len(self.angles)
-        self.weights = [(math.cos(a)+1.5) for a in self.angles]
-        
-    #User-defined function
-    def calculate_new_goal(self, distances):
-        """Determines a new goal for the robot based on which sensors are active"""
-        
-        angle = 0.0
-        weightdist = 0.0
-        
-        maxdist = max(distances)
-        mindist = min(distances)
-        
-        # Determine the angle with most obstacles
-        
-        if maxdist == mindist: # go forward
-            angle = math.pi
-        else:
-            for s_angle, s_dist, s_weight in \
-                zip(self.angles, distances, self.weights):
-                
-                angle += s_angle*(maxdist - s_dist)*s_weight
-                weightdist += (maxdist - s_dist)*s_weight
-                
-            #angle /= maxdist - mindist
-            angle /= weightdist
+        self.poses = params.sensor_poses
+        self.weights = [1.0]*len(self.poses)
+        #self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+        ws = sum(self.weights)
+        self.weights = [w/ws for w in self.weights]
 
-        self.away_angle = angle + math.pi
-
-        # We have to escape, rotate by pi
-        angle += self.robottheta + math.pi
-
-        #angle = angle/weightdist #average angle to the clear
-
-        return (angle+math.pi)%(2*math.pi) - math.pi
-
-    def calculate_new_velocity(self, distances, vmax):
-        """Adjusts robot velocity based on distance to object"""
-        mindist = min(distances)
-        maxdist = max(distances)
+    def calculate(self, state):
+        # Calculate vectors:
+        self.vectors = \
+            numpy.array(
+                [numpy.dot(
+                    p.get_transformation(),
+                    numpy.array([d,0,1])
+                    )
+                     for d, p in zip(state.sensor_distances, self.poses) ] )
         
-        # We want the robot to slow down as it approaches the obstacles
-        # So, if mindist is real close to zero, the velocity should be
-        # minimal, and if mindist is at maxdist, it can be maximal
-        vel = math.sqrt(mindist/maxdist)*vmax
-        return vel 
-
+        # Calculate weighted sum:
+        heading = \
+            numpy.dot( \
+                numpy.dot(state.pose.get_transformation(),self.vectors.transpose()),
+                self.weights)
+     
+        rx, ry, rt = state.pose
+        theta = math.atan2(heading[1]-ry,heading[0]-rx)
+        self.away_angle = theta - rt
+    
     def execute(self, state, dt):
         """Executes avoidance behavior based on state and dt. 
         state --> supevisor set ui_params
@@ -81,15 +60,12 @@ class AvoidObstacles(Controller):
         dt --> supervisor set timestep
 
         return --> unicycle model list [velocity, omega]"""
-        self.robotx, self.roboty, self.robottheta = state.pose
-
-        #Non-global goal
-        theta = self.calculate_new_goal(state.sensor_distances) #user defined function
-        v_ = self.calculate_new_velocity(state.sensor_distances,
-                                         state.velocity.v) #user defined function
+     
+        self.calculate(state)
+        v_ = state.velocity.v
 
         #1. Calculate simple proportional error
-        error = theta - self.robottheta
+        error = self.away_angle
 
         #2. Correct for angles (angle may be greater than PI)
         error = math.atan2(math.sin(error), math.cos(error))

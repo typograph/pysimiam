@@ -79,12 +79,11 @@ The UI may use the get_parameters function interface to create docker windows fo
             
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
-        default_value = 3960
         #Assignment week2
         ir_distances = [] #populate this list
         #self.robot.ir_sensors.readings | (may want to use this)
         for reading in self.robot.ir_sensors.readings:
-            val = max( min( (log1p(3960) - log1p(reading))/30 + 0.02 , 3960) , 0.02)
+            val = max( min( (log1p(3960) - log1p(reading))/30 + self.robot.ir_sensors.rmin , self.robot.ir_sensors.rmax) , self.robot.ir_sensors.rmin)
             ir_distances.append(val) 
 
         #End Assignment week2

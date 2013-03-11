@@ -9,7 +9,7 @@ class K3DefaultSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
-        self.ui_params.sensor_angles = [pose.theta for pose in robot_info.ir_sensors.poses]
+        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
         self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params)
         self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
         self.hold = self.add_controller('hold.Hold', None)
@@ -45,13 +45,20 @@ class K3DefaultSupervisor(K3Supervisor):
                    self.current = self.avoidobstacles
                    self.avoidobstacles.clear_error()
 
+        self.avoidobstacles.calculate(self.ui_params)
         return self.ui_params
     
     def draw(self, renderer):
         K3Supervisor.draw(self,renderer)
         renderer.set_pose(self.pose_est)
-        renderer.set_pen(self.robot_color)
+        renderer.set_pen(0xFF0000)
         arrow_length = self.robot_size*5
         renderer.draw_arrow(0,0,
             arrow_length*cos(self.avoidobstacles.away_angle),
             arrow_length*sin(self.avoidobstacles.away_angle))
+            
+        renderer.set_pen(0)
+        for v in self.avoidobstacles.vectors:
+            x,y,z = v
+            renderer.draw_arrow(0,0,x,y)
+            
