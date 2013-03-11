@@ -24,10 +24,10 @@ class K3BlendingSupervisor(K3Supervisor):
         self.robot = robot_info
         self.pose_est = self.estimate_pose()
 
-        # Check if we are in place
+        # Ensure that the robot is not over the goal
         distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
         if distance_from_goal < self.robot.wheels.base_length/2:
-            return (0,0)
+            return (0,0) #stop robot condition
 
         # Fill parameters for the controllers
         self.ui_params.pose = self.pose_est
