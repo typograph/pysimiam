@@ -17,7 +17,10 @@ class Supervisor:
         Any extension of pysimiam will require inheriting from this superclass.
         The important methods that have to be implemented to control a robot are
         :meth:`~Supervisor.estimate_pose`, :meth:`~Supervisor.process`,
-        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`
+        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`.
+        
+        The base class implements a state machine for switching between different
+        controllers. See :meth:`add_controller` for more information.
 
         .. attribute:: initial_pose 
             
@@ -71,6 +74,9 @@ class Supervisor:
         self.current = None
         self.robot = None
         self.robot_color = robot_info.color
+        
+        # Dict controller -> (function, controller)
+        self.states = {}
 
     def get_parameters(self):
         """Get the parameter structure of the supervisor.
@@ -132,7 +138,7 @@ class Supervisor:
         """
         self.ui_params = params
 
-    def add_controller(self, module_string, parameters):
+    def get_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.
 
         :param module_string: a string specifying a class in a module.
@@ -144,6 +150,18 @@ class Supervisor:
         """
         controller_class = helpers.load_by_name(module_string, 'controllers')
         return controller_class(parameters)
+    
+    def add_controller(self,controller,*args):
+        """Add a transition table for a state with controller
+        
+           The arguments are (function, controller) tuples.
+           The functions cannot take any arguments.
+           Each step, the functions are executed in the order
+           they were supplied to this function. If a function
+           evaluates to True, the current controller switches to the
+           one specified with this function.
+        """
+        self.states[controller] = args
 
     def execute(self, robot_info, dt):
         """Based on robot state and elapsed time, return the parameters
@@ -160,13 +178,22 @@ class Supervisor:
         
         #. Store robot information in :attr:`~Supervisor.robot`
         #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`
-        #. Set controller and get controller parameters from :meth:`~Supervisor.process`
+        #. Calculate state variables and get controller parameters from :meth:`~Supervisor.process`
+        #. Check if the controller has to be switched
         #. Execute currently selected controller with the parameters from previous step
         #. Return unicycle model parameters as an output (velocity, omega)
         """
         self.robot = robot_info
         self.pose_est = self.estimate_pose()
         params = self.process() #User-defined algorithm
+        
+        # Switch:
+        for f, c in self.states[self.current]:
+            if f():
+                c.restart()
+                self.current = c
+                break
+        
         output = self.current.execute(params,dt) #execute the current controller
         return output
 
@@ -181,7 +208,7 @@ class Supervisor:
         pass
 
     def process(self):
-        """Evaluate the information about the robot and select a controller.
+        """Evaluate the information about the robot and set state variables.
         
         :return: A parameter structure in the format appropriate for the current controller.
         :rtype: :class:`~helpers.Struct`

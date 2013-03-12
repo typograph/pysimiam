@@ -10,9 +10,18 @@ class K3DefaultSupervisor(K3Supervisor):
 
         #Add controllers ( go to goal is default)
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params)
-        self.hold = self.add_controller('hold.Hold', None)
+        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.ui_params)
+        self.gtg = self.get_controller('gotogoal.GoToGoal', self.ui_params)
+        self.hold = self.get_controller('hold.Hold', None)
+
+        self.add_controller(self.hold)
+        self.add_controller(self.gtg,
+                            (self.at_goal, self.hold),
+                            (self.at_obstacle, self.avoidobstacles))
+        self.add_controller(self.avoidobstacles,
+                            (self.at_goal, self.hold),
+                            (self.free, self.gtg),
+                            )
 
         self.current = self.gtg
 
@@ -21,36 +30,28 @@ class K3DefaultSupervisor(K3Supervisor):
         self.gtg.set_parameters(self.ui_params)
         self.avoidobstacles.set_parameters(self.ui_params)
 
+    def at_goal(self):
+        return self.distance_from_goal < self.robot.wheels.base_length/2
+        
+    def at_obstacle(self):
+        return self.distmin < self.robot.ir_sensors.rmax/2
+        
+    def free(self):
+        return self.distmin > self.robot.ir_sensors.rmax/1.5
+
     def process(self):
         """Selects the best controller based on ir sensor readings
         Updates ui_params.pose and ui_params.ir_readings"""
 
         self.ui_params.pose = self.pose_est
-
-        distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
-        if distance_from_goal < self.robot.wheels.base_length/2:
-            if not self.current == self.hold:
-                print "GOAL"
-                self.current = self.hold
-        else:
-            self.ui_params.sensor_distances = self.get_ir_distances()
-            distmin = min(self.ui_params.sensor_distances)
-            if not self.current == self.gtg:
-               if distmin > self.robot.ir_sensors.rmax/1.5:
-                   print "GTG"
-                   self.current = self.gtg
-                   self.gtg.clear_error()
-            elif not self.current == self.avoidobstacles:
-               if distmin < self.robot.ir_sensors.rmax/2:
-                   print "AVOID"
-                   self.current = self.avoidobstacles
-                   self.avoidobstacles.clear_error()
-
+        self.ui_params.sensor_distances = self.get_ir_distances()
+        
+        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        self.distmin = min(self.ui_params.sensor_distances)
+        
         # Ensure the headings are calculated
-        if self.current != self.avoidobstacles:
-            self.avoidobstacles.get_heading(self.ui_params)
-        if self.current != self.gtg:
-            self.gtg.get_heading(self.ui_params)
+        self.avoidobstacles.get_heading(self.ui_params)
+        self.gtg.get_heading(self.ui_params)
 
         return self.ui_params
     

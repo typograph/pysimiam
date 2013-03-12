@@ -12,8 +12,8 @@ class K3BlendingSupervisor(K3Supervisor):
 
         #Add controllers ( go to goal is default)
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.add_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.add_controller('gotogoal.GoToGoal', self.ui_params.gains)
+        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.ui_params)
+        self.gtg = self.get_controller('gotogoal.GoToGoal', self.ui_params)
 
         self.current = self.gtg
         self.old_omega = 0

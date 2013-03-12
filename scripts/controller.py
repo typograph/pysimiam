@@ -19,6 +19,7 @@ class Controller():
         :type params: :class:`~helpers.Struct`
         """
         self.set_parameters(params)
+        self.restart()
     
     def execute(self, state, dt):
         """Given a state and elapsed time, calculate and return robot motion parameters
@@ -40,3 +41,7 @@ class Controller():
         To be implemented in subclasses,
         """
         raise NotImplementedError("Controller.set_parameters")
+    
+    def restart(self):
+        """Reset the controller to the initial state."""
+        pass

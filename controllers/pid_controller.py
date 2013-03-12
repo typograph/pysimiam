@@ -12,9 +12,7 @@ class PIDController(Controller):
         '''read another .xml for PID parameters?'''
         Controller.__init__(self,params)
 
-        self.clear_error()
-
-    def clear_error(self):
+    def restart(self):
         self.E = 0
         self.error_1 = 0
 
@@ -53,8 +51,6 @@ class PIDController(Controller):
      
         heading = self.get_heading(state)
         
-        v_ = state.velocity.v*math.sqrt(heading[0]**2 + heading[1]**2)
-
         #1. Calculate simple proportional error
         error = math.atan2(heading[1],heading[0])
 
@@ -68,6 +64,8 @@ class PIDController(Controller):
 
         #4. Calculate desired omega
         w_ = self.kp*error + self.ki*self.E + self.kd*dE
+        
+        v_ = state.velocity.v*math.exp(-abs(w_)/16)
 
         #6. Return solution
         return [v_, w_]
