@@ -16,8 +16,10 @@ class AvoidObstacles(PIDController):
         self.vectors = []
 
     def set_parameters(self, params):
-        """Set PID values
-        @param: (float) kp, ki, kd
+        """Set PID values and sensor poses.
+        
+        The params structure is expected to have sensor poses in the robot's
+        reference frame as ``params.sensor_poses``.
         """
         PIDController.set_parameters(self,params)
 
@@ -28,6 +30,8 @@ class AvoidObstacles(PIDController):
         self.weights = [w/ws for w in self.weights]
 
     def get_heading(self, state):
+        """Get the direction away from the obstacles as a vector."""      
+        
         # Calculate vectors:
         self.vectors = \
             numpy.array(

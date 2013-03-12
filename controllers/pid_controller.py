@@ -7,7 +7,7 @@ import math
 import numpy
 
 class PIDController(Controller):
-    """Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines."""
+    """The PID controller is a general-purpose controller that steers the robot to a certain heading direction. The heading is recalculated on every execution."""
     def __init__(self, params):
         '''read another .xml for PID parameters?'''
         Controller.__init__(self,params)
@@ -20,7 +20,16 @@ class PIDController(Controller):
 
     def set_parameters(self, params):
         """Set PID values
-        @param: (float) kp, ki, kd
+        
+        The params structure is expected to have in the `gains` field three
+        parameters for the PID gains.
+        
+        :param params.gains.kp: Proportional gain
+        :type params.gains.kp: float
+        :param params.gains.ki: Integral gain
+        :type params.gains.ki: float
+        :param params.gains.kd: Differential gain
+        :type params.gains.kd: float
         """
         self.kp = params.gains.kp
         self.ki = params.gains.ki
@@ -30,7 +39,7 @@ class PIDController(Controller):
         """Get the direction in which the controller wants to move the robot
         as a vector.
         
-        :return: an array [x, y, z] with z = 1.
+        :return: a numpy array [x, y, z] with z = 1.
         """
         raise NotImplementedError("PIDController.get_heading")
     
@@ -44,7 +53,7 @@ class PIDController(Controller):
      
         heading = self.get_heading(state)
         
-        v_ = state.velocity.v
+        v_ = state.velocity.v*math.sqrt(heading[0]**2 + heading[1]**2)
 
         #1. Calculate simple proportional error
         error = math.atan2(heading[1],heading[0])
