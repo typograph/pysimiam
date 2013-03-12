@@ -52,7 +52,9 @@ class ProximitySensor(MountedSensor):
         MountedSensor.__init__(self,pose,robot)
         self.rmin, self.rmax, self.phi = geometry
         self.pts = self.get_cone(self.rmax)
-        self.fullcone = self.pts
+        self.fullcone = [(0,0),
+                         (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
+                         (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2))]
                     
         self.__distance = 65536
         self.set_color(0x33FF5566)
