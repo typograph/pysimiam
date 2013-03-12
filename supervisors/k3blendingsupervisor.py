@@ -1,77 +1,66 @@
 from khepera3 import K3Supervisor
-from math import sqrt, sin, cos, pi, atan2
+from supervisor import Supervisor
+from math import sqrt, sin, cos, atan2
 
 class K3BlendingSupervisor(K3Supervisor):
-    """K3Blending supervisor creates two controllers: gotogoal and avoidobstacles
-       and blends their outputs instead of choosing one.
-       
-       This module is intended to be demonstration on implementing blending supervisors"""
+    """K3Blending supervisor has just one controller, the one that blends between the creates four controllers: hold, gotogoal, avoidobstacles and blending."""
     def __init__(self, robot_pose, robot_info):
         """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.get_controller('gotogoal.GoToGoal', self.ui_params)
-
-        self.current = self.gtg
-        self.old_omega = 0
-
-    def execute(self, robot_info, dt):
-        """Blend the behaviour of several controllers"""
-        # Copied from Supervisor
-        self.robot = robot_info
-        self.pose_est = self.estimate_pose()
-
-        # Check if we are in place
-        distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
-        if distance_from_goal < self.robot.wheels.base_length/2:
-            return (0,0)
-
-        # Fill parameters for the controllers
-        self.ui_params.pose = self.pose_est
-        self.ui_params.sensor_distances = self.get_ir_distances()
-
-        # now instead of choosing one controller, blend results
-        distmin = min(self.ui_params.sensor_distances)
-        distmax = self.robot.ir_sensors.rmax
+        self.blending = self.get_controller('blending.Blending', self.ui_params)
+        self.hold = self.get_controller('hold.Hold', None)
         
-        distance_ratio = distmin/distmax     
-        if distance_ratio > 1:
-            distance_ratio = 1
-        # Forget about the goal at 0.2 ratio
-        distance_ratio -= 0.2
-        distance_ratio /= 0.8
+        self.add_controller(self.hold,
+                            (lambda: not self.at_goal(), self.blending))
+        self.add_controller(self.blending,
+                            (self.at_goal,self.hold))
 
-        weight_avo = 0.5*(1 + cos(pi*distance_ratio))
+        self.current = self.blending
 
-        v_gtg, w_gtg = self.gtg.execute(self.ui_params,dt) #execute go-to-goal
-        v_avo, w_avo = self.avoidobstacles.execute(self.ui_params,dt) #execute go-to-goal
+    def set_parameters(self,params):
+        K3Supervisor.set_parameters(self,params)
+        self.blending.set_parameters(self.ui_params)
 
-        v = v_gtg*(1-weight_avo) + v_avo*weight_avo
-        w = w_gtg*(1-weight_avo) + w_avo*weight_avo
-       
-        vl, vr = self.uni2diff((v,w))
-        return (vl, vr) 
+    def at_goal(self):
+        return self.distance_from_goal < self.robot.wheels.base_length/2
 
+    def process(self):
+        """Selects the best controller based on ir sensor readings
+        Updates ui_params.pose and ui_params.ir_readings"""
+
+        self.ui_params.pose = self.pose_est
+        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        
+        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.distmin = min(
+            (d for d, p in zip(self.ui_params.sensor_distances, self.ui_params.sensor_poses) if abs(p.theta) < 2.2))
+
+        return self.ui_params
+    
     def draw(self, renderer):
         K3Supervisor.draw(self,renderer)
+
         renderer.set_pose(self.pose_est)
-
-        # Draw direction from obstacles
-        renderer.set_pen(0xFF0000)
         arrow_length = self.robot_size*5
+        
+        # Draw arrow to goal
+        renderer.set_pen(0x00FF00)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.avoidobstacles.away_angle),
-            arrow_length*sin(self.avoidobstacles.away_angle))
+            arrow_length*cos(self.blending.goal_angle),
+            arrow_length*sin(self.blending.goal_angle))
 
-        # Draw direction to goal
-        renderer.set_pen(0x444444)
-        goal_angle = atan2(self.ui_params.goal.y - self.pose_est.y,
-                           self.ui_params.goal.x - self.pose_est.x) \
-                     - self.pose_est.theta
+        # Draw arrow away from obstacles
+        renderer.set_pen(0xFF0000)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(goal_angle),
-            arrow_length*sin(goal_angle))
-                           
+            arrow_length*cos(self.blending.away_angle),
+            arrow_length*sin(self.blending.away_angle))
+
+        # Draw heading
+        renderer.set_pen(0x0000FF)
+        renderer.draw_arrow(0,0,
+            arrow_length*cos(self.blending.blend_angle),
+            arrow_length*sin(self.blending.blend_angle))
+            

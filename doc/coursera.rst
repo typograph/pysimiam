@@ -488,56 +488,48 @@ Switching
 
 The second type of arbitration mechanism is `switching`. Instead of executing both go-to-goal and avoid-obstacles simultaneously, we will only execute one controller at a time, but switch between the two controllers whenever a certain condition is satisfied.
     
-In the ``execute`` method of ``pysimiam/supervisors/k3defaultsupervisor.py``, you will need to implement the switching logic between go-to-goal and avoid-obstacles. The supervisor has been extended since last week to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor also defines a set of events. These events can be checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular event has occured, and if so, switch to a new controller.
+You will need to implement the switching logic between go-to-goal and avoid-obstacles in ``pysimiam/supervisors/k3switchingsupervisor.py``. The supervisor has been extended since last week to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor has to define the switching conditions. These conditions are checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular condition is fullfilled, and if so, switch to a new controller.
 
-The tools that you should will need to implement the switching logic:
+The switching itself is already implemented for you in the base :class:`~supervisor.Supervisor` class. To add a state with a controller ``c0``, use the ``add_controller`` method of the supervisor::
+    
+    self.add_controller(c0, (condition1, c1), (condition2, c2), ...)
 
-#. Four events can be checked with the ``self.check_event(name)`` function, where ``name`` is the name of the state:
+where the conditions are functions that take no parameters and evaluate to true or false. If a condition evaluates to true, the controller is switched e.g. to ``c1`` for ``condition1``.
 
-    * ```at_obstacle'`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than ``self.d_at_obs``. Return ``true`` if this is the case, ``false`` otherwise.
-    * ```at_goal'`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
-    * ```unsafe'`` checks to see if any of the front sensors detect an obstacle at a distance less than ``self.d_unsafe``.
-    * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than ``self.d_at_obs`` meters.
+We suggest definin at least the following conditions:
 
-#. The ``self.switch_state(name)`` function switches between the states/controllers. There currently are four possible values that ``name`` can be:
+* ``at_obstacle`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than a certain limiting distance. Return ``true`` if this is the case, ``false`` otherwise.
+* ``at_goal`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
+* ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
 
-    * ```go_to_goal'`` for the go-to-goal controller.
-    * ```avoid_obstacles'`` for the avoid-obstacles controller.
-    * ```ao_and_gtg'`` for the blending controller.
-    * ```stop'`` for stopping the robot.
-
-
-Implement the logic for switching to ``avoid_obstacles``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, and switching to ``stop`` when ``at_goal`` is true. 
-
-.. note:: Running the blending controller was implemented using these switching tools as an example. In the example, ``check_event('at_goal')`` was used to switch from ``ao_and_gtg`` to ``stop`` once the robot reaches the goal.
+Implement the logic for switching to ``avoid_obstacles``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, and switching to ``hold`` when ``at_goal`` is true. 
   
 Mix blending and switching
 --------------------------
 
 The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
 
-Implement the logic for switching to ``ao_and_gtg``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, switching to ``avoid_obstacles`` when ``unsafe`` is true, and switching to ``stop`` when ``at_goal`` is true.
+Implement additional conditions in ``pysimiam/supervisors/k3switchingsupervisor.py``:
 
+* ``unsafe``, that checks to see if any of the front sensors detect an obstacle closer than a critical distance (this distance should be smaller than ``at_obstacle`` critical distance).
+* ``safe``, that checks if the the minimal distance is larger than the critical distance.
+
+Those conditions can now be used to implement switching like shown on the diagram:
+
+.. image:: blending_states.png
 
 How to test it all
 ------------------
 
-To test your code, the simulator is set up to either use the blending arbitration mechanism or the switching arbitration mechanism. If ``self.is_blending`` is ``true``, then blending is used, otherwise switching is used. 
+The code for this week is implemented in two different supervisors, ``K3SwitchingSupervisor`` and ``K3BlendingSupervisor``. You can test the two separately or make them race against one another. To test the two separately, load the worlds ``week5_switching.xml`` or ``week5_blending.xml``. The race world is ``week5_race.xml``.
 
 Here are some tips to the test the four parts:
 
-
-#. Test the first part with the second part. Uncomment the line::
-
-      fprintf('(v,w) = (%0.3f,%0.3f)\n', outputs.v, outputs.w);
-
-   It is located with the code for the blending, which you will test in the next part. Watch ``(v,w)`` to make sure that when one increases, the other decreases.
-
-#. Test the second part by setting ``self.is_blending`` to ``true``. The robot should successfully navigate to the goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop (you can adjust the stopping distance with ``self.d_stop``). The output plot will likely look something similar to:
+#. Test the second part by running ``python qtsimiam_week5_blending.py``. The robot should successfully navigate to the goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
 
    .. image:: week-5-part-2.png
 
-#. Test the third part by setting ``self.is_blending`` to ``false``. The robot should successfully navigate to the same goal location :math:`(1,1)` without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
+#. Test the third part by setting ``python qtsimiam_week5_switching.py``. The robot should successfully navigate to the same goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
 
    .. image:: week-5-part-3.png
     
@@ -547,19 +539,13 @@ Here are some tips to the test the four parts:
 
    .. figure:: week-5-part-4.png
     
-   Notice that the controller still switches, but less often than before. Also, it now switches to the blended controller (cyan line). Depending on how you set ``self.d_unsafe`` and ``self.d_at_obs``, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
-   
+   Notice that the controller still switches, but less often than before. Also, it now switches to the blended controller (cyan line). Depending on how you set the critical distances, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
 
 
 How to migrate your solutions from last week
 --------------------------------------------
 
-Here are a few pointers to help you migrate your own solutions from last week to this week's simulator code. You only need to pay attention to this section if you want to use your own solutions, otherwise you can use what is provided for this week and skip this section.
-
-
-#. The simulator has seen a significant amount of changes from last week to support this week's programming exercises. It is *recommended* that you do not overwrite any of the files this week with your solutions from last week.
-#. However, you can selectively replace the sections delimited last week (by ``START/END CODE BLOCK``) in ``GoToGoal.m`` and ``AvoidObstacles.m``, as well as the sections that were copied from each into ``AOandGTG.m``.
-
+You can replace all of the provided go-to-goal and avoid-obstacles code with your code from the last week.
 
 Week 6
 ======

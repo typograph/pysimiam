@@ -188,11 +188,12 @@ class Supervisor:
         params = self.process() #User-defined algorithm
         
         # Switch:
-        for f, c in self.states[self.current]:
-            if f():
-                c.restart()
-                self.current = c
-                break
+        if self.current in self.states:
+            for f, c in self.states[self.current]:
+                if f():
+                    c.restart()
+                    self.current = c
+                    break
         
         output = self.current.execute(params,dt) #execute the current controller
         return output
