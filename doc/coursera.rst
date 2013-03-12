@@ -447,62 +447,76 @@ Week 5
 
 Start by downloading the new robot simulator for this week from GitHub. This week you will be making a small improvement to the go-to-goal and avoid-obstacle controllers and testing two arbitration mechanisms: blending and hard switches. Arbitration between the two controllers will allow the robot to drive to a goal, while not colliding with any obstacles on the way.
 
-#. Implement a simple control for the linear velocity, :math:`v`, as a function of the angular velocity, :math:`\omega`. Add it to both ``+simiam/+controller/GoToGoal.m`` and ``+simiam/+controller/AvoidObstacles.m``.
-  
-   So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, :math:`v`, to a constant value of :math:`0.1` m/s. While this approach works, it certainly leave plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
+Linear velocity dependent on angular velocity
+---------------------------------------------
 
-   The actuator limits of the robot limit the linear velocity to a range of :math:`[-0.3,0.3]` m/s and the angular velocity to a range of :math:`[-2.765,2.765]` rad/s. However, it is important to remember that with a differential drive, we cannot, for example, drive the robot at the maximum linear and angular velocities. There is a trade-off between linear and angular velocities: linear velocity has to decrease for angular velocity to increase, and vice versa.
+So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, :math:`v`, to a constant value defined in the simulator. While this approach works, it certainly leave plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
 
-   Therefore, design and implement a function or equation for the linear velocity that depends on the angular velocity, such that the linear velocity is large when the `absolute value` of the angular velocity is small (near zero), and the linear velocity is small when the absolute value of the angular velocity is large. The linear velocity should not exceed :math:`0.25` m/s and be no smaller than :math:`0.075` m/s (because we want to maintain a minimum linear velocity to keep the robot moving).
+The actuator limits of the robot limit the left and right wheel velocities to a range of :math:`[-2.587, 2.587]` rad/s. Thus, it is important to remember that with a differential drive, we cannot, for example, drive the robot at the maximum linear and angular velocities. There is a trade-off between linear and angular velocities: linear velocity has to decrease for angular velocity to increase, and vice versa.
 
-   Add this function or equation to the bottom of the execute functions for both ``+simiam/+controller/`` ``GoToGoal.m`` and ``+simiam/+controller/AvoidObstacles.m``.
+Therefore, design and implement a function or equation for the linear velocity that depends on the angular velocity, such that the linear velocity is large when the `absolute value` of the angular velocity is small (near zero), and the linear velocity is small when the absolute value of the angular velocity is large. Remember that we want to maintain a minimum linear velocity to keep the robot moving. Add it to to the general PID controller in ``pysimiam/controllers/pid_controller.py``.
 
-   .. note:: This is just one way to improve the controllers. For example, one could improve the above strategy by letting the linear velocity be a function of the angular velocity `and` the distance to the goal (or distance to the nearest obstacle).
+.. note:: This is just one way to improve the controllers. For example, one could improve the above strategy by letting the linear velocity be a function of the angular velocity `and` the distance to the goal (or distance to the nearest obstacle). If you want to go in this direction, consider using the length of the heading vector returned from ``get_heading`` to scale the linear velocity.
 
-#. Combine your go-to-goal controller and avoid-obstacle controller into a single controller that blends the two behaviors. Implement it in ``+simiam/+controller/AOandGTG.m``.
+Blending
+--------
 
-   It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller, ``+simiam/+controller/AOandGTG.m``. However, one important piece is missing. ``u_gtg`` is a vector pointing to the goal from the robot, and ``u_ao`` is a vector pointing from the robot to a point in space away from obstacles. These two vectors need to be combined (blended) in some way into the vector ``u_ao_gtg``, which should be a vector that points the robot both away from obstacles and towards the goal.
+It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller ``pysimiam/controller/blending.py``. However, one important piece (namely the implementation of ``get_heading``) is missing::
 
-   The combination of the two vectors into ``u_ao_gtg`` should result in the robot driving to a goal without colliding with any obstacles in the way. Do not use ``if/else`` to pick between ``u_gtg`` or ``u_ao``, but rather think about weighing each vector according to their importance, and then linearly combining the two vectors into a single vector, ``u_ao_gtg``. For example,
+    def get_heading(self, state):
+        u_ao = self.get_ao_heading(state)
+        u_gtg = self.get_gtg_heading(state)
+        
+        u = numpy.array([1,0,1])
+        
+        self.blend_angle = math.atan2(u[1],u[0])
+        
+        return u
 
-   .. math::
-      \alpha &=& 0.75 \\
-      u_{\text{ao,gtg}} &=& \alpha u_{\text{gtg}}+(1-\alpha)u_{\text{ao}}
+Here, ``u_gtg`` is a vector pointing to the goal from the robot, and ``u_ao`` is a vector pointing from the robot to a point in space away from obstacles. These two vectors need to be combined (blended) in some way into the vector ``u``, which should be a vector that points the robot both away from obstacles and towards the goal.
 
-   In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. :math:`\alpha` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles.
+The combination of the two vectors into ``u`` should result in the robot driving to a goal without colliding with any obstacles in the way. Do not use ``if/else`` to pick between ``u_gtg`` or ``u_ao``, but rather think about weighing each vector according to their importance, and then linearly combining the two vectors into a single vector, ``u_ao_gtg``. For example,
 
-#. Implement the switching logic that switches between the go-to-goal controller and the avoid-obstacles controller, such that the robot avoids any nearby obstacles and drives to the goal when clear of any obstacles.
-  
-   The second type of arbitration mechanism is `switching`. Instead of executing both go-to-goal and avoid-obstacles simultaneously, we will only execute one controller at a time, but switch between the two controllers whenever a certain condition is satisfied.
-      
-   In the ``execute`` function of ``+simiam/+controller/+khepera3/K3Supervisor.m``, you will need to implement the switching logic between go-to-goal and avoid-obstacles. The supervisor has been extended since last week to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor also defines a set of events. These events can be checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular event has occured, and if so, switch to a new controller.
+.. math::
+    \alpha &=& 0.75 \\
+    u &=& \alpha u_{\mathrm{gtg}}+(1-\alpha)u_{\mathrm{ao}}
+
+In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. :math:`\alpha` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles.
+
+Switching
+---------
+
+The second type of arbitration mechanism is `switching`. Instead of executing both go-to-goal and avoid-obstacles simultaneously, we will only execute one controller at a time, but switch between the two controllers whenever a certain condition is satisfied.
     
-   The tools that you should will need to implement the switching logic:
+In the ``execute`` method of ``pysimiam/supervisors/k3defaultsupervisor.py``, you will need to implement the switching logic between go-to-goal and avoid-obstacles. The supervisor has been extended since last week to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor also defines a set of events. These events can be checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular event has occured, and if so, switch to a new controller.
 
-   #. Four events can be checked with the ``self.check_event(name)`` function, where ``name`` is the name of the state:
+The tools that you should will need to implement the switching logic:
 
-      * ```at_obstacle'`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than ``self.d_at_obs``. Return ``true`` if this is the case, ``false`` otherwise.
-      * ```at_goal'`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
-      * ```unsafe'`` checks to see if any of the front sensors detect an obstacle at a distance less than ``self.d_unsafe``.
-      * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than ``self.d_at_obs`` meters.
+#. Four events can be checked with the ``self.check_event(name)`` function, where ``name`` is the name of the state:
 
-   #. The ``self.switch_state(name)`` function switches between the states/controllers. There currently are four possible values that ``name`` can be:
+    * ```at_obstacle'`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than ``self.d_at_obs``. Return ``true`` if this is the case, ``false`` otherwise.
+    * ```at_goal'`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
+    * ```unsafe'`` checks to see if any of the front sensors detect an obstacle at a distance less than ``self.d_unsafe``.
+    * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than ``self.d_at_obs`` meters.
 
-      * ```go_to_goal'`` for the go-to-goal controller.
-      * ```avoid_obstacles'`` for the avoid-obstacles controller.
-      * ```ao_and_gtg'`` for the blending controller.
-      * ```stop'`` for stopping the robot.
+#. The ``self.switch_state(name)`` function switches between the states/controllers. There currently are four possible values that ``name`` can be:
+
+    * ```go_to_goal'`` for the go-to-goal controller.
+    * ```avoid_obstacles'`` for the avoid-obstacles controller.
+    * ```ao_and_gtg'`` for the blending controller.
+    * ```stop'`` for stopping the robot.
 
 
-   Implement the logic for switching to ``avoid_obstacles``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, and switching to ``stop`` when ``at_goal`` is true. 
+Implement the logic for switching to ``avoid_obstacles``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, and switching to ``stop`` when ``at_goal`` is true. 
+
+.. note:: Running the blending controller was implemented using these switching tools as an example. In the example, ``check_event('at_goal')`` was used to switch from ``ao_and_gtg`` to ``stop`` once the robot reaches the goal.
   
-   .. note:: Running the blending controller was implemented using these switching tools as an example. In the example, ``check_event('at_goal')`` was used to switch from ``ao_and_gtg`` to ``stop`` once the robot reaches the goal.
-  
-#. Improve the switching arbitration by using the blended controller as an intermediary between the go-to-goal and avoid-obstacles controller.
-  
-   The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
-  
-   Implement the logic for switching to ``ao_and_gtg``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, switching to ``avoid_obstacles`` when ``unsafe`` is true, and switching to ``stop`` when ``at_goal`` is true.
+Mix blending and switching
+--------------------------
+
+The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
+
+Implement the logic for switching to ``ao_and_gtg``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, switching to ``avoid_obstacles`` when ``unsafe`` is true, and switching to ``stop`` when ``at_goal`` is true.
 
 
 How to test it all
