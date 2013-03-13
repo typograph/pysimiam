@@ -82,6 +82,7 @@ class SimulationWidget(QtGui.QMainWindow):
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
         self.viewer = SimulatorViewer()
+        self.viewer.resized.connect(self.refresh_view)
         scrollArea.setWidget(self.viewer)
         scrollArea.setWidgetResizable(True)
 
@@ -350,6 +351,10 @@ class SimulationWidget(QtGui.QMainWindow):
         self.on_pause()
         if self.world_dialog.exec_():
             self.load_world(self.world_dialog.selectedFiles()[0])
+
+    @QtCore.pyqtSlot()
+    def refresh_view(self):
+        self.sim_queue.put(('refresh',()))
             
     @QtCore.pyqtSlot(bool)
     def show_grid(self,show):
@@ -463,6 +468,9 @@ class SimulationWidget(QtGui.QMainWindow):
 #end QtSimiamFrame class
 
 class SimulatorViewer(QtGui.QFrame):
+    
+    resized = QtCore.pyqtSignal()
+    
     def __init__(self, parent = None):
         super(SimulatorViewer, self).__init__(parent)
         self.bitmap = QtGui.QPixmap()
@@ -497,6 +505,7 @@ class SimulatorViewer(QtGui.QFrame):
         """Resize panel and canvas"""
         # use cached size and flag
         self.resize_on_paint = True
+        self.resized.emit()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

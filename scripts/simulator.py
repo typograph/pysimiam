@@ -300,7 +300,10 @@ class Simulator(threading.Thread):
 
     def __draw_once(self):
         if self.__state == PAUSE:
-            self.__state = DRAW_ONCE        
+            self.__state = DRAW_ONCE
+            
+    def refresh(self):
+        self.__draw_once()
         
     def focus_on_world(self):
         """Scale the view to include all of the world (including robots)"""
