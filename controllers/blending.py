@@ -16,7 +16,6 @@ class Blending(PIDController):
         PIDController.__init__(self,params)
         self.goal_angle = 0
         self.away_angle = 0
-        self.blend_angle = 0
 
     def set_parameters(self, params):
         """Set PID values and sensor poses.
@@ -77,7 +76,5 @@ class Blending(PIDController):
         weight_gtg = math.exp(- 0.2 / min(state.sensor_distances) + 1)
         
         u = u_ao*(1-weight_gtg) + u_gtg*weight_gtg
-        
-        self.blend_angle = math.atan2(u[1],u[0])
-        
+                
         return u

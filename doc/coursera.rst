@@ -502,7 +502,7 @@ We suggest definin at least the following conditions:
 * ``at_goal`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
 * ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
 
-Implement the logic for switching to ``avoid_obstacles``, when ``at_obstacle`` is true, switching to ``go_to_goal`` when ``obstacle_cleared`` is true, and switching to ``hold`` when ``at_goal`` is true. 
+Implement the logic for switching to ``AvoidObstacles``, when ``at_obstacle`` is true, switching to ``GoToGoal`` when ``obstacle_cleared`` is true, and switching to ``hold`` when ``at_goal`` is true. 
   
 Mix blending and switching
 --------------------------
@@ -550,59 +550,62 @@ You can replace all of the provided go-to-goal and avoid-obstacles code with you
 Week 6
 ======
 
-Start by downloading the new robot simulator for this week from the `Programming Exercises` tab on the Coursera course page. This week you will be implementing a wall following behavior that will aid the robot in navigating around obstacles. Implement these parts in ``+simiam/+controller/+FollowWall.m``.
+Start by downloading the new robot simulator for this week from GitHub. This week you will be implementing a wall following behavior that will aid the robot in navigating around obstacles. Implement these parts in the ``get_heading`` method of ``pysimiam/controllers/followwall.py``.
 
-#. Compute a vector, :math:`u_{fw,t}`, that estimates a section of the obstacle (`wall`) next to the robot using the robot's right (or left) IR sensors.
+Estimate wall geometry
+----------------------
    
-   We will use the IR sensors to detect an obstacle and construct a vector that approximates a section of the obstacle (`wall`). In the figure, this vector, :math:`u_{fw,t}` (``u_fw_t``), is illustrated in red.
-   
-   .. image:: week-6-part-1.png
-   
-   The direction of the wall following behavior (whether it is follow obstacle on the left or right) is determined by ``inputs.direction``, which can either be equal to ``right`` or ``left``. Suppose we want to follow an obstacle to the ``left`` of the robot, then we would could use the left set of IR sensors (1-4). If we are following the wall, then at all times there should be at least one sensor that can detect the obstacle. So, we need to pick a second sensor and use the points corresponding to the measurements from these two sensors (see avoid-obstacles in Week 4) to form a line that estimates a section of the obstacle. In the figure above, sensors 2 and 3 are used to roughly approximate the edge of the obstacle. But what about corners?
-    
-   .. image:: week-6-part-1b.png
-   
-   Corners are trickier (see figure below), because typically only a single sensor will be able to detect the wall. The estimate is off as one can see in the figure, but as long as the robot isn't following the wall too closely, it will be ok.
-   
-   An example strategy for estimating a section of the wall is to pick the two sensors (from IR sensors 1-4) with the smallest reported measurement in ``ir_distances``. Suppose sensor 2 and 3 returned the smallest values, then let :math:`p_1` ``= ir_distances_rf(:,2)`` and :math:`p_2` ``= ir_distances_rf(:,3)``. A vector that estimates a section of the obstacle is :math:`u_{fw,t}=p_2-p_1`. 
-   
-   .. note:: It is important that the sensor with smaller ID (in the example, sensor 2) is assigned to :math:`p_1` (``p_1``) and the sensor with the larger ID (in the example, sensor 3) is assigned to :math:`p_2` (``p_2``), because we want that the vector points in the direction that robot should travel.
-   
-   The figures correspond to the above example strategy, but you may want to experiment with different strategies for computing :math:`u_{fw,t}`. A better estimate would make wall following safer and smoother when the robot navigates around the corners of obstacles. 
-   
-#. Compute a vector, :math:`u_{fw,p}`, that points from the robot to the closest point on :math:`u_{fw,t}`.
-   
-   Now that we have the vector :math:`u_{fw,t}` (represented by the red line in the figures), we need to compute a vector :math:`u_{fw,p}` that points from the robot to the closest point on :math:`u_{fw,t}`. This vector is visualized as blue line in the figures and can be computed using a little bit of linear algebra:
+We will use the IR sensors to detect an obstacle and construct a vector that approximates a section of the obstacle (`wall`). In the figure, this vector, :math:`u_{fw,t}`, is illustrated in red.
 
-   .. math::
-      \begin{split}
-         u'_{fw,t} &= \frac{u_{fw,t}}{\|u_{fw,t}\|}, \quad u_p = \begin{bmatrix} x \\ y \end{bmatrix}, \quad u_a = p_1 \\
-         u_{fw,p} &= (u_a-u_p)-((u_a-u_p)\cdot u'_{fw,t})u'_{fw,t}
-      \end{split}
-   
-   :math:`u_{fw,p}` corresponds to ``u_fw_p`` and :math:`u'_{fw,t}` corresponds to ``u_fw_tp`` in the code. 
-   
-   .. note:: A small technicality is that we are computing :math:`u_{fw,p}` as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` were infinitely long.
-   
-#. Combine the two vectors, such that it can be used as a heading vector for a PID controller that will follow the wall to the right (or left) at some distance :math:`d_{fw}`.
-   
-   The last step is to combine :math:`u_{fw,t}` and :math:`u_{fw,p}` such that the robot follows the obstacle all the way around at some distance :math:`d_{fw}` (``d_fw``). :math:`u_{fw,t}` will ensure that the robot drives in a direction that is parallel to an edge on the obstacle, while :math:`u_{fw,p}` needs to be used to maintain a distance :math:`d_{fw}` from the obstacle.
-    
-   One way to achieve this is,
+.. image:: week-6-part-1.png
 
-   .. math::
-      u'_{fw,p} = u_{fw,p}-d_{fw}\frac{u_{fw,p}}{\|u_{fw,p}|},
-   
-   where :math:`u'_{fw,p}` (``u_fw_pp``) is now a vector points towards the obstacle when the distance to the obstacle, :math:`d>d_{fw}`, is near zero when the robot is :math:`d_{fw}` away from the obstacle, and points away from the obstacle when :math:`d<d_{fw}`.
-   
-   All that is left is to linearly combine :math:`u'_{fw,t}` and :math:`u'_{fw,p}` into a single vector :math:`u_{fw}` (``u_fw``) that can be used with the PID controller to steer the robot along the obstacle at the distance :math:`d_{fw}`.
-   
-   (`Hint`: Think about how this worked with :math:`u_{ao}` and :math:`u_{gtg}` last week). 
+The direction of the wall following behavior (whether it is follow obstacle on the left or right) is determined by ``self.direction``, which can either be equal to ``"right"`` or ``"left"``. Suppose we want to follow an obstacle to the `left` of the robot, then we would could use the left set of IR sensors (0 < θ < π). If we are following the wall, then at all times there should be at least one sensor that can detect the obstacle. So, we need to pick a second sensor and use the points corresponding to the measurements from these two sensors (see avoid-obstacles in Week 4) to form a line that estimates a section of the obstacle. In the figure above, sensors 2 and 3 are used to roughly approximate the edge of the obstacle. But what about corners?
+
+.. image:: week-6-part-1b.png
+
+Corners are trickier (see figure below), because typically only a single sensor will be able to detect the wall. The estimate is off as one can see in the figure, but as long as the robot isn't following the wall too closely, it will be ok.
+
+An example strategy for estimating a section of the wall is to pick the two sensors (from IR sensors 1-4) with the smallest reported measurement in ``state.sensor_distances``. Suppose sensor 2 and 3 returned the smallest values, then let :math:`p_1` ``= self.vectors[1]`` and :math:`p_2` ``= self.vectors[2]``. A vector that estimates a section of the obstacle is :math:`u_{fw,t}=p_2-p_1`. 
+
+.. note:: It is important that the sensor with larger abs(θ) (in the example, sensor 2) is assigned to :math:`p_1` (``p_1``) and the sensor with the smaller abs(θ) (in the example, sensor 3) is assigned to :math:`p_2` (``p_2``), because we want that the vector points in the direction that robot should travel.
+
+.. note:: In the code, :math:`u_{fw,t}` is represented by ``self.along_wall_vector``.
+
+The figures correspond to the above example strategy, but you may want to experiment with different strategies for computing :math:`u_{fw,t}`. A better estimate would make wall following safer and smoother when the robot navigates around the corners of obstacles. 
+
+Find the closest wall point
+---------------------------
+     
+Now that we have the vector :math:`u_{fw,t}` (represented by the red line in the figures), we need to compute a vector :math:`u_{fw,p}` that points from the robot to the closest point on :math:`u_{fw,t}`. This vector is visualized as blue line in the figures and can be computed using a little bit of linear algebra:
+
+.. math::
+    \begin{split}
+        u'_{fw,t} &= \frac{u_{fw,t}}{\|u_{fw,t}\|}, \quad u_p = \begin{bmatrix} x \\ y \end{bmatrix}, \quad u_a = p_1 \\
+        u_{fw,p} &= (u_a-u_p)-((u_a-u_p)\cdot u'_{fw,t})u'_{fw,t}
+    \end{split}
+
+.. note:: A small technicality is that we are computing :math:`u_{fw,p}` as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` were infinitely long.
+
+.. note:: In the code, :math:`u_{fw,p}` is represented by ``self.to_wall_vector``.
+
+Compute the heading vector
+--------------------------
+     
+The last step is to combine :math:`u_{fw,t}` and :math:`u_{fw,p}` such that the robot follows the obstacle all the way around at some distance :math:`d_{fw}` (``d_fw``). :math:`u_{fw,t}` will ensure that the robot drives in a direction that is parallel to an edge on the obstacle, while :math:`u_{fw,p}` needs to be used to maintain a distance :math:`d_{fw}` from the obstacle.
+
+One way to achieve this is,
+
+.. math::
+    u'_{fw,p} = u_{fw,p}-d_{fw}\frac{u_{fw,p}}{\|u_{fw,p}|},
+
+where :math:`u'_{fw,p}` is now a vector points towards the obstacle when the distance to the obstacle, :math:`d>d_{fw}`, is near zero when the robot is :math:`d_{fw}` away from the obstacle, and points away from the obstacle when :math:`d<d_{fw}`.
+
+All that is left is to linearly combine :math:`u'_{fw,t}` and :math:`u'_{fw,p}` into a single vector :math:`u_{fw}` that can be used with the PID controller to steer the robot along the obstacle at the distance :math:`d_{fw}`. (`Hint`: Think about how this worked with :math:`u_{ao}` and :math:`u_{gtg}` last week). 
 
 How to test it all
 ------------------
 
-To test your code, the simulator is set up to run ``+simiam/+controller/FollowWall.m``. First test the follow wall behaviour by setting ``inputs.direction = `left'`` in ``+simiam/+controller/+khepera3/`` ``K3Supervisor.m``. This will test the robot following the obstacle to its left (like in the figures). Then set ``inputs.direction = `right'``, and changed in ``settings.xml`` the initial theta of the robot to :math:`\pi`:
+To test your code, the simulator is set up to run the follow-wall behaviour. First test the follow wall behaviour by setting ``self.direction = `left'`` in ``__init__``. This will test the robot following the obstacle to its left (like in the figures). Then set ``self.direction = `right'``, and changed in ``settings.xml`` the initial theta of the robot to :math:`\pi`:
 
 .. code-block:: xml
 
@@ -610,48 +613,42 @@ To test your code, the simulator is set up to run ``+simiam/+controller/FollowWa
 
 The robot is set up near the obstacle, so that it can start following it immediately. This is a valid situation, because we are assuming another behavior (like go-to-goal) has brought us near the obstacle. Here are some tips to the test the three parts:
 
+#. Set ``u_fw = u_fw_tp``. The robot starts off next to an obstacle and you should see that the red line approximately matches up with the edge of the obstacle (like in the figures above). The robot should be able to follow the obstacle all the way around.
 
-    #. Set ``u_fw = u_fw_tp``. The robot starts off next to an obstacle and you should see that the red line approximately matches up with the edge of the obstacle (like in the figures above). The robot should be able to follow the obstacle all the way around.
-    
     .. note:: Depending on how the edges of the obstacle are approximated, it is possible for the robot to peel off at one of the corners. This is not the case in the example strategy provided for the first part.
-    
-    #. If this part is implemented correctly, the blue line should point from the robot to the closest point on the red line.
-    
-    .. image:: week-6-part-2.png
-    
-    .. note:: Recall that we are computing :math:`u_{fw,p}` (the blue line) as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` (the red line) were infinitely long. In the figure above, the red line is not drawn infinitely long, so the blue line does not touch the red line in this situation. However, if we were to extend the red line, we would see that the blue line correctly points to the closest point on the red line to the robot.
-    
-    #. Set ``self.d_fw`` to some distance in :math:`[0.02,0.2]` m. The robot should follow the wall at approximately the distance specified by ``self.d_fw``. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).
-    
 
+#. If this part is implemented correctly, the blue line should point from the robot to the closest point on the red line.
+
+    .. image:: week-6-part-2.png
+
+    .. note:: Recall that we are computing :math:`u_{fw,p}` (the blue line) as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` (the red line) were infinitely long. In the figure above, the red line is not drawn infinitely long, so the blue line does not touch the red line in this situation. However, if we were to extend the red line, we would see that the blue line correctly points to the closest point on the red line to the robot.
+
+#. Set ``self.d_fw`` to some distance in :math:`[0.02,0.2]` m. The robot should follow the wall at approximately the distance specified by ``self.d_fw``. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).  
 
 How to migrate your solutions from last week
 --------------------------------------------
 
-Here are a few pointers to help you migrate your own solutions from last week to this week's simulator code. You only need to pay attention to this section if you want to use your own solutions, otherwise you can use what is provided for this week and skip this section.
-
- #. The only new addition to the simulator is ``+simiam/+controller/FollowWall.m``. Everything else may be overwrite with the exception of ``K3Supervisor.m``.
-
+You are free to overwrite anything with your own code.
 
 Week 7
 ======
-Start by downloading the new robot simulator for this week from the `Programming Exercises` tab on the Coursera course page. This week you will be combining the go-to-goal, avoid-obstacles, and follow-wall controllers into a full navigation system for the robot. The robot will be able to navigate around a cluttered, complex environment without colliding with any obstacles and reaching the goal location successfully. Implement your solution in ``+simiam/+controller/+khepera3/K3Supervisor.m``.
+Start by downloading the new robot simulator for this week from GitHub. This week you will be combining the go-to-goal, avoid-obstacles, and follow-wall controllers into a full navigation system for the robot. The robot will be able to navigate around a cluttered, complex environment without colliding with any obstacles and reaching the goal location successfully. Implement your solution in ``pysimiam/supervisors/k3fullsupervisor.py``.
 
 
-#. Implement the ``progress_made`` event that will determine whether the robot is making any progress towards the goal.
+#. Implement the ``progress_made`` condition that will determine whether the robot is making any progress towards the goal.
   
-   By default, the robot is set up to switch between ``avoid_obstacles`` and ``go_to_goal`` to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at :math:`(x,g)=(1,1)`. The robot needs a better strategy for navigation. This strategy needs to realize that the robot is not making any forward progress and switch to ``follow_wall`` to navigate out of the obstacle.
+   By default, the robot is set up to switch between ``AvoidObstacles`` and ``GoToGoal`` to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at (1,1). The robot needs a better strategy for navigation. This strategy needs to realize that the robot is not making any forward progress and switch to ``FollowWall`` to navigate out of the obstacle.
     
    Implement the function ``progress_made`` such that it returns ``true`` if
 
    .. math::
       \left\|\begin{bmatrix} x-x_g \\ y-y_g \end{bmatrix}\right\| < d_{\text{progress}}-\epsilon,
    
-   where :math:`\epsilon=0.1` (``epsilon``) gives a little bit of slack, and :math:`d_{\text{progress}}` (``d_prog``) is the closest (in terms of distance) the robot has progressed towards the goal. This distance should be set using the function ``set_progress_point`` before switching to the ``follow_wall`` behavior in the third part.
+   where ε = 0.1 gives a little bit of slack, and :math:`d_{\text{progress}}` (``d_prog``) is the closest (in terms of distance) the robot has progressed towards the goal. This distance should be set using the function ``set_progress_point`` before switching to the ``FollowWall`` behavior in the third part.
 
-#. Implement the ``sliding_left`` and ``sliding_right`` events that will serve as a criterion for whether the robot should continue to follow the wall (left or right) or switch back to the go-to-goal behavior.
+#. Implement the ``sliding_left`` and ``sliding_right`` conditions that will serve as a criterion for whether the robot should continue to follow the wall (left or right) or switch back to the go-to-goal behavior.
 
-   While the lack of ``progress_made`` will trigger the navigation system into a ``follow_wall`` behavior, we need to check whether the robot should stay in the wall following behavior, or switch back to ``go_to_goal``. We can check whether we need to be in the sliding mode (wall following) by testing if :math:`\sigma_1>0` and :math:`\sigma_2>0`, where
+   While the lack of ``progress_made`` will trigger the navigation system into a ``FollowWall`` behavior, we need to check whether the robot should stay in the wall following behavior, or switch back to ``GoToGoal``. We can check whether we need to be in the sliding mode (wall following) by testing if :math:`\sigma_1>0` and :math:`\sigma_2>0`, where
 
    .. math::
       \begin{bmatrix}u_{gtg} & u_{ao}\end{bmatrix}\begin{bmatrix}\sigma_1 \\ \sigma_2\end{bmatrix} = u_{fw}.
@@ -659,18 +656,14 @@ Start by downloading the new robot simulator for this week from the `Programming
    
    Implement this test in the function ``sliding_left`` and ``sliding_right``. The test will be the same for both functions. The difference is in how :math:`u_{fw}` is computed.
 
-#. Implement the finite state machine that will navigate the robot to the goal located at :math:`(x_g,y_g)=(1,1)` without colliding with any of the obstacles in the environment.
+#. Implement the finite state machine that will navigate the robot to the goal located at (1,1) without colliding with any of the obstacles in the environment.
    
-   Now, we are ready to implement a finite state machine (FSM) that solves the full navigation problem. A finite state machine is nothing but a set of ``if/elseif/else`` statements that first check which state (or behavior) the robot is in, then based on whether an event (condition) is satisfied, the FSM switches to another state or stays in the same state. Some of the logic that should be part of the FSM is:
+   Now, we are ready to implement a finite state machine (FSM) that solves the full navigation problem. A finite state machine is nothing but a set of ``if/elseif/else`` statements that first check which state (or behavior) the robot is in, then based on whether a condition is satisfied, the FSM switches to another state or stays in the same state. Some of the logic that should be part of the FSM is:
    
       #. If ``at_goal``, then switch to ``stop``.
-      #. If ``unsafe``, then switch to state ``avoid_obstacles``.
-      #. If in state ``go_to_goal`` and ``at_obstacle``, then check whether the robot needs to ``slide_left`` or ``slide_right``. If so ``set_progress_point``, and switch to state ``follow_wall`` (with ``inputs.direction`` equal to right or left depending on the results of the sliding test).
-      #. If in state ``follow_wall``, check whether ``progress_made`` and the robot does not need to slide ``slide_left`` (or ``slide_right`` depending on ``inputs.direction``). If so, switch to state ``go_to_goal``, otherwise keep following wall.
-   
-   
-   You can check an event using ``self.check_event(`name-of-event')`` and switch to a different state using ``self.switch_to_state(`name-of-state')``.
-
+      #. If ``unsafe``, then switch to state ``AvoidObstacles``.
+      #. If in state ``GoToGoal`` and ``at_obstacle``, then check whether the robot needs to ``slide_left`` or ``slide_right``. If so ``set_progress_point``, and switch to state ``FollowWall`` (with ``inputs.direction`` equal to right or left depending on the results of the sliding test).
+      #. If in state ``FollowWall``, check whether ``progress_made`` and the robot does not need to slide ``slide_left`` (or ``slide_right`` depending on ``inputs.direction``). If so, switch to state ``GoToGoal``, otherwise keep following wall.
 
 How to test it all
 ------------------
@@ -678,20 +671,12 @@ How to test it all
 To test your code, the simulator is set up to run a simple FSM that is unable to exit the large obstacle and advance towards the goal.
 
 
-  #. Test the first part with the third part.
-  #. Test the second part with the third part.
-  #. Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at :math:`(x_g,y_g)=(1,1)` or not? However, let us consider a few key situations that will likely be problematic.
+#. Test the first part with the third part.
+#. Test the second part with the third part.
+#. Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at (1,1) or not? However, let us consider a few key situations that will likely be problematic.
   
     #. First, the default code has the problem that the robot is stuck inside the large obstacle. The reason for this situation is that avoid obstacle is not enough to push the robot far enough way from the obstacle, such that when go-to-goal kicks back in, the robot is clear of the obstacle and has a free path towards the goal. So, you need to make sure that the robot realizes that no progress towards the goal is being made and that wall following needs to be activated for the robot to navigate out of the interior of the large obstacle.
-    #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and sliding is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``sliding_left`` (``sliding_right``) events to transition from ``follow_wall`` to ``go_to_goal``.
+    #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and sliding is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``sliding_left`` (``sliding_right``) conditions to transition from ``FollowWall`` to ``GoToGoal``.
   
   Remember that adding ``print`` calls to different parts of your code can help you debug your problems. By default, the supervisor prints out the state that it switches to.
 
-
-How to migrate your solutions from last week
---------------------------------------------
-
-Here are a few pointers to help you migrate your own solutions from last week to this week's simulator code. You only need to pay attention to this section if you want to use your own solutions, otherwise you can use what is provided for this week and skip this section.
-
-
- #. Everything may be overwrite with the exception of ``K3Supervisor.m``.

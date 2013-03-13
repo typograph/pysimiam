@@ -61,6 +61,6 @@ class K3BlendingSupervisor(K3Supervisor):
         # Draw heading
         renderer.set_pen(0x0000FF)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.blending.blend_angle),
-            arrow_length*sin(self.blending.blend_angle))
+            arrow_length*cos(self.blending.heading_angle),
+            arrow_length*sin(self.blending.heading_angle))
             

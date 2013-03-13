@@ -159,7 +159,11 @@ class Supervisor:
            Each step, the functions are executed in the order
            they were supplied to this function. If a function
            evaluates to True, the current controller switches to the
-           one specified with this function.
+           one specified with this function. The target controller
+           is restarted using :meth:`controller.Controller.restart`.
+           
+           The functions are guaranteed to be called after :meth:`process`.
+           Thus, :attr:`robot` should contain actual information about the robot.
         """
         self.states[controller] = args
 
@@ -193,6 +197,7 @@ class Supervisor:
                 if f():
                     c.restart()
                     self.current = c
+                    print "Switched to {}".format(c.__class__.__name__)
                     break
         
         output = self.current.execute(params,dt) #execute the current controller

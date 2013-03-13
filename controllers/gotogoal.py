@@ -15,7 +15,6 @@ class GoToGoal(PIDController):
         for the expected parameter structure
         """
         PIDController.__init__(self,params)
-        self.goal_angle = 0
 
     def get_heading(self, state):
         """Get the direction from the robot to the goal as a vector."""
@@ -23,10 +22,10 @@ class GoToGoal(PIDController):
         x_g, y_g = state.goal.x, state.goal.y
         x_r, y_r, theta = state.pose
 
-        self.goal_angle = math.atan2(y_g - y_r, x_g - x_r) - theta
+        goal_angle = math.atan2(y_g - y_r, x_g - x_r) - theta
         # Alternative implementation:
         # return numpy.dot(
         #     numpy.linalg.pinv(state.pose.get_transformation()),
         #     numpy.array([state.goal.x, state.goal.y, 1]))
         
-        return numpy.array([math.cos(self.goal_angle),math.sin(self.goal_angle),1])        
+        return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])        

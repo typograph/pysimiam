@@ -12,7 +12,6 @@ class AvoidObstacles(PIDController):
         '''read another .xml for PID parameters?'''
         PIDController.__init__(self,params)
 
-        self.away_angle = 0
         self.vectors = []
 
     def set_parameters(self, params):
@@ -24,8 +23,8 @@ class AvoidObstacles(PIDController):
         PIDController.set_parameters(self,params)
 
         self.poses = params.sensor_poses
-        self.weights = [1.0]*len(self.poses)
-        #self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+        #self.weights = [1.0]*len(self.poses)
+        self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
         ws = sum(self.weights)
         self.weights = [w/ws for w in self.weights]
 
@@ -44,6 +43,4 @@ class AvoidObstacles(PIDController):
         # Calculate weighted sum:
         heading = numpy.dot(self.vectors.transpose(), self.weights)
      
-        self.away_angle = math.atan2(heading[1],heading[0])
-        
         return heading

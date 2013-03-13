@@ -11,6 +11,7 @@ class PIDController(Controller):
     def __init__(self, params):
         '''read another .xml for PID parameters?'''
         Controller.__init__(self,params)
+        self.heading_angle = 0
 
     def restart(self):
         self.E = 0
@@ -52,7 +53,8 @@ class PIDController(Controller):
         heading = self.get_heading(state)
         
         #1. Calculate simple proportional error
-        error = math.atan2(heading[1],heading[0])
+        self.heading_angle = math.atan2(heading[1],heading[0])
+        error = self.heading_angle
 
         #2. Calculate integral error
         self.E += error*dt

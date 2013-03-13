@@ -64,14 +64,14 @@ class K3DefaultSupervisor(K3Supervisor):
         # Draw arrow to goal
         renderer.set_pen(0x00FF00)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.gtg.goal_angle),
-            arrow_length*sin(self.gtg.goal_angle))
+            arrow_length*cos(self.gtg.heading_angle),
+            arrow_length*sin(self.gtg.heading_angle))
 
         # Draw arrow away from obstacles
         renderer.set_pen(0xFF0000)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.avoidobstacles.away_angle),
-            arrow_length*sin(self.avoidobstacles.away_angle))
+            arrow_length*cos(self.avoidobstacles.heading_angle),
+            arrow_length*sin(self.avoidobstacles.heading_angle))
             
         # Week 3
         renderer.set_pen(0)
