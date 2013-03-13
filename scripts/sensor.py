@@ -54,6 +54,7 @@ class ProximitySensor(MountedSensor):
         self.pts = self.get_cone(self.rmax)
         self.fullcone = [(0,0),
                          (self.rmax*cos(self.phi/2),self.rmax*sin(self.phi/2)),
+                         (self.rmax,0),
                          (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2))]
                     
         self.__distance = 65536
@@ -62,6 +63,7 @@ class ProximitySensor(MountedSensor):
     def get_cone(self, distance):
         return [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
                 (distance*cos(self.phi/2),distance*sin(self.phi/2)),
+                (distance,0),
                 (distance*cos(self.phi/2),-distance*sin(self.phi/2)),
                 (self.rmin*cos(self.phi/2),-self.rmin*sin(self.phi/2))]
         
@@ -87,7 +89,7 @@ class ProximitySensor(MountedSensor):
             # reset distance to max
             self.__distance = 65536
             self.set_color(0x33FF5566)
-            self.pts = self.fullcone
+            self.pts = self.get_cone(self.rmax)
             return True
         else:
             distance_to_obj = self.get_distance_to(sim_object)
