@@ -12,7 +12,8 @@ from quadtree import QuadTree, Rect
 
 PAUSE = 0
 RUN = 1
-DRAW_ONCE = 2
+RUN_ONCE = 2
+DRAW_ONCE = 3
 
 class Simulator(threading.Thread):
     """The simulator manages simobjects and their collisions, commands supervisors
@@ -216,7 +217,10 @@ class Simulator(threading.Thread):
 
                 sleep(time_constant/self.__time_multiplier)
 
-                if self.__state == RUN:
+                self.__process_queue()
+
+                if self.__state == RUN or \
+                   self.__state == RUN_ONCE:
 
                     self.__time += time_constant
 
@@ -225,20 +229,16 @@ class Simulator(threading.Thread):
                         robot.move(time_constant)
                         self.__trackers[i].add_point(robot.get_pose())
 
+                    # Second, check for collisions and update sensors
+                    if self.__check_collisions():
+                        print "Collision detected!"
+                        self.__state = DRAW_ONCE
+
                     # Now calculate supervisor outputs for the new position
                     for i, supervisor in enumerate(self.__supervisors):
                         info = self.__robots[i].get_info()
                         inputs = supervisor.execute( info, time_constant)
                         self.__robots[i].set_inputs(inputs)
-
-                    # the parameters that might have been changed have no effect
-                    # on collisions
-                    if self.__check_collisions():
-                        print "Collision detected!"
-                        self.__state = PAUSE
-                        #self.__stop = True
-
-                self.__process_queue()
 
                 # Draw to buffer-bitmap
                 # Note that if the robot moves immediately after calculation,
@@ -246,7 +246,8 @@ class Simulator(threading.Thread):
                 if self.__state != PAUSE:
                     self.__draw()
                     
-                if self.__state == DRAW_ONCE:
+                if self.__state == DRAW_ONCE or \
+                   self.__state == RUN_ONCE:
                     self.__state = PAUSE
             
             except Exception as e:
@@ -270,13 +271,13 @@ class Simulator(threading.Thread):
 
         self.__renderer.clear_screen()
 
-        for supervisor in self.__supervisors:
-            supervisor.draw(self.__renderer)
-
         for bg_object in self.__background:
             bg_object.draw(self.__renderer)
         for obstacle in self.__obstacles:
             obstacle.draw(self.__renderer)
+
+        for supervisor in self.__supervisors:
+            supervisor.draw(self.__renderer)
 
         # Draw the robots, trackers and sensors after obstacles
         if self.__show_tracks:
@@ -389,6 +390,12 @@ class Simulator(threading.Thread):
         """Pause the simulation"""
         self.__state = PAUSE
         self._out_queue.put(('paused',()))
+
+    def step_simulation(self):
+        """Do one step"""
+        if self.__state != RUN:
+            self.__state = RUN_ONCE
+        #self._out_queue.put(('paused',()))
 
     def reset_simulation(self):
         """Reset the simulation to the start position"""

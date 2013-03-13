@@ -136,7 +136,15 @@ class SimulationWidget(QtGui.QMainWindow):
         
         self.run_action = PlayPauseAction(self, self.on_run,self.on_pause)        
         self.run_action.setEnabled(False)
-
+        
+        self.step_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("media-skip-forward",
+                            QtGui.QIcon("./res/image/media-skip-forward-7.png")),
+                          "Step", self)
+        self.step_action.triggered.connect(self.on_step)
+        self.step_action.setStatusTip("Do one simulation step")
+        self.step_action.setEnabled(False)
+        
         self.grid_action = \
             QtGui.QAction(QtGui.QIcon("./res/image/grid.png"),
                           "Show/Hide grid", self)
@@ -207,6 +215,7 @@ class SimulationWidget(QtGui.QMainWindow):
         
         tbar.addAction(self.rev_action)
         tbar.addAction(self.run_action)
+        tbar.addAction(self.step_action)
         
         self.speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.speed_slider.setToolTip("Adjust speed")
@@ -279,6 +288,7 @@ class SimulationWidget(QtGui.QMainWindow):
         run_menu = menu.addMenu("&Simulation")
         
         run_menu.addAction(self.run_action)
+        run_menu.addAction(self.step_action)
         run_menu.addAction(self.rev_action)
         
         help_menu = menu.addMenu("&Help")
@@ -329,6 +339,11 @@ class SimulationWidget(QtGui.QMainWindow):
     def on_pause(self): # Pause
         self.speed_slider.setEnabled(False)        
         self.sim_queue.put(('pause_simulation',()))
+
+    @QtCore.pyqtSlot()
+    def on_step(self): # Pause
+        #self.speed_slider.setEnabled(False)        
+        self.sim_queue.put(('step_simulation',()))
 
     @QtCore.pyqtSlot()
     def on_open_world(self):
@@ -419,9 +434,11 @@ class SimulationWidget(QtGui.QMainWindow):
         
     def simulator_running(self):
         self.speed_slider.setEnabled(True)
+        self.step_action.setEnabled(False)
     
     def simulator_paused(self):
         self.speed_slider.setEnabled(False)
+        self.step_action.setEnabled(True)
         t = self.simulator_thread.get_time()
         minutes = int(t//60)
         self.status_label.setText(
