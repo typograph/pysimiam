@@ -51,13 +51,7 @@ The UI may use the get_parameters function interface to create docker windows fo
                         (('ki','Integral gain'), p.gains.ki),
                         (('kd','Differential gain'), p.gains.kd)]))])
 
-    def get_parameters(self):
-        params = Struct()
-        params.pid = Supervisor.get_parameters(self)
-        return params
-
     def set_parameters(self,params):
-        params = params.pid
         self.ui_params.goal = params.goal
         self.ui_params.velocity = params.velocity
         self.ui_params.gains = params.gains
@@ -78,14 +72,13 @@ The UI may use the get_parameters function interface to create docker windows fo
             
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
-        #Assignment week2
+
         ir_distances = [] #populate this list
         #self.robot.ir_sensors.readings | (may want to use this)
         for reading in self.robot.ir_sensors.readings:
             val = max( min( (log1p(3960) - log1p(reading))/30 + self.robot.ir_sensors.rmin , self.robot.ir_sensors.rmax) , self.robot.ir_sensors.rmin)
             ir_distances.append(val) 
 
-        #End Assignment week2
         return ir_distances
 
     def process(self):
@@ -97,7 +90,6 @@ The UI may use the get_parameters function interface to create docker windows fo
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
         
-        #Week 2 exercise 
         # Get tick updates
         dtl = self.robot.wheels.left_ticks - self.left_ticks
         dtr = self.robot.wheels.right_ticks - self.right_ticks
@@ -126,7 +118,6 @@ The UI may use the get_parameters function interface to create docker windows fo
         theta_new = theta + theta_dt
         x_new = x + x_dt
         y_new = y + y_dt             
-        #end week2 exercise
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
             

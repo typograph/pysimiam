@@ -2,18 +2,11 @@
     <app type="ControlApp" />
     
     <robot type="Khepera3">
-        <supervisor type="khepera3.K3Supervisor" />
+        <supervisor type="week4.K3AvoidSupervisor" />
         <pose x="0" y="0" theta="0.2618" />
     </robot>
     
-    <!--
-    <robot type="Khepera3">
-        <supervisor type="khepera3.K3Supervisor" />
-        <pose x="1" y="1" theta="1.5708" />
-    </robot>
-    -->
-    
-    <!--<obstacle>
+    <obstacle>
         <pose x="1" y="1.2" theta="0" />
         <geometry>
             <point x="0" y="0" />
@@ -61,9 +54,7 @@
             <point x="1.5" y="0.3" />
             <point x="0" y="0.3" />
         </geometry>
-    </obstacle> -->
-    
-    
+    </obstacle>
     
     <obstacle>
         <pose x="-1.6" y="-1.5" theta="0" />

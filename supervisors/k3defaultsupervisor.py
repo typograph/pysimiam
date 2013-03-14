@@ -73,7 +73,7 @@ class K3DefaultSupervisor(K3Supervisor):
             arrow_length*cos(self.avoidobstacles.heading_angle),
             arrow_length*sin(self.avoidobstacles.heading_angle))
             
-        # Week 3
+        # Week 4
         renderer.set_pen(0)
         for v in self.avoidobstacles.vectors:
             x,y,z = v
