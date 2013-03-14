@@ -4,6 +4,8 @@ from helpers import Struct
 from xmlreader import XMLReader
 from xmlwriter import XMLWriter
 from collections import OrderedDict
+from traceback import format_exception
+import sys
 
 # Constructing UI from parameters:
 # 
@@ -40,6 +42,46 @@ class Entry():
         
     def set_value(self, value):
         self.control.setValue(value)
+
+class ChoiceEntry():
+    def __init__(self,label,value,options):
+        self.label = label
+        self.value = value
+        self.options = options
+        self.radios = []
+    
+    def create_widgets(self,parent,layout):
+        """Create a label and a spinbox in layout"""
+        self.control = QtGui.QFrame(parent)
+        self.control.setFrameStyle(QtGui.QFrame.StyledPanel | QtGui.QFrame.Sunken)
+        vlayout = QtGui.QVBoxLayout(self.control)
+        vlayout.setContentsMargins(5,5,5,5)
+        vlayout.setSpacing(5)
+        self.control.setLayout(vlayout)
+        
+        for opt in self.options:
+            w = QtGui.QRadioButton(opt, self.control)
+            vlayout.addWidget(w)
+            self.radios.append(w)
+            if opt == self.value:
+                w.setChecked(True)
+        
+        layout.addRow(self.label,self.control)
+    
+    def get_value(self):
+        for r in self.radios:
+            if r.isChecked():
+                return str(r.text())
+        return self.value
+
+    def get_struct(self):
+        return self.get_value()
+        
+    def set_value(self, value):
+        self.value = value
+        i = self.options.index(value)
+        if i >= 0:
+            self.radios[i].toggle()
     
 class Group():
     def __init__(self,label,parameters):
@@ -69,6 +111,8 @@ class Group():
                 self.leafs[dict_key] = Entry(child_label,v)
             elif isinstance(v,int):
                 self.leafs[dict_key] = Entry(child_label,float(v))
+            elif isinstance(v,tuple):
+                self.leafs[dict_key] = ChoiceEntry(child_label,v[0],v[1])
             else:
                 self.leafs[dict_key] = Group(child_label,v)
         
@@ -180,7 +224,8 @@ class ParamWidget(QtGui.QWidget):
             try:
                 writer.write()
             except Exception as e:
-                QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
+                #QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
+                QtGui.QMessageBox.critical(self,"Saving parameters failed","\n".join(format_exception(*sys.exc_info())))
     
     @pyqtSlot()
     def load_click(self):
@@ -194,7 +239,9 @@ class ParamWidget(QtGui.QWidget):
             try:
                 self.contents.use_xmlstruct(reader.read())
             except Exception as e:
-                QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
+
+                #QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
+                QtGui.QMessageBox.critical(self,"Loading parameters failed","\n".join(format_exception(*sys.exc_info())))
                 self.contents.use_xmlstruct(cache)
 
 class ParamDock(QtGui.QDockWidget):

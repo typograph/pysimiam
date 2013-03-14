@@ -47,23 +47,22 @@ class XMLReader(XMLObject):
             A dictionary encapsulating the parameters. 
         """
 
-        result = {}
-        for sub in self._root:
-            sub_dict = {}
-            try:
-                if not sub.get('id') == None:
-                    for attr in sub.items():
-                        if not attr[0] == 'id': sub_dict[attr[0]] = float(attr[1])
-                    result[(sub.tag, sub.get('id'))] = sub_dict
-                else:
-                    for attr in sub.items():
-                        sub_dict[attr[0]] = float(attr[1])
-                    result[sub.tag] = sub_dict
-            except:
-                raise Exception(
-                    '[XMLReader._parse_parameters] Bad value in XML!')
+        def parse_tag(rdict, tag):
+            """Fill dict with data from tag"""
+            for attr, value in tag.items():
+                if attr != "id":
+                    try:
+                        rdict[attr] = float(value)
+                    except ValueError:
+                        rdict[attr] = value
+            for child in tag:
+                rdict[child.tag] = {}
+                parse_tag(rdict[child.tag], child)
 
-        return {self._root.tag : result} 
+        result = {}
+        parse_tag(result, self._root)
+
+        return result
  
     def _parse_color(self, color):
         """
