@@ -277,10 +277,6 @@ class Simulator(threading.Thread):
         for obstacle in self.__obstacles:
             obstacle.draw(self.__renderer)
 
-        if self.__draw_supervisors:
-            for supervisor in self.__supervisors:
-                supervisor.draw(self.__renderer)
-
         # Draw the robots, trackers and sensors after obstacles
         if self.__show_tracks:
             for tracker in self.__trackers:
@@ -289,6 +285,10 @@ class Simulator(threading.Thread):
             robot.draw(self.__renderer)
             if self.__show_sensors:
                 robot.draw_sensors(self.__renderer)
+
+        if self.__draw_supervisors:
+            for supervisor in self.__supervisors:
+                supervisor.draw(self.__renderer)
 
         # update view
         self.__update_view()

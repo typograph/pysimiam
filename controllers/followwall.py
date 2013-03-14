@@ -14,9 +14,6 @@ class FollowWall(PIDController):
         ''' It's just a PID controller'''
         PIDController.__init__(self,params)
 
-        self.direction = 'left'
-        self.distance = 0.05
-        self.away_angle = 0
         self.vectors = []
         
     def restart(self):
@@ -33,9 +30,6 @@ class FollowWall(PIDController):
         PIDController.set_parameters(self,params)
 
         self.poses = params.sensor_poses
-        self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
-        ws = sum(self.weights)
-        self.weights = [w/ws for w in self.weights]
         self.direction = params.direction
         self.distance = params.distance
         self.sensor_max = params.ir_max
