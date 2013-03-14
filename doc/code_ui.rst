@@ -7,9 +7,9 @@ Drawing
 .. autoclass:: renderer.Renderer
     :members:
 
-.. autoclass:: qtrenderer.QtRenderer
+.. autoclass:: qt_renderer.QtRenderer
 
-.. autoclass:: wxrenderer.wxGCRenderer
+.. autoclass:: wx_renderer.wxGCRenderer
 
 
 UI

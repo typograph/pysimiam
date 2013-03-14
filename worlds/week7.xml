@@ -2,36 +2,9 @@
     <app type="ControlApp" />
     
     <robot type="Khepera3">
-        <supervisor type="khepera3.K3Supervisor" />
+        <supervisor type="week7.K3FullSupervisor" />
         <pose x="0" y="0" theta="0" />
     </robot>
-    
-    <!--
-    <robot type="Khepera3">
-        <supervisor type="khepera3.K3Supervisor" />
-        <pose x="1" y="1" theta="1.5708" />
-    </robot>
-    -->
-    
-    <!--<obstacle>
-        <pose x="1" y="1.2" theta="0" />
-        <geometry>
-            <point x="0" y="0" />
-            <point x="0.3" y="0" />
-            <point x="0.3" y="0.3" />
-            <point x="0" y="0.3" />
-        </geometry>
-    </obstacle>
-    
-    <obstacle>
-        <pose x="-0.5" y="0" theta="0.7854" />
-        <geometry>
-            <point x="0" y="0" />
-            <point x="0.3" y="0" />
-            <point x="0.3" y="0.3" />
-            <point x="0" y="0.3" />
-        </geometry>
-    </obstacle>-->
     
     <obstacle>
         <pose x="-0.4" y="0.2" theta="0" />
@@ -92,28 +65,6 @@
             <point x="0" y="0.2" />
         </geometry>
     </obstacle>
-    
-    
-    <!--<obstacle>
-        <pose x="0.2" y="0.8" theta="0" />
-        <geometry>
-            <point x="0" y="0" />
-            <point x="0.3" y="0" />
-            <point x="0.3" y="0.3" />
-            <point x="0" y="0.3" />
-        </geometry>
-    </obstacle>
-    
-    <obstacle>
-        <pose x="-1" y="-1" theta="0" />
-        <geometry>
-            <point x="0" y="0" />
-            <point x="1.5" y="0" />
-            <point x="1.5" y="0.3" />
-            <point x="0" y="0.3" />
-        </geometry>
-    </obstacle> -->
-    
     
     
     <obstacle>
