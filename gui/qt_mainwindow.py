@@ -170,6 +170,14 @@ class SimulationWidget(QtGui.QMainWindow):
         self.trace_action.setCheckable(True)
         self.trace_action.setChecked(True)
 
+        self.superv_action = \
+            QtGui.QAction(QtGui.QIcon("./res/image/robot-supervisors.png"),
+                          "Show/Hide supervisor information", self)
+        self.superv_action.setStatusTip("Show/hide supervisor information")
+        self.superv_action.triggered[bool].connect(self.show_supervisors)
+        self.superv_action.setCheckable(True)
+        self.superv_action.setChecked(False)
+
         zoom_group = QtGui.QActionGroup(self)
 
         self.zoom_world_action = \
@@ -241,6 +249,7 @@ class SimulationWidget(QtGui.QMainWindow):
         tbar.addAction(self.grid_action)        
         tbar.addAction(self.sens_action)
         tbar.addAction(self.trace_action)
+        tbar.addAction(self.superv_action)
         tbar.addSeparator()
         
         tbar.addAction(self.zoom_world_action)
@@ -285,6 +294,7 @@ class SimulationWidget(QtGui.QMainWindow):
         view_menu.addAction(self.grid_action)
         view_menu.addAction(self.sens_action)
         view_menu.addAction(self.trace_action)
+        view_menu.addAction(self.superv_action)
         
         run_menu = menu.addMenu("&Simulation")
         
@@ -367,6 +377,10 @@ class SimulationWidget(QtGui.QMainWindow):
     @QtCore.pyqtSlot(bool)
     def show_tracks(self,show):
         self.sim_queue.put(('show_tracks',(show,)))
+            
+    @QtCore.pyqtSlot(bool)
+    def show_supervisors(self,show):
+        self.sim_queue.put(('show_supervisors',(show,)))
             
     @QtCore.pyqtSlot()
     def zoom_scene(self):

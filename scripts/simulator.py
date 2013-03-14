@@ -47,6 +47,7 @@ class Simulator(threading.Thread):
         self.__center_on_robot = False
         self.__orient_on_robot = False
         self.__show_sensors = True
+        self.__draw_supervisors = False
         self.__show_tracks = True
         
         self.__in_queue = in_queue
@@ -276,8 +277,9 @@ class Simulator(threading.Thread):
         for obstacle in self.__obstacles:
             obstacle.draw(self.__renderer)
 
-        for supervisor in self.__supervisors:
-            supervisor.draw(self.__renderer)
+        if self.__draw_supervisors:
+            for supervisor in self.__supervisors:
+                supervisor.draw(self.__renderer)
 
         # Draw the robots, trackers and sensors after obstacles
         if self.__show_tracks:
@@ -351,6 +353,11 @@ class Simulator(threading.Thread):
     def show_tracks(self, show = True):
         """Show/hide tracks for every robot on simulator view"""
         self.__show_tracks = show
+        self.__draw_once()
+
+    def show_supervisors(self, show = True):
+        """Show/hide the information from the supervisors"""
+        self.__draw_supervisors = show
         self.__draw_once()
 
     def show_grid(self, show=True):
