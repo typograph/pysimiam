@@ -10,9 +10,9 @@ class K3DefaultSupervisor(K3Supervisor):
 
         #Add controllers ( go to goal is default)
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.get_controller('gotogoal.GoToGoal', self.ui_params)
-        self.hold = self.get_controller('hold.Hold', None)
+        self.avoidobstacles = self.create_controller('avoidobstacles.AvoidObstacles', self.ui_params)
+        self.gtg = self.create_controller('gotogoal.GoToGoal', self.ui_params)
+        self.hold = self.create_controller('hold.Hold', None)
 
         self.add_controller(self.hold)
         self.add_controller(self.gtg,

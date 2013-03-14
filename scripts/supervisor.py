@@ -72,7 +72,7 @@ class Supervisor:
         self.pose_est = robot_pose
         self.ui_params = self.get_default_parameters()
         self.current = None
-        self.robot = None
+        self.robot = robot_info
         self.robot_color = robot_info.color
         
         # Dict controller -> (function, controller)
@@ -138,7 +138,7 @@ class Supervisor:
         """
         self.ui_params = params
 
-    def get_controller(self, module_string, parameters):
+    def create_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.
 
         :param module_string: a string specifying a class in a module.

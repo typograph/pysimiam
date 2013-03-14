@@ -10,8 +10,8 @@ class K3BlendingSupervisor(K3Supervisor):
 
         #Add controllers ( go to goal is default)
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.blending = self.get_controller('blending.Blending', self.ui_params)
-        self.hold = self.get_controller('hold.Hold', None)
+        self.blending = self.create_controller('blending.Blending', self.ui_params)
+        self.hold = self.create_controller('hold.Hold', None)
         
         self.add_controller(self.hold,
                             (lambda: not self.at_goal(), self.blending))

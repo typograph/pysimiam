@@ -308,6 +308,7 @@ class SimulationWidget(QtGui.QMainWindow):
     def create_statusbar(self):      
         self.setStatusBar(QtGui.QStatusBar())
         self.status_label = QtGui.QLabel("",self.statusBar())
+        self.status_label.setFrameShape(QtGui.QFrame.NoFrame)
         self.statusBar().addWidget(self.status_label)
 
     def closeEvent(self,event):
