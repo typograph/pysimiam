@@ -23,7 +23,7 @@ class AvoidObstacles(PIDController):
         PIDController.set_parameters(self,params)
 
         self.poses = params.sensor_poses
-        #self.weights = [1.0]*len(self.poses)
+
         self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
         ws = sum(self.weights)
         self.weights = [w/ws for w in self.weights]

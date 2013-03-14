@@ -95,8 +95,8 @@ class FollowWall(PIDController):
                                     
                 
         else:
-            self.along_wall_vector = self.vectors[0] - self.vectors[1]
-            a = self.vectors[1]
+            self.along_wall_vector = self.vectors[0] - self.vectors[-1]
+            a = self.vectors[-1]
             b = self.along_wall_vector
             dot = numpy.dot
             self.to_wall_vector = a - b*dot(a,b)/dot(b,b)

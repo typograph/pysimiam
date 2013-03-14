@@ -67,7 +67,7 @@ class PIDController(Controller):
         #4. Calculate desired omega
         w_ = self.kp*error + self.ki*self.E + self.kd*dE
         
-        v_ = state.velocity.v*math.exp(-abs(w_)/16)
+        v_ = state.velocity.v
 
         #6. Return solution
         return [v_, w_]

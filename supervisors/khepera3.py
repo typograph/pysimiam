@@ -28,8 +28,8 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
         p.goal = Struct()
-        p.goal.x = 0.0
-        p.goal.y = 0.5
+        p.goal.x = 1.0
+        p.goal.y = 1.0
         p.velocity = Struct()
         p.velocity.v = 0.2
         p.gains = Struct()

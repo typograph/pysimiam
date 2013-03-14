@@ -426,7 +426,7 @@ Secont, use the set of transformed points to compute a vector that points away f
   
 #. Pick a weight :math:`\alpha_i` for each vector according to how important you think a particular sensor is for obstacle avoidance. For example, if you were to multiply the vector from the robot to point `i` (corresponding to sensor `i`) by a small value (e.g., 0.1), then sensor `i` will not impact obstacle avoidance significantly. Set the weights in ``set_parameters``.
 
-    .. note:: Make sure to that the weights are symmetric with respect to the left and right sides of the robot. Without any obstacles around, the robot should not steer left or right.
+ .. note:: Make sure to that the weights are symmetric with respect to the left and right sides of the robot. Without any obstacles around, the robot should not steer left or right.
 
 #. Sum up the weighted vectors, :math:`\alpha_iv'_i`, into a single vector :math:`u_o`.
 
@@ -449,14 +449,20 @@ You can also tune the parameters of the PID regulator for `ω`.
 Week 5. Mixing behaviours
 =========================
 
+The simulator for this week can be run with::
+    
+    >>> python qtsimiam_week5.py
+
+You are encouraged (but not required) to reuse your code from week 4, by replacing the `set_parameters` and `get_heading` method in ``pysimiam/controllers/avoidobstacles.py`` with your solutions.
+
 Start by downloading the new robot simulator for this week from GitHub. This week you will be making a small improvement to the go-to-goal and avoid-obstacle controllers and testing two arbitration mechanisms: blending and hard switches. Arbitration between the two controllers will allow the robot to drive to a goal, while not colliding with any obstacles on the way.
 
 Linear velocity dependent on angular velocity
 ---------------------------------------------
 
-So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, :math:`v`, to a constant value defined in the simulator. While this approach works, it certainly leave plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
+So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, `v`, to a constant value defined in the simulator. While this approach works, it certainly leave plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
 
-The actuator limits of the robot limit the left and right wheel velocities to a range of :math:`[-2.587, 2.587]` rad/s. Thus, it is important to remember that with a differential drive, we cannot, for example, drive the robot at the maximum linear and angular velocities. There is a trade-off between linear and angular velocities: linear velocity has to decrease for angular velocity to increase, and vice versa.
+The actuator limits of the robot limit the left and right wheel velocities to a range of [-2.587, 2.587] rad/s. Thus, it is important to remember that with a differential drive, we cannot, for example, drive the robot at the maximum linear and angular velocities. There is a trade-off between linear and angular velocities: linear velocity has to decrease for angular velocity to increase, and vice versa.
 
 Therefore, design and implement a function or equation for the linear velocity that depends on the angular velocity, such that the linear velocity is large when the `absolute value` of the angular velocity is small (near zero), and the linear velocity is small when the absolute value of the angular velocity is large. Remember that we want to maintain a minimum linear velocity to keep the robot moving. Add it to to the general PID controller in ``pysimiam/controllers/pid_controller.py``.
 
@@ -465,16 +471,14 @@ Therefore, design and implement a function or equation for the linear velocity t
 Blending
 --------
 
-It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller ``pysimiam/controller/blending.py``. However, one important piece (namely the implementation of ``get_heading``) is missing::
+It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller ``pysimiam/controller/week5.py``. However, one important piece (namely the implementation of ``get_heading``) is missing::
 
     def get_heading(self, state):
         u_ao = self.get_ao_heading(state)
         u_gtg = self.get_gtg_heading(state)
         
-        u = numpy.array([1,0,1])
-        
-        self.blend_angle = math.atan2(u[1],u[0])
-        
+        u = u_gtg
+                
         return u
 
 Here, ``u_gtg`` is a vector pointing to the goal from the robot, and ``u_ao`` is a vector pointing from the robot to a point in space away from obstacles. These two vectors need to be combined (blended) in some way into the vector ``u``, which should be a vector that points the robot both away from obstacles and towards the goal.
@@ -485,35 +489,75 @@ The combination of the two vectors into ``u`` should result in the robot driving
     \alpha &=& 0.75 \\
     u &=& \alpha u_{\mathrm{gtg}}+(1-\alpha)u_{\mathrm{ao}}
 
-In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. :math:`\alpha` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles.
+In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. `α` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles.
 
 Switching
 ---------
 
 The second type of arbitration mechanism is `switching`. Instead of executing both go-to-goal and avoid-obstacles simultaneously, we will only execute one controller at a time, but switch between the two controllers whenever a certain condition is satisfied.
     
-You will need to implement the switching logic between go-to-goal and avoid-obstacles in ``pysimiam/supervisors/k3switchingsupervisor.py``. The supervisor has been extended since last week to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor has to define the switching conditions. These conditions are checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular condition is fullfilled, and if so, switch to a new controller.
+You will need to implement the switching logic between go-to-goal and avoid-obstacles in ``pysimiam/supervisors/week5_switching.py``. The supervisor has a built-in state machine to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor has to define the switching conditions. These conditions are checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular condition is fullfilled, and if so, switch to a new controller.
 
-The switching itself is already implemented for you in the base :class:`~supervisor.Supervisor` class. To add a state with a controller ``c0``, use the ``add_controller`` method of the supervisor::
+The controllers and the switching conditions are initialized in the ``__init__`` method of the supervisor. The following code is in place::
+
+    def __init__(self, robot_pose, robot_info):
+        """Create necessary controllers"""
+        K3Supervisor.__init__(self, robot_pose, robot_info)
+
+        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+
+        # Create the controllers
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
+        self.gtg = self.create_controller('GoToGoal', self.ui_params)
+        self.hold = self.create_controller('Hold', None)
+
+        self.add_controller(self.hold)
+        self.add_controller(self.gtg,
+                            (self.at_goal, self.hold),
+                            (self.at_obstacle, self.avoidobstacles))
+
+        self.current = self.gtg
+
+This code creates three controllers - `GoToGoal`, `AvoidObstacles` and `Hold`. You are already familiar with the first two. The third controller just makes the robot stop (it returns (0,0) as linear and angular velocities). This code also defines a switching condition between `GoToGoal` and `Hold` and between `GoToGoal` and `AvoidObstacles`, and makes `GoToGoal` the starting state. The ``add_controller`` method of the supervisor should be called in the following way::
     
     self.add_controller(c0, (condition1, c1), (condition2, c2), ...)
 
-where the conditions are functions that take no parameters and evaluate to true or false. If a condition evaluates to true, the controller is switched e.g. to ``c1`` for ``condition1``.
+to add a state with a controller ``c0``. The conditions are functions that take no parameters and evaluate to true or false. If a condition evaluates to true, the controller is switched e.g. to ``c1`` for ``condition1``.
 
-We suggest definin at least the following conditions:
+The code in the supervisor now corresponds to the following diagram:
+
+.. image:: switching_states_incomplete.png
+
+This not a good behaviour! Your goal is to update the logic to complete the diagram:
+
+.. image:: switching_states.png
+
+You should also implement the condition functions. We suggest defining at least the following conditions:
 
 * ``at_obstacle`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than a certain limiting distance. Return ``true`` if this is the case, ``false`` otherwise.
 * ``at_goal`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
-* ```obstacle_cleared'`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
+* ``obstacle_cleared`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
 
-Implement the logic for switching to ``AvoidObstacles``, when ``at_obstacle`` is true, switching to ``GoToGoal`` when ``obstacle_cleared`` is true, and switching to ``hold`` when ``at_goal`` is true. 
-  
+When implementing various conditions, take note that the functions are called without any arguments. So, all of the parameters you want to access should be stored in the supervisor. You can precalculate anything you need in the ``process`` function that is guaranteed to be called before any conditions are checked. You may also find the following variables useful:
+
+- ``self.ui_params.goal.x`` (float) - The X coordinate of the goal
+- ``self.ui_params.goal.y`` (float) - The Y coordinate of the goal
+- ``self.ui_params.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``self.ui_params.velocity.v`` (float) - The given target velocity of the robot
+- ``self.ui_params.sensor_distances`` (list of float) - The IR distances measured by each sensor
+- ``self.robot.ir_sensors.rmax`` (float) - The maximum distance that can be detected by an IR sensor
+- ``self.robot.ir_sensors.poses`` (list of :class:`~pose.Pose`) - The positions and orientations of IR sensors in the reference frame of the robot
+
 Mix blending and switching
 --------------------------
 
 The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
 
-Implement additional conditions in ``pysimiam/supervisors/k3switchingsupervisor.py``:
+To create the blending controller uncomment this line in ``pysimiam/supervisors/week5_switching.py``::
+
+    # self.blending = self.create_controller('week5.Blending', self.ui_params)
+
+Implement additional conditions:
 
 * ``unsafe``, that checks to see if any of the front sensors detect an obstacle closer than a critical distance (this distance should be smaller than ``at_obstacle`` critical distance).
 * ``safe``, that checks if the the minimal distance is larger than the critical distance.
@@ -522,34 +566,24 @@ Those conditions can now be used to implement switching like shown on the diagra
 
 .. image:: blending_states.png
 
-How to test it all
+Testing
 ------------------
 
-The code for this week is implemented in two different supervisors, ``K3SwitchingSupervisor`` and ``K3BlendingSupervisor``. You can test the two separately or make them race against one another. To test the two separately, load the worlds ``week5_switching.xml`` or ``week5_blending.xml``. The race world is ``week5_race.xml``.
+You can test the blending and the switching supervisors separately or make them race against one another. To run the simulator use one of::
 
-Here are some tips to the test the four parts:
+    >>> python qtsimiam_week5.py blending
+    >>> python qtsimiam_week5.py switching
+    >>> python qtsimiam_week5.py race
 
-#. Test the second part by running ``python qtsimiam_week5_blending.py``. The robot should successfully navigate to the goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
+.. note:: You don't have to restart the simulator to try another supervisor - instead you can load another world (e.g. ``week5_race.xml``) directly with `File > Open`.
 
-   .. image:: week-5-part-2.png
+Here are some tips to the test the supervisor behaviour:
 
-#. Test the third part by setting ``python qtsimiam_week5_switching.py``. The robot should successfully navigate to the same goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it should stop. The output plot will likely look something similar to:
+#. Test the second part by running ``python qtsimiam_week5.py blending``. The robot should successfully navigate to the goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it will start rotating in place. Don't worry, this behaviour will be fixed in the switching supervisor. 
 
-   .. image:: week-5-part-3.png
-    
-   Notice that the blue line is the current heading of the robot, the red line is the heading set by the go-to-goal controller, and the green line is the heading set by the avoid-obstacles controller. You should see that the two switch very quickly and often when next to the goal. Also, you will see many messages in the MATLAB window stating that a switch has occurred.
+#. Test the third part by setting ``python qtsimiam_week5.py switching``. The robot should successfully navigate to the same goal location (1,1) without colliding with the obstacle that is in the way. This time once the robot is near the goal, it should stop. In the console where you ran the simulator, you should see a lot of messages indicating that the controllers have been switched.
   
-#. Test the fourth part in the same way as the third part. This time, the output plot will likely look something similar to:
-
-   .. figure:: week-5-part-4.png
-    
-   Notice that the controller still switches, but less often than before. Also, it now switches to the blended controller (cyan line). Depending on how you set the critical distances, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
-
-
-How to migrate your solutions from last week
---------------------------------------------
-
-You can replace all of the provided go-to-goal and avoid-obstacles code with your code from the last week.
+#. Test the fourth part in the same way as the third part. This time, the controller should switch much less often than before. Also, it now switches to the blended controller. Depending on how you set the critical distances, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
 
 Week 6
 ======
