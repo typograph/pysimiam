@@ -6,17 +6,38 @@ Tutorial
 Using the GUI
 -------------
 
-Start the simulator with the ``python qtsimiam.py`` command. It is important that this command is executed inside the downloaded folder (but not inside any of its subdirectories).
-
+To start the simulator, run the following from the command-line in the ``pysimiam`` folder::
+    
+    >>> python qtsimiam.py
+    
 Here is a screenshot of the Qt graphical user interface (GUI) of the simulator:
 
 .. image:: qtsimiam.png
 
-The GUI can be controlled by the menu or the toolbar buttons (or their equivalent keyboard shortcuts). The first button is the `Open` button ``Ctrl-O`` and lets you open a world with the robots. The second button is the `Rewind` button and resets the simulation. The third button is the `Play` button, which can be used to play and pause the simulation. The speed of the simulation can be controlled with the slider to the right. The set of `Zoom` buttons allows you to zoom in and out to get a better view of the simulation.
+The GUI can be controlled by the menu or the toolbar buttons
+(or their equivalent keyboard shortcuts). The first toolbar controls the execution:
+    
+.. image:: run-buttons.png
+
+The second toolbar controls the display options:
+    
+.. image:: view-buttons.png
+
+Every time the simulation is restarted, the robot, supervisor and controller code
+is reloaded. Therefore, it is possible to change the code without restarting the simulator - 
+restarting the simulation is enough.
+
+.. note:: There is a known bug with code reloading malfunctioning. In the case you
+ are constantly getting weird error messages, restart the simulator, and they might
+ go away.
+
+The docking windows on the left and on the right display the parameters of the
+robots' supervisors. These parameters can be changed at runtime by clicking `Apply`.
+You can also save and load important parameter sets by using `Save` and `Load` buttons.
+It is up to the supervisor to implement those runtime changes.
 
 Implementing your own robot
 ---------------------------
-
 
 Writing a supervisor
 --------------------
