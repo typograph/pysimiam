@@ -97,7 +97,7 @@ class Simulator(threading.Thread):
 
         helpers.unload_user_modules()
 
-        self.__state = PAUSE            
+        self.__state = DRAW_ONCE            
             
         self.__robots = []
         self.__obstacles = []
@@ -171,8 +171,8 @@ class Simulator(threading.Thread):
             self.__recalculate_default_zoom()
             if not self.__center_on_robot:
                 self.focus_on_world()
-            self.__draw_once()
             self.__supervisor_param_cache = None
+            self.step_simulation()
             
         self._out_queue.put(('reset',()))
 
@@ -249,7 +249,7 @@ class Simulator(threading.Thread):
                     
                 if self.__state == DRAW_ONCE or \
                    self.__state == RUN_ONCE:
-                    self.__state = PAUSE
+                    self.pause_simulation()
             
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
