@@ -10,13 +10,17 @@ from math import sin,cos,atan2,pi,sqrt
 This tool converts svg files to world files
 
 It only supports a subset of svg, notably all the groups
-except the top one are ignored.
+except the top one are ignored. Only the contents of
+thi stop group are processed (in Inkscape, the top group
+is the default layer).
 
-The rectangles in the file will be converted to obstacles.
-The paths with more than 2 points are converted to markers.
 A path with 1 or 2 points is interpreted as a robot,
 with the position of the robot determined by the first point,
 and the direction by the second one.
+
+The rectangles and the paths with more than 2 points
+will be converted to obstacles, unless their 'id' attribute
+begins with 'marker', such as 'marker345'.
 
 The color of obstacles, markers and robots is taken directly
 from the fill color. The stroke color is ignored.
@@ -225,112 +229,100 @@ def transform_coords(tstr,points):
     
     return new_points    
 
-if len(sys.argv) < 3:
-    print 'usage: svg2world.py input.svg output.xml'
-    quit()
 
-try:
-    svgfile = ET.parse(sys.argv[1],ET.XMLParser(target = TreeBuilder_NS()))
-    root = svgfile.getroot().find('g')
-    if root is None:
-        raise ValueError("No top-level group in this file")
-except Exception as e:
-    print 'Invalid svg file'
-    print e
-    quit()
-    
-world = ET.ElementTree(ET.Element('simulation'))
-world_root = world.getroot()
+def add_element(parent,tag,style,points,transform):
 
-# Robots:
-for circle in root.findall('circle'):
-    x = float(circle.get('cx'))
-    y = -float(circle.get('cy'))
-
-    name = circle.get('id')
+    points = transform_coords(transform,points)
         
-    style = circle.get('style')
     color = None
     if style is not None:
         color = color_re.search(style)
     if color is not None:
-        robot = ET.SubElement(world_root,'robot',{'type':robot_class,'color':color.group(1)})
+        element = ET.SubElement(parent,tag,{'color':color.group(1)})
     else:
-        robot = ET.SubElement(world_root,'robot',{'type':robot_class})
-
-    pose = ET.SubElement(robot,'pose',{'x':str(x),'y':str(y),'theta':"0"})
-    geom = ET.SubElement(robot,'supervisor',{'type':robot_supervisor})
-
-# Robots and markers
-for path in root.findall('path'):
-
-    style = path.get('style')
-    color = None
-    if style is not None:
-        color = color_re.search(style)
-
-    points = parse_path(path.get('d'))
-    if not points:
-        continue
-    points = transform_coords(path.get('transform'),points)
-    
-    if len(points) < 3: # Robot
-        name = path.get('id')
-        
-        if color is not None:
-            robot = ET.SubElement(world_root,'robot',{'type':robot_class,'color':color.group(1)})
-        else:
-            robot = ET.SubElement(world_root,'robot',{'type':robot_class})
-
-        x, y = points[0]
-        theta = 0
-        if len(points) > 1:
-            x2, y2 = points[1]
-            theta = atan2(y2-y,x2-x)
-        pose = ET.SubElement(robot,'pose',{'x':str(x),'y':str(y),'theta':str(theta)})
-        geom = ET.SubElement(robot,'supervisor',{'type':robot_supervisor})
-        
-    else: # Marker   
-        if color is not None:
-            marker = ET.SubElement(world_root,'marker',{'color':color.group(1)})
-        else:
-            marker = ET.SubElement(world_root,'marker')
-            
-        x0, y0 = points[0]
-            
-        pose = ET.SubElement(marker,'pose',{'x':str(x0),'y':str(y0),'theta':"0"})
-        geom = ET.SubElement(marker,'geometry')
-        for x, y in points:
-            ET.SubElement(geom,'point',{'x':str(x-x0),'y':str(y-y0)})
-
-# Obstacles    
-for rect in root.findall('rect'):
-    x = float(rect.get('x'))
-    y = float(rect.get('y'))
-    w = float(rect.get('width'))
-    h = float(rect.get('height'))
-
-    points = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
-    points = transform_coords(rect.get('transform'),points)
-        
-    style = rect.get('style')
-    color = None
-    if style is not None:
-        color = color_re.search(style)
-    if color is not None:
-        obstacle = ET.SubElement(world_root,'obstacle',{'color':color.group(1)})
-    else:
-        obstacle = ET.SubElement(world_root,'obstacle')
+        element = ET.SubElement(parent,tag)
 
     x0, y0 = points[0]
         
-    pose = ET.SubElement(obstacle,'pose',{'x':str(x0),'y':str(y0),'theta':"0"})
-    geom = ET.SubElement(obstacle,'geometry')
+    pose = ET.SubElement(element,'pose',{'x':str(x0),'y':str(y0),'theta':"0"})
+    geom = ET.SubElement(element,'geometry')
     for x, y in points:
         ET.SubElement(geom,'point',{'x':str(x-x0),'y':str(y-y0)})
- 
-#world.write(sys.argv[2])
+    
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print 'usage: svg2world.py input.svg output.xml'
+        quit()
 
-with open(sys.argv[2],'w') as f:
-    dom.parseString(ET.tostring(world.getroot())).writexml(f,'','    ','\n')
+    try:
+        svgfile = ET.parse(sys.argv[1],ET.XMLParser(target = TreeBuilder_NS()))
+        root = svgfile.getroot().find('g')
+        if root is None:
+            raise ValueError("No top-level group in this file")
+    except Exception as e:
+        print 'Invalid svg file'
+        print e
+        quit()
+        
+    world = ET.ElementTree(ET.Element('simulation'))
+    world_root = world.getroot()
 
+    # Robots and objects
+    for path in root.findall('path'):
+
+        points = parse_path(path.get('d'))
+        if not points:
+            continue
+        
+        if len(points) < 3: # Robot
+            style = path.get('style')
+            if style is not None:
+                color = color_re.search(style)
+            points = transform_coords(path.get('transform'),points)
+            
+            if color is not None:
+                robot = ET.SubElement(world_root,'robot',{'type':robot_class,'color':color.group(1)})
+            else:
+                robot = ET.SubElement(world_root,'robot',{'type':robot_class})
+
+            x, y = points[0]
+            theta = 0
+            if len(points) > 1:
+                x2, y2 = points[1]
+                theta = atan2(y2-y,x2-x)
+            pose = ET.SubElement(robot,'pose',{'x':str(x),'y':str(y),'theta':str(theta)})
+            geom = ET.SubElement(robot,'supervisor',{'type':robot_supervisor})
+            
+        else: # Marker
+            name = path.get('id')
+            if name is not None and name.startswith('marker'):
+                name = 'marker'
+            else:
+                name = 'obstacle'
+            add_element(world_root, name,
+                        path.get('style'),
+                        points,
+                        path.get('transform'))
+
+    # Obstacles    
+    for rect in root.findall('rect'):
+        x = float(rect.get('x'))
+        y = float(rect.get('y'))
+        w = float(rect.get('width'))
+        h = float(rect.get('height'))
+        
+        name = rect.get('id')
+        if name is not None and name.startswith('marker'):
+            name = 'marker'
+        else:
+            name = 'obstacle'
+        
+        add_element(world_root, name,
+                    rect.get('style'),
+                    [(x,y),(x+w,y),(x+w,y+h),(x,y+h)], # Coordinates of all corners
+                    rect.get('transform'))
+    
+    #world.write(sys.argv[2])
+
+    with open(sys.argv[2],'w') as f:
+        dom.parseString(ET.tostring(world.getroot())).writexml(f,'','    ','\n')
