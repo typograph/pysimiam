@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as dom
 
@@ -30,8 +31,8 @@ color_re = re.compile('fill:(#[0-9a-fA-F]{6})')
 ns_re = re.compile('^(\{[^\}]*\})?(.*)$')
 trans_re = re.compile('([^(]*)\(([\-0-9\.,]*)\)')
 
-path_subc = re.compile('[MmZzLlHhVvCcSsQqTtAa]\s*(?:,?\s*[\-0-9\.]+)*')
-path_num  = re.compile('[\-0-9\.]+')
+path_subc = re.compile('[MmZzLlHhVvCcSsQqTtAa]\s*(?:,?\s*[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[1-9][0-9]*)?)*')
+path_num  = re.compile('[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[1-9][0-9]*)?')
 
 """
 This class will discard namespace information from the xml
@@ -332,3 +333,4 @@ for rect in root.findall('rect'):
 
 with open(sys.argv[2],'w') as f:
     dom.parseString(ET.tostring(world.getroot())).writexml(f,'','    ','\n')
+
