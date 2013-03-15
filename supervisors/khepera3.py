@@ -1,11 +1,11 @@
-"""
-(c) PySimiam Team 2013
-
-Contact person: John Witten <jon.witten@gmail.com>
-
-This class was implemented as a weekly programming excercise
-of the 'Control of Mobile Robots' course by Magnus Egerstedt.
-"""
+#
+# (c) PySimiam Team 2013
+#
+# Contact person: John Witten <jon.witten@gmail.com>
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose

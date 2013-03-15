@@ -1,11 +1,11 @@
-"""
-(c) PySimiam Team 2013
-
-Contact person: Tim Fuchs <typograph@elec.ru>
-
-This class was implemented for the weekly programming excercises
-of the 'Control of Mobile Robots' course by Magnus Egerstedt.
-"""
+#
+# (c) PySimiam Team 2013
+# 
+# Contact person: Tim Fuchs <typograph@elec.ru>
+#
+# This class was implemented for the weekly programming excercises
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
 from khepera3 import K3Supervisor
 from helpers import Struct
 from numpy import array, dot

@@ -1,11 +1,11 @@
-"""
-(c) PySimiam Team 2013
-
-Contact person: Tim Fuchs <typograph@elec.ru>
-
-This class was implemented for the weekly programming excercises
-of the 'Control of Mobile Robots' course by Magnus Egerstedt.
-"""
+#
+# (c) PySimiam Team 2013
+# 
+# Contact person: Tim Fuchs <typograph@elec.ru>
+#
+# This class was implemented for the weekly programming excercises
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
