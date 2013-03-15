@@ -47,7 +47,18 @@ class Supervisor:
         
             The current controller to be executed in :py:meth:`~Supervisor.execute`.
             The subclass can set this value in :py:meth:`~Supervisor.process`
-            or in the constructor.
+            or in the constructor. In case the state machine is used, the current
+            controller will be switched automatically.
+
+        .. attribute:: states
+
+            :type: {:class:`~controller.Controller`: [(condition()->bool,:class:`~controller.Controller`)]}
+        
+            The transition table of the state machine. The keys of the
+            dictionary are the state. The conditions are executed one after
+            another until one returns True or the list is through. If one
+            of the conditions evaluates to True, its corresponding controller
+            is made current.
             
         .. attribute:: robot
         
