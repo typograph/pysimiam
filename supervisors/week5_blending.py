@@ -17,10 +17,10 @@ class K3BlendingSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in poses for the controller
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
         
         # Create the controller
-        self.blending = self.create_controller('week5.Blending', self.ui_params)
+        self.blending = self.create_controller('week5.Blending', self.parameters)
 
         # Set the controller
         self.current = self.blending
@@ -28,18 +28,18 @@ class K3BlendingSupervisor(K3Supervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
-        self.blending.set_parameters(self.ui_params)
+        self.blending.set_parameters(self.parameters)
 
     def process(self):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
 
         # Sensor readings in world units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
         
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

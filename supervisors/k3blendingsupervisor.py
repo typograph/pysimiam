@@ -18,10 +18,10 @@ class K3BlendingSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in poses for the controller
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Add controllers
-        self.blending = self.create_controller('blending.Blending', self.ui_params)
+        self.blending = self.create_controller('blending.Blending', self.parameters)
         self.hold = self.create_controller('hold.Hold', None)
         
         # Transitions if at goal
@@ -36,7 +36,7 @@ class K3BlendingSupervisor(K3Supervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
-        self.blending.set_parameters(self.ui_params)
+        self.blending.set_parameters(self.parameters)
 
     def at_goal(self):
         """Check if the distance to goal is small"""
@@ -46,15 +46,15 @@ class K3BlendingSupervisor(K3Supervisor):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
         
         # Distance to the goal
-        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         
         # Sensor readings in real units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

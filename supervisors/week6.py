@@ -20,33 +20,33 @@ class K3WallSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in poses for the controller
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
         
         # Create and set the controller
-        self.current = self.create_controller('week6.FollowWall', self.ui_params)
+        self.current = self.create_controller('week6.FollowWall', self.parameters)
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
-        self.ui_params.direction = params.wall.direction
-        self.ui_params.distance = params.wall.distance
-        self.ui_params.velocity = params.velocity
-        self.ui_params.gains = params.gains
-        self.current.set_parameters(self.ui_params)
+        self.parameters.direction = params.wall.direction
+        self.parameters.distance = params.wall.distance
+        self.parameters.velocity = params.velocity
+        self.parameters.gains = params.gains
+        self.current.set_parameters(self.parameters)
     
     def get_parameters(self):
         """Return a structure with current parameters"""
         p = Struct()
         p.wall = Struct()
-        p.wall.direction = self.ui_params.direction
-        p.wall.distance = self.ui_params.distance
-        p.velocity = self.ui_params.velocity
-        p.gains = self.ui_params.gains
+        p.wall.direction = self.parameters.direction
+        p.wall.distance = self.parameters.distance
+        p.velocity = self.parameters.velocity
+        p.gains = self.parameters.gains
         return p        
 
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.ui_params
+            p = self.parameters
         
         return OrderedDict([
                     (('wall', "Follow wall"), OrderedDict([
@@ -58,27 +58,25 @@ class K3WallSupervisor(K3Supervisor):
                         (('ki','Integral gain'), p.gains.ki),
                         (('kd','Differential gain'), p.gains.kd)]))])
                     
-    def get_default_parameters(self):
-        """Return a structure with default parameters"""
-        p = Struct()
-        p.wall = Struct()
-        p.wall.direction = 'left'
-        p.wall.distance = 0.2
-        p.velocity = Struct()
-        p.velocity.v = 0.2
-        p.gains = Struct()
-        p.gains.kp = 10.0
-        p.gains.ki = 2.0
-        p.gains.kd = 0.0
-        return p
+    def init_default_parameters(self):
+        """Init parameters with default values"""
+        self.parameters = Struct()
+        self.parameters.direction = 'left'
+        self.parameters.distance = 0.2
+        self.parameters.velocity = Struct()
+        self.parameters.velocity.v = 0.2
+        self.parameters.gains = Struct()
+        self.parameters.gains.kp = 10.0
+        self.parameters.gains.ki = 2.0
+        self.parameters.gains.kd = 0.0
 
     def process(self):
         """Update state parameters for the controllers and self"""
         
         # Sensor readings in world units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

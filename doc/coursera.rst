@@ -504,11 +504,11 @@ The controllers and the switching conditions are initialized in the ``__init__``
         """Create necessary controllers"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Create the controllers
-        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
-        self.gtg = self.create_controller('GoToGoal', self.ui_params)
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.parameters)
+        self.gtg = self.create_controller('GoToGoal', self.parameters)
         self.hold = self.create_controller('Hold', None)
 
         self.add_controller(self.hold)
@@ -540,11 +540,11 @@ You should also implement the condition functions. We suggest defining at least 
 
 When implementing various conditions, take note that the functions are called without any arguments. So, all of the parameters you want to access should be stored in the supervisor. You can precalculate anything you need in the ``process`` function that is guaranteed to be called before any conditions are checked. You may also find the following variables useful:
 
-- ``self.ui_params.goal.x`` (float) - The X coordinate of the goal
-- ``self.ui_params.goal.y`` (float) - The Y coordinate of the goal
-- ``self.ui_params.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
-- ``self.ui_params.velocity.v`` (float) - The given target velocity of the robot
-- ``self.ui_params.sensor_distances`` (list of float) - The IR distances measured by each sensor
+- ``self.parameters.goal.x`` (float) - The X coordinate of the goal
+- ``self.parameters.goal.y`` (float) - The Y coordinate of the goal
+- ``self.parameters.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``self.parameters.velocity.v`` (float) - The given target velocity of the robot
+- ``self.parameters.sensor_distances`` (list of float) - The IR distances measured by each sensor
 - ``self.robot.ir_sensors.rmax`` (float) - The maximum distance that can be detected by an IR sensor
 - ``self.robot.ir_sensors.poses`` (list of :class:`~pose.Pose`) - The positions and orientations of IR sensors in the reference frame of the robot
 
@@ -555,9 +555,9 @@ The blending controller's advantage is that it (hopefully) smoothly blends go-to
 
 To create the blending controller uncomment the lines mentioning the blending controller in ``pysimiam/supervisors/week5_switching.py``::
 
-    # self.blending = self.create_controller('week5.Blending', self.ui_params)
-    # self.blending.set_parameters(self.ui_params)
-    # self.blending.get_heading(self.ui_params)
+    # self.blending = self.create_controller('week5.Blending', self.parameters)
+    # self.blending.set_parameters(self.parameters)
+    # self.blending.get_heading(self.parameters)
 
 
 Implement additional conditions:

@@ -33,9 +33,9 @@ The UI may use the get_parameters function interface to create docker windows fo
         self.tracker = Path(robot_pose, 0)
         
         # Create & set the controller
-        self.current = self.create_controller('GoToGoal', self.ui_params)
+        self.current = self.create_controller('GoToGoal', self.parameters)
                     
-    def get_default_parameters(self):
+    def init_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
         p.goal = Struct()
@@ -47,12 +47,13 @@ The UI may use the get_parameters function interface to create docker windows fo
         p.gains.kp = 10.0
         p.gains.ki = 2.0
         p.gains.kd = 0.0
-        return p
+        
+        self.parameters = p
         
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.ui_params
+            p = self.parameters
         
         return OrderedDict([
                     ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
@@ -64,10 +65,10 @@ The UI may use the get_parameters function interface to create docker windows fo
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
-        self.ui_params.goal = params.goal
-        self.ui_params.velocity = params.velocity
-        self.ui_params.gains = params.gains
-        self.current.set_parameters(self.ui_params)
+        self.parameters.goal = params.goal
+        self.parameters.velocity = params.velocity
+        self.parameters.gains = params.gains
+        self.current.set_parameters(self.parameters)
                                   
     def uni2diff(self,uni):
         """Convert from unicycle model to differential model"""
@@ -128,14 +129,14 @@ The UI may use the get_parameters function interface to create docker windows fo
     def process(self):
         """Update state parameters for the controllers and self"""
         
-        self.ui_params.pose = self.pose_est
-        return self.ui_params
+        self.parameters.pose = self.pose_est
+        return self.parameters
     
     def draw(self, renderer):
         """Draw a circular goal, path and ir_sensors"""
         
         # Draw goal
-        renderer.set_pose(Pose(self.ui_params.goal.x, self.ui_params.goal.y))
+        renderer.set_pose(Pose(self.parameters.goal.x, self.parameters.goal.y))
         renderer.set_brush(self.robot_color)
         r = self.robot.wheels.base_length/2
         renderer.draw_ellipse(0,0,r,r)

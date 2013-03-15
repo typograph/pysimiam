@@ -11,9 +11,9 @@ class K3BlendingSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.get_controller('gotogoal.GoToGoal', self.ui_params)
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.parameters)
+        self.gtg = self.get_controller('gotogoal.GoToGoal', self.parameters)
 
         self.current = self.gtg
         self.old_omega = 0
@@ -25,16 +25,16 @@ class K3BlendingSupervisor(K3Supervisor):
         self.pose_est = self.estimate_pose()
 
         # Check if we are in place
-        distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         if distance_from_goal < self.robot.wheels.base_length/2:
             return (0,0)
 
         # Fill parameters for the controllers
-        self.ui_params.pose = self.pose_est
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.pose = self.pose_est
+        self.parameters.sensor_distances = self.get_ir_distances()
 
         # now instead of choosing one controller, blend results
-        distmin = min(self.ui_params.sensor_distances)
+        distmin = min(self.parameters.sensor_distances)
         distmax = self.robot.ir_sensors.rmax
         
         distance_ratio = distmin/distmax     
@@ -46,8 +46,8 @@ class K3BlendingSupervisor(K3Supervisor):
 
         weight_avo = 0.5*(1 + cos(pi*distance_ratio))
 
-        v_gtg, w_gtg = self.gtg.execute(self.ui_params,dt) #execute go-to-goal
-        v_avo, w_avo = self.avoidobstacles.execute(self.ui_params,dt) #execute go-to-goal
+        v_gtg, w_gtg = self.gtg.execute(self.parameters,dt) #execute go-to-goal
+        v_avo, w_avo = self.avoidobstacles.execute(self.parameters,dt) #execute go-to-goal
 
         v = v_gtg*(1-weight_avo) + v_avo*weight_avo
         w = w_gtg*(1-weight_avo) + w_avo*weight_avo
@@ -68,8 +68,8 @@ class K3BlendingSupervisor(K3Supervisor):
 
         # Draw direction to goal
         renderer.set_pen(0x444444)
-        goal_angle = atan2(self.ui_params.goal.y - self.pose_est.y,
-                           self.ui_params.goal.x - self.pose_est.x) \
+        goal_angle = atan2(self.parameters.goal.y - self.pose_est.y,
+                           self.parameters.goal.x - self.pose_est.x) \
                      - self.pose_est.theta
         renderer.draw_arrow(0,0,
             arrow_length*cos(goal_angle),

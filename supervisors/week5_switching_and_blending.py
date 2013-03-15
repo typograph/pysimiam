@@ -9,9 +9,9 @@ class K3DefaultSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         #Add controllers ( go to goal is default)
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.avoidobstacles = self.create_controller('avoidobstacles.AvoidObstacles', self.ui_params)
-        self.gtg = self.create_controller('gotogoal.GoToGoal', self.ui_params)
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.avoidobstacles = self.create_controller('avoidobstacles.AvoidObstacles', self.parameters)
+        self.gtg = self.create_controller('gotogoal.GoToGoal', self.parameters)
         self.hold = self.create_controller('hold.Hold', None)
 
         self.add_controller(self.hold)
@@ -27,8 +27,8 @@ class K3DefaultSupervisor(K3Supervisor):
 
     def set_parameters(self,params):
         K3Supervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.ui_params)
-        self.avoidobstacles.set_parameters(self.ui_params)
+        self.gtg.set_parameters(self.parameters)
+        self.avoidobstacles.set_parameters(self.parameters)
 
     def at_goal(self):
         return self.distance_from_goal < self.robot.wheels.base_length/2
@@ -41,19 +41,19 @@ class K3DefaultSupervisor(K3Supervisor):
 
     def process(self):
         """Selects the best controller based on ir sensor readings
-        Updates ui_params.pose and ui_params.ir_readings"""
+        Updates parameters.pose and parameters.ir_readings"""
 
-        self.ui_params.pose = self.pose_est
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.pose = self.pose_est
+        self.parameters.sensor_distances = self.get_ir_distances()
         
-        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
-        self.distmin = min(self.ui_params.sensor_distances)
+        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        self.distmin = min(self.parameters.sensor_distances)
         
         # Ensure the headings are calculated
-        self.avoidobstacles.get_heading(self.ui_params)
-        self.gtg.get_heading(self.ui_params)
+        self.avoidobstacles.get_heading(self.parameters)
+        self.gtg.get_heading(self.parameters)
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         K3Supervisor.draw(self,renderer)

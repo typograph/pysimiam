@@ -17,7 +17,7 @@ class Supervisor:
         Any extension of pysimiam will require inheriting from this superclass.
         The important methods that have to be implemented to control a robot are
         :meth:`~Supervisor.estimate_pose`, :meth:`~Supervisor.process`,
-        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`.
+        :meth:`~Supervisor.init_default_parameters` and :meth:`~Supervisor.get_ui_description`.
         
         The base class implements a state machine for switching between different
         controllers. See :meth:`add_controller` for more information.
@@ -35,7 +35,7 @@ class Supervisor:
             The estimated pose of the robot. This variable is updated automatically in
             the beginning of the calculation cycle using :py:meth:`~Supervisor.estimate_pose`
             
-        .. attribute:: ui_params
+        .. attribute:: parameters
         
             :type: :class:`~helpers.Struct`
 
@@ -70,10 +70,10 @@ class Supervisor:
         """
         self.initial_pose = robot_pose
         self.pose_est = robot_pose
-        self.ui_params = self.get_default_parameters()
         self.current = None
         self.robot = robot_info
         self.robot_color = robot_info.color
+        self.init_default_parameters()
         
         # Dict controller -> (function, controller)
         self.states = {}
@@ -86,21 +86,21 @@ class Supervisor:
         :return: A supervisor-specific parameter structure.
         :rtype: :class:`~helpers.Struct`
         """
-        return self.ui_params
+        return self.parameters
 
-    def get_default_parameters(self):
-        """Return the default parameter structure, suitable for running this supervisor.
+    def init_default_parameters(self):
+        """Populate :attr:`parameters` with default values
         
         Must be implemented in subclasses.
         """
-        raise NotImplementedError("Supervisor.get_default_parameters")
+        raise NotImplementedError("Supervisor.init_default_parameters")
 
     def get_ui_description(self, params = None):
         """Return a dictionary describing the parameters available to the user.
 
         :param params: An instance of the paramaters structure as returned
                        from get_parameters. If not specified, this method
-                       should use :attr:`~Supervisor.ui_params`
+                       should use :attr:`~Supervisor.parameters`
         :type params:  :class:`~helpers.Struct`
         
         :return: A dictionary describing the interface
@@ -130,13 +130,14 @@ class Supervisor:
         raise NotImplementedError("Supervisor.get_ui_description")
         
     def set_parameters(self,params):
-        """Update this supervisor parameters
+        """Update this supervisor parameters. The `params` will have the same
+        structure as specified by :meth:`get_ui_description`
 
         :param params: An instance of the paramaters structure as can be returned
                        from :meth:`~Supervisor.get_parameters`.
         :type params: :class:`~helpers.Struct`
         """
-        self.ui_params = params
+        self.parameters = params
 
     def create_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.

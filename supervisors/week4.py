@@ -18,24 +18,24 @@ class K3AvoidSupervisor(K3Supervisor):
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in poses for the controller
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Create the controller
-        self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.ui_params)
+        self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.parameters)
 
         # Set the controller
         self.current = self.avoidobstacles
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
-        self.ui_params.velocity = params.velocity
-        self.ui_params.gains = params.gains
-        self.avoidobstacles.set_parameters(self.ui_params)
+        self.parameters.velocity = params.velocity
+        self.parameters.gains = params.gains
+        self.avoidobstacles.set_parameters(self.parameters)
 
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.ui_params
+            p = self.parameters
         
         return OrderedDict([
                     ('velocity', {'v':p.velocity.v}),
@@ -48,12 +48,12 @@ class K3AvoidSupervisor(K3Supervisor):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
 
         # Sensor readings in world units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""
@@ -62,7 +62,7 @@ class K3AvoidSupervisor(K3Supervisor):
         arrow_length = self.robot_size*5
         
         # Draw arrow away from obstacles
-        renderer.set_pen(0xFF0000)
+        renderer.set_pen(0xCC3311)
         renderer.draw_arrow(0,0,
             arrow_length*cos(self.avoidobstacles.heading_angle),
             arrow_length*sin(self.avoidobstacles.heading_angle))

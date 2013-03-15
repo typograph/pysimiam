@@ -10,7 +10,7 @@ For the Khepera3, two supervisor classes are layered to improve readability and 
 Students are expected to write their own second-level supervisor class to extend the base K3Supervisor class.
 As an example, the k3defaultsupervisor.K3DefaultSupervisor class which inherits from the K3Supervisor, is where all the decision making and controller implementation is written. To behave appropriately, the K3DefaultSupervisor will need your controller declarations and process implementation. 
 
-A supervisor process is the object method or instruction set that occurs each time the simulator updates the robot with pose information and obstacle interaction. In your implementation, the process method is where the robot should change supervisors and set or add any paramaters to the ui_params variable.
+A supervisor process is the object method or instruction set that occurs each time the simulator updates the robot with pose information and obstacle interaction. In your implementation, the process method is where the robot should change supervisors and set or add any paramaters to the parameters variable.
 
 Simulation World
 ----------------

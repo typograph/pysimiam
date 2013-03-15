@@ -5,7 +5,8 @@ Contact person: Tim Fuchs <typograph@elec.ru>
 
 This class was implemented for the weekly programming excercises
 of the 'Control of Mobile Robots' course by Magnus Egerstedt.
-"""from pid_controller import PIDController
+"""
+from pid_controller import PIDController
 import math
 import numpy
 

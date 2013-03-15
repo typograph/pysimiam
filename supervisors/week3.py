@@ -7,6 +7,7 @@ This class was implemented for the weekly programming excercises
 of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 """
 from khepera3 import K3Supervisor
+from simobject import Path
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 
@@ -20,7 +21,7 @@ class K3GTGSupervisor(K3Supervisor):
         self.tracker = Path(robot_pose, 0)
 
         # Create the controller
-        self.gtg = self.create_controller('week3.GoToGoal', self.ui_params)
+        self.gtg = self.create_controller('week3.GoToGoal', self.parameters)
 
         # Set the controller
         self.current = self.gtg
@@ -28,18 +29,18 @@ class K3GTGSupervisor(K3Supervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.ui_params)
+        self.gtg.set_parameters(self.parameters)
 
     def process(self):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
         
         # Update the trajectory
         self.tracker.add_point(self.pose_est)
         
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

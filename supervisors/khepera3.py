@@ -30,7 +30,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         # Let's say the robot is that big:
         self.robot_size = robot_info.wheels.base_length
         
-    def get_default_parameters(self):
+    def init_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
         p.goal = Struct()
@@ -42,12 +42,13 @@ The UI may use the get_parameters function interface to create docker windows fo
         p.gains.kp = 10.0
         p.gains.ki = 2.0
         p.gains.kd = 0.0
-        return p
+        
+        self.parameters = p
         
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.ui_params
+            p = self.parameters
         
         return OrderedDict([
                     ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
@@ -59,9 +60,9 @@ The UI may use the get_parameters function interface to create docker windows fo
 
     def set_parameters(self,params):
         """Set param structure from docker"""
-        self.ui_params.goal = params.goal
-        self.ui_params.velocity = params.velocity
-        self.ui_params.gains = params.gains
+        self.parameters.goal = params.goal
+        self.parameters.velocity = params.velocity
+        self.parameters.gains = params.gains
                                   
     def uni2diff(self,uni):
         """Convert between unicycle model to differential model"""
@@ -132,7 +133,7 @@ The UI may use the get_parameters function interface to create docker windows fo
 
     def draw(self, renderer):
         """Draw a circular goal"""
-        renderer.set_pose(Pose(self.ui_params.goal.x, self.ui_params.goal.y))
+        renderer.set_pose(Pose(self.parameters.goal.x, self.parameters.goal.y))
         renderer.set_brush(self.robot_color)
         r = self.robot_size/2
         renderer.draw_ellipse(0,0,r,r)

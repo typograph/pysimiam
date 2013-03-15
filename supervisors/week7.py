@@ -13,22 +13,22 @@ import numpy
 
 class K3FullSupervisor(K3Supervisor):
     """K3Full supervisor implements the full switching behaviour for navigating labyrinths."""
-     def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_info):
         """Create controllers and the state transitions"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in some parameters
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.ui_params.ir_max = robot_info.ir_sensors.rmax
-        self.ui_params.direction = 'left'
-        self.ui_params.distance = 0.2
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.ir_max = robot_info.ir_sensors.rmax
+        self.parameters.direction = 'left'
+        self.parameters.distance = 0.2
         
         self.robot = robot_info
         
         #Add controllers
-        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
-        self.gtg = self.create_controller('GoToGoal', self.ui_params)
-        self.wall = self.create_controller('FollowWall', self.ui_params)
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.parameters)
+        self.gtg = self.create_controller('GoToGoal', self.parameters)
+        self.wall = self.create_controller('FollowWall', self.parameters)
         self.hold = self.create_controller('Hold', None)
 
         # Week 7 Assignment:
@@ -54,9 +54,9 @@ class K3FullSupervisor(K3Supervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.ui_params)
-        self.avoidobstacles.set_parameters(self.ui_params)
-        self.wall.set_parameters(self.ui_params)
+        self.gtg.set_parameters(self.parameters)
+        self.avoidobstacles.set_parameters(self.parameters)
+        self.wall.set_parameters(self.parameters)
 
     def at_goal(self):
         """Check if the distance to goal is small"""
@@ -74,18 +74,18 @@ class K3FullSupervisor(K3Supervisor):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
 
         # Distance to the goal
-        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         
         # Sensor readings in real units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
         
         # Distance to the closest obstacle        
-        self.distmin = min(self.ui_params.sensor_distances)
+        self.distmin = min(self.parameters.sensor_distances)
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""
@@ -104,7 +104,7 @@ class K3FullSupervisor(K3Supervisor):
 
         elif self.current == self.avoidobstacles:
             # Draw arrow away from obstacles
-            renderer.set_pen(0xFF0000)
+            renderer.set_pen(0xCC3311)
             renderer.draw_arrow(0,0,
                 arrow_length*cos(self.avoidobstacles.heading_angle),
                 arrow_length*sin(self.avoidobstacles.heading_angle))

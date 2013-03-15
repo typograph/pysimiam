@@ -13,5 +13,5 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     simWidget = SimulationWidget()
     simWidget.show()
-    simWidget.load_world("playground.xml")
+    simWidget.load_world("week1.xml")
     app.exec_()

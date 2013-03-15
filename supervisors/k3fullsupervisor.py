@@ -21,18 +21,18 @@ class K3FullSupervisor(K3Supervisor):
         self.distmax = robot_info.ir_sensors.rmax + robot_info.wheels.base_length/2
 
         # Fill in some parameters
-        self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.ui_params.ir_max = robot_info.ir_sensors.rmax
-        self.ui_params.direction = 'left'
-        self.ui_params.distance = self.distmax*0.85
+        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.parameters.ir_max = robot_info.ir_sensors.rmax
+        self.parameters.direction = 'left'
+        self.parameters.distance = self.distmax*0.85
         
         self.robot = robot_info
         self.process()
         
         #Add controllers
-        self.gtg = self.create_controller('GoToGoal', self.ui_params)
-        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
-        self.wall = self.create_controller('FollowWall', self.ui_params)
+        self.gtg = self.create_controller('GoToGoal', self.parameters)
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.parameters)
+        self.wall = self.create_controller('FollowWall', self.parameters)
         self.hold = self.create_controller('Hold', None)
         
         # Define transitions
@@ -55,9 +55,9 @@ class K3FullSupervisor(K3Supervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.ui_params)
-        self.avoidobstacles.set_parameters(self.ui_params)
-        self.wall.set_parameters(self.ui_params)
+        self.gtg.set_parameters(self.parameters)
+        self.avoidobstacles.set_parameters(self.parameters)
+        self.wall.set_parameters(self.parameters)
 
     def at_goal(self):
         """Check if the distance to goal is small"""
@@ -79,19 +79,19 @@ class K3FullSupervisor(K3Supervisor):
             # Find the closest detected point
             dmin = self.distmax
             tmin = 0
-            for i, d in enumerate(self.ui_params.sensor_distances):
+            for i, d in enumerate(self.parameters.sensor_distances):
                 if d < dmin:
                     dmin = d
-                    tmin = self.ui_params.sensor_poses[i].theta
+                    tmin = self.parameters.sensor_poses[i].theta
             
             # Go that way
             if tmin > 0:
-                self.ui_params.direction = 'left'
+                self.parameters.direction = 'left'
             else:
-                self.ui_params.direction = 'right'
+                self.parameters.direction = 'right'
               
             # Notify the controller
-            self.wall.set_parameters(self.ui_params)
+            self.wall.set_parameters(self.parameters)
             
             # Save the closest we've been to the goal
             self.best_distance = self.distance_from_goal
@@ -111,7 +111,7 @@ class K3FullSupervisor(K3Supervisor):
             return False
             
         # Check if we have a clear shot to the goal
-        h_gtg = self.gtg.get_heading(self.ui_params)
+        h_gtg = self.gtg.get_heading(self.parameters)
         return numpy.dot(self.wall.to_wall_vector[:2],h_gtg[:2]) < 0
 
     def unsafe(self):
@@ -130,13 +130,13 @@ class K3FullSupervisor(K3Supervisor):
         """Update state parameters for the controllers and self"""
 
         # The pose for controllers
-        self.ui_params.pose = self.pose_est
+        self.parameters.pose = self.pose_est
         
         # Distance to the goal
-        self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
+        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         
         # Sensor readings in real units
-        self.ui_params.sensor_distances = self.get_ir_distances()
+        self.parameters.sensor_distances = self.get_ir_distances()
         
         # Smallest reading translated into distance from center of robot
         vectors = \
@@ -145,12 +145,12 @@ class K3FullSupervisor(K3Supervisor):
                     p.get_transformation(),
                     numpy.array([d,0,1])
                     )
-                     for d, p in zip(self.ui_params.sensor_distances, self.ui_params.sensor_poses) \
+                     for d, p in zip(self.parameters.sensor_distances, self.parameters.sensor_poses) \
                      if abs(p.theta) < 2.4] )
         
         self.distmin = min((sqrt(a[0]**2 + a[1]**2) for a in vectors))
 
-        return self.ui_params
+        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""
