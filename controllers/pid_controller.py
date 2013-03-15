@@ -1,7 +1,11 @@
-#PySimiam
-#Author: John Alexander
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
+"""
+(c) PySimiam Team 2013 
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from controller import Controller
 import math
 import numpy
@@ -9,11 +13,16 @@ import numpy
 class PIDController(Controller):
     """The PID controller is a general-purpose controller that steers the robot to a certain heading direction. The heading is recalculated on every execution."""
     def __init__(self, params):
-        '''read another .xml for PID parameters?'''
+        '''Initialize internal variables'''
         Controller.__init__(self,params)
+        
+        # This angle shows the direction that the controller
+        # tries to follow. It is used by the supervisor
+        # to draw and debug this controller
         self.heading_angle = 0
 
     def restart(self):
+        """Set the integral and differential errors to zero"""
         self.E = 0
         self.error_1 = 0
 
@@ -43,31 +52,32 @@ class PIDController(Controller):
         raise NotImplementedError("PIDController.get_heading")
     
     def execute(self, state, dt):
-        """Executes avoidance behavior based on state and dt. 
-        state --> supevisor set ui_params
-
-        dt --> supervisor set timestep
-
-        return --> unicycle model list [velocity, omega]"""
+        """Calculate errors and steer the robot"""
      
+        # The vector to follow
         heading = self.get_heading(state)
         
-        #1. Calculate simple proportional error
+        # This is the direction we want to go
         self.heading_angle = math.atan2(heading[1],heading[0])
+
+        # 1. Calculate simple proportional error
+        # The direction is in the robot's frame of reference,
+        # so the error is the direction.
+        # Note that the error is automatically between pi and -pi.
         error = self.heading_angle
 
-        #2. Calculate integral error
+        # 2. Calculate integral error
         self.E += error*dt
         self.E = (self.E + math.pi)%(2*math.pi) - math.pi
 
-        #3. Calculate differential error
+        # 3. Calculate differential error
         dE = (error - self.error_1)/dt
         self.error_1 = error #updates the error_1 var
 
-        #4. Calculate desired omega
+        # 4. Calculate desired omega
         w_ = self.kp*error + self.ki*self.E + self.kd*dE
         
+        # The linear velocity is given to us:
         v_ = state.velocity.v
 
-        #6. Return solution
         return [v_, w_]

@@ -1,17 +1,27 @@
-#PySimiam
-#Author: John Alexander
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from pid_controller import PIDController
 import math
 import numpy
 
 class AvoidObstacles(PIDController):
-    """Avoid obstacles is an example controller that checks the sensors for any readings, checks a threshold, and then performs counter-clockwise evasion from the first detected sensor position. Speed control and goal selection are a part of its routines."""
+    """Avoid obstacles is an example controller that checks the sensors
+       for any readings, constructs 'obstacle' vectors and directs the robot
+       in the direction of their weightd sum."""
     def __init__(self, params):
-        '''read another .xml for PID parameters?'''
+        '''Initialize internal variables'''
         PIDController.__init__(self,params)
 
+        # This variable should contain a list of vectors
+        # calculated from sensor readings. It is used by
+        # the supervisor to draw & debug the controller's
+        # behaviour
         self.vectors = []
 
     def set_parameters(self, params):
@@ -24,14 +34,20 @@ class AvoidObstacles(PIDController):
 
         self.poses = params.sensor_poses
 
+        # Now we know the poses, it makes sense to also
+        # calculate the weights
         self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+        
+        # Normalizing weights
         ws = sum(self.weights)
         self.weights = [w/ws for w in self.weights]
 
     def get_heading(self, state):
-        """Get the direction away from the obstacles as a vector."""      
+        """Get the direction away from the obstacles as a vector."""
         
-        # Calculate vectors:
+        # Calculate heading:
+        
+        # 1. Transform distances to vectors in the robot's frame of reference
         self.vectors = \
             numpy.array(
                 [numpy.dot(
@@ -40,7 +56,7 @@ class AvoidObstacles(PIDController):
                     )
                      for d, p in zip(state.sensor_distances, self.poses) ] )
         
-        # Calculate weighted sum:
+        # 2. Calculate weighted sum:
         heading = numpy.dot(self.vectors.transpose(), self.weights)
      
         return heading

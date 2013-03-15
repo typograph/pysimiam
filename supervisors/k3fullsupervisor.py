@@ -1,14 +1,23 @@
+"""
+(c) PySimiam Team 2013 
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 import numpy
 
 class K3FullSupervisor(K3Supervisor):
-    """K3Full supervisor creates four controllers: hold, gotogoal, avoidobstacles and blending."""
+    """K3Full supervisor implements the full switching behaviour for navigating labyrinths."""
     def __init__(self, robot_pose, robot_info):
-        """Creates an avoid-obstacle controller and go-to-goal controller"""
+        """Create controllers and the state transitions"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
+        # The maximal distance to an obstacle (inexact)
         self.distmax = robot_info.ir_sensors.rmax + robot_info.wheels.base_length/2
 
         # Fill in some parameters
@@ -20,13 +29,13 @@ class K3FullSupervisor(K3Supervisor):
         self.robot = robot_info
         self.process()
         
-        #Add controllers ( go to goal is default)
-        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
+        #Add controllers
         self.gtg = self.create_controller('GoToGoal', self.ui_params)
-        #self.blending = self.create_controller('blending.Blending', self.ui_params)
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.ui_params)
         self.wall = self.create_controller('FollowWall', self.ui_params)
         self.hold = self.create_controller('Hold', None)
         
+        # Define transitions
         self.add_controller(self.hold,
                             (lambda: not self.at_goal(), self.gtg))
         self.add_controller(self.gtg,
@@ -40,25 +49,34 @@ class K3FullSupervisor(K3Supervisor):
                             (self.at_goal, self.hold),
                             (self.safe, self.wall))
 
+        # Start in the 'go-to-goal' state
         self.current = self.gtg
 
     def set_parameters(self,params):
+        """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
         self.gtg.set_parameters(self.ui_params)
         self.avoidobstacles.set_parameters(self.ui_params)
         self.wall.set_parameters(self.ui_params)
 
     def at_goal(self):
+        """Check if the distance to goal is small"""
         return self.distance_from_goal < self.robot.wheels.base_length/2
 
     def is_at_wall(self):
+        """Check if the distance to wall is small"""
         return self.distmin < self.distmax*0.8
 
     def at_wall(self):
+        """Check the distance to wall and decide
+           on the direction"""
+
         wall_close = self.is_at_wall()
+        
         # Decide which direction to go
         if wall_close:
-            
+        
+            # Find the closest detected point
             dmin = self.distmax
             tmin = 0
             for i, d in enumerate(self.ui_params.sensor_distances):
@@ -66,37 +84,42 @@ class K3FullSupervisor(K3Supervisor):
                     dmin = d
                     tmin = self.ui_params.sensor_poses[i].theta
             
+            # Go that way
             if tmin > 0:
                 self.ui_params.direction = 'left'
             else:
                 self.ui_params.direction = 'right'
-                
+              
+            # Notify the controller
             self.wall.set_parameters(self.ui_params)
             
+            # Save the closest we've been to the goal
             self.best_distance = self.distance_from_goal
             
         return wall_close
 
     def wall_cleared(self):
-        print self.distmin/self.distmax
-        
+        """Check if the robot should stop following the wall"""
+
+        # Did we make progress?
         if self.distance_from_goal >= self.best_distance:
             return False
-        #self.best_distance = self.distance_from_goal
 
-        print self.distance_from_goal, self.best_distance
-
+        # Are we far enough from the wall,
+        # so that we don't switch back immediately
         if self.is_at_wall():
             return False
             
+        # Check if we have a clear shot to the goal
         h_gtg = self.gtg.get_heading(self.ui_params)
-        print "Far enough", numpy.dot(self.wall.to_wall_vector[:2],h_gtg[:2])
         return numpy.dot(self.wall.to_wall_vector[:2],h_gtg[:2]) < 0
 
     def unsafe(self):
+        """Check if the distance to wall is too small"""        
         return self.distmin < self.distmax*0.5
         
     def safe(self):
+        """Check if the distance to wall is ok again"""        
         wall_far = self.distmin > self.distmax*0.6
         # Check which way to go
         if wall_far:
@@ -104,13 +127,18 @@ class K3FullSupervisor(K3Supervisor):
         return wall_far
 
     def process(self):
-        """Selects the best controller based on ir sensor readings
-        Updates ui_params.pose and ui_params.ir_readings"""
+        """Update state parameters for the controllers and self"""
 
+        # The pose for controllers
         self.ui_params.pose = self.pose_est
+        
+        # Distance to the goal
         self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
         
+        # Sensor readings in real units
         self.ui_params.sensor_distances = self.get_ir_distances()
+        
+        # Smallest reading translated into distance from center of robot
         vectors = \
             numpy.array(
                 [numpy.dot(
@@ -125,9 +153,9 @@ class K3FullSupervisor(K3Supervisor):
         return self.ui_params
     
     def draw(self, renderer):
+        """Draw controller info"""
         K3Supervisor.draw(self,renderer)
 
-        # Make sure to have all headings:
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5
 

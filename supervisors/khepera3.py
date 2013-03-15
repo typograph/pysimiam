@@ -1,3 +1,11 @@
+"""
+(c) PySimiam Team 2013
+
+Contact person: John Witten <jon.witten@gmail.com>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
@@ -6,20 +14,20 @@ from collections import OrderedDict
 from simobject import Path
 
 class K3Supervisor(Supervisor):
-    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the k3defaultsupervisor.K3DefaultSupervisor class in which this class is used to reduce noisy code interactions.
+    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the :class:`~k3defaultsupervisor.K3DefaultSupervisor` class in which this class is used to reduce noisy code interactions.
 
 Most importantly, the K3Supervisor object implements the system functions necessary to operate a Khepera3, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.
 
 The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors."""
     def __init__(self, robot_pose, robot_info):
+        """Initialize internal variables"""
         Supervisor.__init__(self, robot_pose, robot_info)
 
-        #Create conrollers
-        
         # initialize memory registers
         self.left_ticks  = robot_info.wheels.left_ticks
         self.right_ticks = robot_info.wheels.right_ticks
         
+        # Let's say the robot is that big:
         self.robot_size = robot_info.wheels.base_length
         
     def get_default_parameters(self):
@@ -50,6 +58,7 @@ The UI may use the get_parameters function interface to create docker windows fo
                         (('kd','Differential gain'), p.gains.kd)]))])
 
     def set_parameters(self,params):
+        """Set param structure from docker"""
         self.ui_params.goal = params.goal
         self.ui_params.velocity = params.velocity
         self.ui_params.gains = params.gains
@@ -57,7 +66,6 @@ The UI may use the get_parameters function interface to create docker windows fo
     def uni2diff(self,uni):
         """Convert between unicycle model to differential model"""
         (v,w) = uni
-        # Assignment Week 2
 
         summ = 2*v/self.robot.wheels.radius
         diff = self.robot.wheels.base_length*w/self.robot.wheels.radius
@@ -65,25 +73,23 @@ The UI may use the get_parameters function interface to create docker windows fo
         vl = (summ-diff)/2
         vr = (summ+diff)/2
 
-        # End Assignment
         return (vl,vr)
             
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
-
-        ir_distances = [] #populate this list
-        #self.robot.ir_sensors.readings | (may want to use this)
-        for reading in self.robot.ir_sensors.readings:
-            val = max( min( (log1p(3960) - log1p(reading))/30 + self.robot.ir_sensors.rmin , self.robot.ir_sensors.rmax) , self.robot.ir_sensors.rmin)
-            ir_distances.append(val) 
+        
+        ir_distances = [ \
+            max( min( (log1p(3960) - log1p(reading))/30 + 
+                       self.robot.ir_sensors.rmin,
+                      self.robot.ir_sensors.rmax),
+                 self.robot.ir_sensors.rmin)
+            for reading in self.robot.ir_sensors.readings ]
 
         return ir_distances
 
     def process(self):
-        """Select controller and insert data into a state info structure for the controller"""
-        # Controller is already selected
-        # Parameters are nearly in the right format for go-to-goal
-        raise NotImplementedError('K3Supervisor.process') 
+        """Update state parameters for the controllers and self"""
+        raise NotImplementedError('K3Supervisor.process')
     
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
@@ -115,7 +121,7 @@ The UI may use the get_parameters function interface to create docker windows fo
             
         theta_new = theta + theta_dt
         x_new = x + x_dt
-        y_new = y + y_dt             
+        y_new = y + y_dt
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
             
@@ -125,8 +131,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         return self.uni2diff(output)
 
     def draw(self, renderer):
-        """Draw a circular goal and path"""
-        # Draw goal
+        """Draw a circular goal"""
         renderer.set_pose(Pose(self.ui_params.goal.x, self.ui_params.goal.y))
         renderer.set_brush(self.robot_color)
         r = self.robot_size/2

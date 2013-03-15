@@ -1,13 +1,17 @@
-#PySimiam
-#Author: John Alexander
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented for the weekly programming excercises
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from controller import Controller
 import math
 import numpy
 
 class GoToGoal(Controller):
-    """Example of a PID implementation for goal-seek"""
+    """Go-to-goal steers the robot to a predefined position in the world."""
     def __init__(self, params):
         '''Initialize some variables'''
         
@@ -37,7 +41,7 @@ class GoToGoal(Controller):
         #You may use these variables for convenience
         self.E = 0 # Integrated error
         self.e_1 = 0 # Previous error calculation
-
+        
         #End Week 3 Assigment
 
     def get_heading(self, state):
@@ -46,28 +50,28 @@ class GoToGoal(Controller):
         #Insert Week 3 Assignment Code Here
         # Here is an example of how to get goal position
         # and robot pose data. Feel free to name them differently.
-
+        
         #x_g, y_g = state.goal.x, state.goal.y
         #x_r, y_r, theta = state.pose
-
+        
         #End Week 3 Assigment
         
         return [1, 0, 1]
-    
+
     def execute(self, state, dt):
-        """Executes avoidance behavior based on state and dt. 
-        state --> supevisor set ui_params
-        dt --> supervisor set timestep
+        """Executes avoidance behavior based on state and dt.
+        state --> the state of the robot and the goal
+        dt --> elapsed time
         return --> unicycle model list [velocity, omega]"""
-     
-        heading = self.get_heading(state)      
+        
+        heading = self.get_heading(state)
         self.heading_angle = math.atan2(heading[1],heading[0])
-
+        
         #Insert Week 3 Assignment Code Here
-
+        
         w_ = 0
         v_ = 0
-
+        
         #End Week 3 Assignment
         
         return [v_, w_]

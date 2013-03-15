@@ -1,29 +1,41 @@
-#PySimiam
-#Author: Tim Fuchs
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
+"""
+(c) PySimiam Team 2013 
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented for the weekly programming excercises
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from pid_controller import PIDController
 import math
 import numpy
 
 class FollowWall(PIDController):
-    """Follow walls is an example controller that keeps a certain distance
+    """Follow walls is a controller that keeps a certain distance
     to the wall and drives alongside it in clockwise or counter-clockwise
     fashion."""
     def __init__(self, params):
-        ''' It's just a PID controller'''
+        '''Initialize internal variables'''
         PIDController.__init__(self,params)
 
+        # This variable should contain a list of vectors
+        # calculated from the relevant sensor readings.
+        # It is used by the supervisor to draw & debug
+        # the controller's behaviour
         self.vectors = []
         
     def restart(self):
+        """Reset internal state"""
         PIDController.restart(self)
 
     def set_parameters(self, params):
-        """Set PID values and sensor poses.
+        """Set PID values, sensor poses, direction and distance.
         
         The params structure is expected to have sensor poses in the robot's
-        reference frame as ``params.sensor_poses``.
+        reference frame as ``params.sensor_poses``, the direction of wall
+        following (either 'right' for clockwise or 'left' for anticlockwise)
+        as ``params.direction`` and the desired distance to the wall 
+        to maintain as ``params.distance``.
         """
         PIDController.set_parameters(self,params)
 

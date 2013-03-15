@@ -1,7 +1,11 @@
-#PySimiam
-#Author: John Alexander
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
+"""
+(c) PySimiam Team 2013 
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from controller import Controller
 import math
 import numpy

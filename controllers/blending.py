@@ -1,21 +1,29 @@
-#PySimiam
-#Author: Tim Fuchs
-#Description: A blending controller for coursera
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from pid_controller import PIDController
 import math
 import numpy
 
 class Blending(PIDController):
-    """Example of a PID implementation for goal-seek"""
+    """A controller blending go-to-goal and avoid-obstacles behaviour"""
     def __init__(self, params):
-        """Create the go-to-goal controlles.
-        
-        See :meth:`controller.PIDController.set_params`
-        for the expected parameter structure
-        """
+        """Initialize internal variables"""
         PIDController.__init__(self,params)
+        
+        # These two angles are used by the supervisor
+        # to debug the controller's behaviour, and contain
+        # the headings as returned by the two subcontrollers.
         self.goal_angle = 0
         self.away_angle = 0
+        
+        # Initial vectors for avoid-obstacles
+        self.vectors = []
 
     def set_parameters(self, params):
         """Set PID values and sensor poses.
@@ -26,14 +34,21 @@ class Blending(PIDController):
         PIDController.set_parameters(self,params)
 
         self.poses = params.sensor_poses
-        self.weights = [1.0]*len(self.poses)
-        #self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+
+        # Now we know the poses, it makes sense to also
+        # calculate the weights
+        self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+        
+        # Normalizing weights
         ws = sum(self.weights)
         self.weights = [w/ws for w in self.weights]
 
     def get_ao_heading(self,state):
+        """Get the direction away from the obstacles as a vector."""
         
-        # Calculate vectors:
+        # Calculate heading:
+        
+        # 1. Transform distances to vectors in the robot's frame of reference
         self.vectors = \
             numpy.array(
                 [numpy.dot(
@@ -42,9 +57,10 @@ class Blending(PIDController):
                     )
                      for d, p in zip(state.sensor_distances, self.poses) ] )
         
-        # Calculate weighted sum:
+        # 2. Calculate weighted sum:
         heading = numpy.dot(self.vectors.transpose(), self.weights)
-        
+
+        # 3. Normalize the heading vector
         mod_heading = math.sqrt(heading[1]**2 + heading[0]**2)
         
         heading[0] /= mod_heading
@@ -57,22 +73,25 @@ class Blending(PIDController):
 
     def get_gtg_heading(self, state):
         """Get the direction from the robot to the goal as a vector."""
+        
         #Calculate the goal position
         x_g, y_g = state.goal.x, state.goal.y
         x_r, y_r, theta = state.pose
 
         self.goal_angle = math.atan2(y_g - y_r, x_g - x_r) - theta
-        # Alternative implementation:
-        # return numpy.dot(
-        #     numpy.linalg.pinv(state.pose.get_transformation()),
-        #     numpy.array([state.goal.x, state.goal.y, 1]))
         
-        return numpy.array([math.cos(self.goal_angle),math.sin(self.goal_angle),1])        
+        return numpy.array([math.cos(self.goal_angle),
+                            math.sin(self.goal_angle),
+                            1])
 
     def get_heading(self, state):
+        """Blend the two headings"""
+        
+        # Get the outputs of the two subcontrollers
         u_ao = self.get_ao_heading(state)
         u_gtg = self.get_gtg_heading(state)
         
+        # The closer we are to the obstacles, the less weight go-to-goal has
         weight_gtg = math.exp(- 0.2 / min(state.sensor_distances) + 1)
         
         u = u_ao*(1-weight_gtg) + u_gtg*weight_gtg

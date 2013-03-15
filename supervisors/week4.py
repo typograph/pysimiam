@@ -1,21 +1,33 @@
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented for the weekly programming excercises
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 from collections import OrderedDict
 
 class K3AvoidSupervisor(K3Supervisor):
-    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
+    """K3Avoid supervisor uses one avoid-obstacles controller to drive the robot through a cluttered environment without collisions."""
     def __init__(self, robot_pose, robot_info):
-        """Creates an avoid-obstacle controller and go-to-goal controller"""
+        """Create the controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
+        # Fill in poses for the controller
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
 
+        # Create the controller
         self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.ui_params)
 
+        # Set the controller
         self.current = self.avoidobstacles
 
     def set_parameters(self,params):
+        """Set parameters for itself and the controllers"""
         self.ui_params.velocity = params.velocity
         self.ui_params.gains = params.gains
         self.avoidobstacles.set_parameters(self.ui_params)
@@ -33,18 +45,19 @@ class K3AvoidSupervisor(K3Supervisor):
                         (('kd','Differential gain'), p.gains.kd)]))])
 
     def process(self):
-        """Selects the best controller based on ir sensor readings
-        Updates ui_params.pose and ui_params.ir_readings"""
+        """Update state parameters for the controllers and self"""
 
+        # The pose for controllers
         self.ui_params.pose = self.pose_est
+
+        # Sensor readings in world units
         self.ui_params.sensor_distances = self.get_ir_distances()
 
         return self.ui_params
     
     def draw(self, renderer):
-        # Draw robot path
-        self.tracker.draw(renderer)
-        
+        """Draw controller info"""
+
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5
         
@@ -54,7 +67,7 @@ class K3AvoidSupervisor(K3Supervisor):
             arrow_length*cos(self.avoidobstacles.heading_angle),
             arrow_length*sin(self.avoidobstacles.heading_angle))
             
-        # Week 3
+        # Draw calculated vectors
         renderer.set_pen(0)
         for v in self.avoidobstacles.vectors:
             x,y,z = v
@@ -66,5 +79,5 @@ class K3AvoidSupervisor(K3Supervisor):
             renderer.draw_line(0.01,0.01,-0.01,-0.01)
             renderer.draw_line(0.01,-0.01,-0.01,0.01)
             
-            renderer.pop_state()            
+            renderer.pop_state()
             

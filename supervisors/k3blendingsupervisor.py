@@ -1,46 +1,63 @@
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented as a weekly programming excercise
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 
 class K3BlendingSupervisor(K3Supervisor):
-    """K3Blending supervisor has just one controller, the one that blends between the creates four controllers: hold, gotogoal, avoidobstacles and blending."""
+    """K3Blending supervisor has two controllers - hold and blending, that blends
+       go-to-goal and avoid-obstacles behaviour."""
     def __init__(self, robot_pose, robot_info):
-        """Creates an avoid-obstacle controller and go-to-goal controller"""
+        """Create controllers and the state transitions"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
-        #Add controllers ( go to goal is default)
+        # Fill in poses for the controller
         self.ui_params.sensor_poses = robot_info.ir_sensors.poses[:]
+
+        # Add controllers
         self.blending = self.create_controller('blending.Blending', self.ui_params)
         self.hold = self.create_controller('hold.Hold', None)
         
+        # Transitions if at goal
         self.add_controller(self.hold,
                             (lambda: not self.at_goal(), self.blending))
         self.add_controller(self.blending,
                             (self.at_goal,self.hold))
 
+        # Start in the 'blending' state
         self.current = self.blending
 
     def set_parameters(self,params):
+        """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
         self.blending.set_parameters(self.ui_params)
 
     def at_goal(self):
+        """Check if the distance to goal is small"""
         return self.distance_from_goal < self.robot.wheels.base_length/2
 
     def process(self):
-        """Selects the best controller based on ir sensor readings
-        Updates ui_params.pose and ui_params.ir_readings"""
+        """Update state parameters for the controllers and self"""
 
+        # The pose for controllers
         self.ui_params.pose = self.pose_est
+        
+        # Distance to the goal
         self.distance_from_goal = sqrt((self.pose_est.x - self.ui_params.goal.x)**2 + (self.pose_est.y - self.ui_params.goal.y)**2)
         
+        # Sensor readings in real units
         self.ui_params.sensor_distances = self.get_ir_distances()
-        self.distmin = min(
-            (d for d, p in zip(self.ui_params.sensor_distances, self.ui_params.sensor_poses) if abs(p.theta) < 2.2))
 
         return self.ui_params
     
     def draw(self, renderer):
+        """Draw controller info"""
         K3Supervisor.draw(self,renderer)
 
         renderer.set_pose(self.pose_est)

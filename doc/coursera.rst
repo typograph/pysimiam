@@ -553,9 +553,12 @@ Mix blending and switching
 
 The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
 
-To create the blending controller uncomment this line in ``pysimiam/supervisors/week5_switching.py``::
+To create the blending controller uncomment the lines mentioning the blending controller in ``pysimiam/supervisors/week5_switching.py``::
 
     # self.blending = self.create_controller('week5.Blending', self.ui_params)
+    # self.blending.set_parameters(self.ui_params)
+    # self.blending.get_heading(self.ui_params)
+
 
 Implement additional conditions:
 

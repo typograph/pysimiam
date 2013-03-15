@@ -1,3 +1,11 @@
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented for the weekly programming excercises
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
@@ -8,16 +16,15 @@ from simobject import Path
 from math import pi, sin, cos, log1p, sqrt, atan2
 
 class K3Supervisor(Supervisor):
-    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the k3defaultsupervisor.K3DefaultSupervisor class in which this class is used to reduce noisy code interactions.
+    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the :class:`~k3defaultsupervisor.K3DefaultSupervisor` class in which this class is used to reduce noisy code interactions.
 
 Most importantly, the K3Supervisor object implements the system functions necessary to operate a Khepera3, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.
 
 The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors."""
     def __init__(self, robot_pose, robot_info):
+        """Initialize internal variables"""
         Supervisor.__init__(self, robot_pose, robot_info)
 
-        #Create conrollers
-        
         # initialize memory registers
         self.prev_left_ticks  = robot_info.wheels.left_ticks
         self.prev_right_ticks = robot_info.wheels.right_ticks
@@ -25,7 +32,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         # Create tracker
         self.tracker = Path(robot_pose, 0)
         
-        # Create controllers
+        # Create & set the controller
         self.current = self.create_controller('GoToGoal', self.ui_params)
                     
     def get_default_parameters(self):
@@ -56,12 +63,14 @@ The UI may use the get_parameters function interface to create docker windows fo
                         (('kd','Differential gain'), p.gains.kd)]))])
 
     def set_parameters(self,params):
+        """Set parameters for itself and the controllers"""
         self.ui_params.goal = params.goal
         self.ui_params.velocity = params.velocity
         self.ui_params.gains = params.gains
+        self.current.set_parameters(self.ui_params)
                                   
     def uni2diff(self,uni):
-        """Convert between unicycle model to differential model"""
+        """Convert from unicycle model to differential model"""
         (v,w) = uni
         
         #Insert Week 2 Assignment Code Here
@@ -117,8 +126,8 @@ The UI may use the get_parameters function interface to create docker windows fo
         return self.uni2diff(output)
 
     def process(self):
-        """Select controller and insert data into a state info structure for the controller"""
-        # This week we just go to goal, 
+        """Update state parameters for the controllers and self"""
+        
         self.ui_params.pose = self.pose_est
         return self.ui_params
     

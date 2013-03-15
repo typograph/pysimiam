@@ -1,31 +1,48 @@
+"""
+(c) PySimiam Team 2013
+
+Contact person: Tim Fuchs <typograph@elec.ru>
+
+This class was implemented for the weekly programming excercises
+of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+"""
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 
 class K3GTGSupervisor(K3Supervisor):
-    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
+    """K3GTG supervisor uses one go-to-goal controller to make the robot reach the goal."""
     def __init__(self, robot_pose, robot_info):
-        """Creates an avoid-obstacle controller and go-to-goal controller"""
+        """Create the controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
+        
+        # Create the tracker
         self.tracker = Path(robot_pose, 0)
-                    
+
+        # Create the controller
         self.gtg = self.create_controller('week3.GoToGoal', self.ui_params)
 
+        # Set the controller
         self.current = self.gtg
 
     def set_parameters(self,params):
+        """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
         self.gtg.set_parameters(self.ui_params)
 
     def process(self):
-        """Selects the best controller based on ir sensor readings
-        Updates ui_params.pose and ui_params.ir_readings"""
+        """Update state parameters for the controllers and self"""
 
+        # The pose for controllers
         self.ui_params.pose = self.pose_est
+        
+        # Update the trajectory
         self.tracker.add_point(self.pose_est)
+        
         return self.ui_params
     
     def draw(self, renderer):
+        """Draw controller info"""
         K3Supervisor.draw(self,renderer)
 
         # Draw robot path
