@@ -37,12 +37,11 @@ class K3AvoidSupervisor(K3Supervisor):
         if p is None:
             p = self.parameters
         
-        return OrderedDict([
-                    ('velocity', {'v':p.velocity.v}),
-                    (('gains',"PID gains"), OrderedDict([
-                        (('kp','Proportional gain'), p.gains.kp),
-                        (('ki','Integral gain'), p.gains.ki),
-                        (('kd','Differential gain'), p.gains.kd)]))])
+        return [('velocity', [('v', p.velocity.v)]),
+                (('gains',"PID gains"),
+                    [(('kp','Proportional gain'), p.gains.kp),
+                     (('ki','Integral gain'), p.gains.ki),
+                     (('kd','Differential gain'), p.gains.kd)])]
 
     def process(self):
         """Update state parameters for the controllers and self"""

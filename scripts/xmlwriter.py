@@ -42,11 +42,10 @@ class XMLWriter(XMLObject):
         """
 
         def write_subtree(root, tree):
-            for key, value in tree.items():
-                # parameter key must be either a string or a tuple
-                
-                # Parameter value is either a dict or a tuple:
-                if isinstance(value, dict):
+            for key, value in tree:
+                # Parameter key must be either a string or a tuple                
+                # Parameter value is either a list or a number/string:
+                if isinstance(value, list):
                     if isinstance(key, basestring):
                         tag = ET.SubElement(root, key)
                     elif isinstance(key, tuple):
@@ -60,11 +59,6 @@ class XMLWriter(XMLObject):
                         root.set(key, str(value))
                     else:
                         raise Exception('[XMLWriter._write_parameters] Invalid key: {}'.format(key))
-
-        # Root must be a dictionary       
-        if not isinstance(self._tree, dict):
-            raise Exception(
-                'XMLWriter._write_parameters] Tree must be a dictionary!')
 
         xml = ET.ElementTree(ET.Element('parameters'))
         xml_root = xml.getroot()

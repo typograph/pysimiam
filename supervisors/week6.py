@@ -48,15 +48,15 @@ class K3WallSupervisor(K3Supervisor):
         if p is None:
             p = self.parameters
         
-        return OrderedDict([
-                    (('wall', "Follow wall"), OrderedDict([
-                        ('direction', (p.direction,['left','right'])),
-                        (('distance','Distance to wall'), p.distance)])),
-                    ('velocity', {'v':p.velocity.v}),
-                    (('gains',"PID gains"), OrderedDict([
-                        (('kp','Proportional gain'), p.gains.kp),
-                        (('ki','Integral gain'), p.gains.ki),
-                        (('kd','Differential gain'), p.gains.kd)]))])
+        return [
+            (('wall', "Follow wall"), [
+                ('direction', (p.direction,['left','right'])),
+                (('distance','Distance to wall'), p.distance)]),
+            ('velocity', [('v',p.velocity.v)]),
+            (('gains',"PID gains"), [
+                (('kp','Proportional gain'), p.gains.kp),
+                (('ki','Integral gain'), p.gains.ki),
+                (('kd','Differential gain'), p.gains.kd)])]
                     
     def init_default_parameters(self):
         """Init parameters with default values"""

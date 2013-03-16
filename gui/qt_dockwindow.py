@@ -85,13 +85,9 @@ class ChoiceEntry():
     
 class Group():
     def __init__(self,label,parameters):
-        if not isinstance(parameters,dict):
-            raise ValueError(
-                "Invalid tree leaf class {}".format(
-                    parameters.__class__.__name__))
         self.label = label
         self.leafs = OrderedDict()
-        for key in parameters:
+        for key, value in parameters:
             if isinstance(key,str):
                 dict_key = key
                 child_label = key.capitalize()
@@ -106,34 +102,32 @@ class Group():
             else:
                 raise ValueError("Invalid tree key")
             
-            v = parameters[key]
-            if isinstance(v,float):
-                self.leafs[dict_key] = Entry(child_label,v)
-            elif isinstance(v,int):
-                self.leafs[dict_key] = Entry(child_label,float(v))
-            elif isinstance(v,tuple):
-                self.leafs[dict_key] = ChoiceEntry(child_label,v[0],v[1])
+            if isinstance(value,float):
+                self.leafs[dict_key] = Entry(child_label,value)
+            elif isinstance(value,int):
+                self.leafs[dict_key] = Entry(child_label,float(value))
+            elif isinstance(value,tuple):
+                self.leafs[dict_key] = ChoiceEntry(child_label,value[0],value[1])
             else:
-                self.leafs[dict_key] = Group(child_label,v)
+                self.leafs[dict_key] = Group(child_label,value)
         
     def create_widgets(self, parent, layout):
         self.box = QtGui.QGroupBox(self.label,parent)
         form_layout = QtGui.QFormLayout(self.box)
+        form_layout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
         for leaf in self.leafs.values():
             leaf.create_widgets(self.box,form_layout)
         layout.addRow(self.box)
 
     def set_value(self, value):
-        if not isinstance(value,dict):
-            raise ValueError("Invalid parameter value {}".format(value))
-        for k, v in value.items():
+        for k, v in value:
             if k in self.leafs:
                 self.leafs[k].set_value(v)
             else:
                 raise KeyError("Key '{}' not accepted by supervisor".format(k))
         
     def get_value(self):
-        return dict([(key, self.leafs[key].get_value()) for key in self.leafs])
+        return [(key, self.leafs[key].get_value()) for key in self.leafs]
 
     def get_struct(self):
         p = Struct()

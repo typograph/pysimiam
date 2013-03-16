@@ -52,14 +52,20 @@ class XMLReader(XMLObject):
             for attr, value in tag.items():
                 if attr != "id":
                     try:
-                        rdict[attr] = float(value)
+                        rdict.append((attr,float(value)))
                     except ValueError:
-                        rdict[attr] = value
+                        rdict.append((attr,value))
+                       
             for child in tag:
-                rdict[child.tag] = {}
-                parse_tag(rdict[child.tag], child)
+                sub = []
+                id_ = child.get('id',None)
+                if id_ is not None:
+                    rdict.append(((child.tag, id_),sub))
+                else:
+                    rdict.append((child.tag,sub))
+                parse_tag(sub, child)
 
-        result = {}
+        result = []
         parse_tag(result, self._root)
 
         return result

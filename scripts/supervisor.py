@@ -107,15 +107,14 @@ class Supervisor:
         raise NotImplementedError("Supervisor.init_default_parameters")
 
     def get_ui_description(self, params = None):
-        """Return a dictionary describing the parameters available to the user.
+        """Return a list describing the parameters available to the user.
 
         :param params: An instance of the paramaters structure as returned
                        from get_parameters. If not specified, this method
                        should use :attr:`~Supervisor.parameters`
         :type params:  :class:`~helpers.Struct`
         
-        :return: A dictionary describing the interface
-        :rtype: `collections.OrderedDict`
+        :return: A list describing the interface
         
         The structure returned by this function is used in the interface
         to show a window where the user can adjust the supervisor parameters.
@@ -124,17 +123,18 @@ class Supervisor:
         
         The format of the returned object is as follows:
         
-        - The object is a dictionary. It is recommended to use `collections.OrderedDict`
-          for the correct order of fields in the UI form.
-        - The key to the dictionary is either a string or a tuple. If it is a tuple,
-          then the first value is the name of the parameter field,
+        - The object is a list of tuples. The order of tuples defines the order
+          of fields.
+        - The first part of a tuple (key) is either a string or a tuple.
+          If it is a tuple, then the first value is the name of the parameter field,
           the second value is an UI label, and the third is an optional string
           identifier if the parameter structure has several fields, identical in
           structure. If the key is a string, it is used both as a label, capitalized,
           and as a field name.
-        - The values of the dictionary are either floats, in which case they describe
-          individual parameters, or dictionaries, structured the same way the root
-          dictionary is structured.
+        - The second part of a tuple (value) is either a float, in which case
+          it describes one parameter, or a (string, list of strings) tuple,
+          for multiple-choise paramaters, or lists, structured the same way
+          the root list is structured.
         
         Must be implemented in subclasses.
         """

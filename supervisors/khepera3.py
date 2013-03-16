@@ -50,13 +50,12 @@ The UI may use the get_parameters function interface to create docker windows fo
         if p is None:
             p = self.parameters
         
-        return OrderedDict([
-                    ('goal', OrderedDict([('x',p.goal.x), ('y',p.goal.y)])),
-                    ('velocity', {'v':p.velocity.v}),
-                    (('gains',"PID gains"), OrderedDict([
-                        (('kp','Proportional gain'), p.gains.kp),
-                        (('ki','Integral gain'), p.gains.ki),
-                        (('kd','Differential gain'), p.gains.kd)]))])
+        return [('goal', [('x',p.goal.x), ('y',p.goal.y)]),
+                ('velocity', [('v',p.velocity.v)]),
+                (('gains',"PID gains"), [
+                    (('kp','Proportional gain'), p.gains.kp),
+                    (('ki','Integral gain'), p.gains.ki),
+                    (('kd','Differential gain'), p.gains.kd)])]
 
     def set_parameters(self,params):
         """Set param structure from docker"""
