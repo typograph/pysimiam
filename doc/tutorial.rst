@@ -80,7 +80,7 @@ The robot moves
 
 To move the robot, the simulator calls :meth:`~robot.Robot.move` with the time
 interval as a parameter. When implementing this method, you should update
-the pose of the robot with :meth:`~simobject.SimObject.set_pose`, sepending on
+the pose of the robot with :meth:`~simobject.SimObject.set_pose`, depending on
 its internal state.
 
 The internal state of the robot is set by the supervisor passing parameters into :meth:`~robot.Robot.set_inputs`. The format of the parameters is up to the robot
@@ -137,14 +137,14 @@ inputs (such as wheel speeds) to make the robot attain a particular goal.
 
 In order to achieve this, the supervisor should subdivide achieving the goal
 into several small tasks and use one or more controllers to accomplish them.
-The controllers are supposed to be general, reusable robot behaviours, and the
+The controllers are supposed to be general, reusable robot behaviors, and the
 task of the supervisor is to choose a suitable controller and supply the expected
 parameters to it, as deduced from the particular robot's parameters.
 
 The simple case
 ^^^^^^^^^^^^^^^
 
-The simplest supervisor only has one behaviour for the robot. In the constructor,
+The simplest supervisor only has one behavior for the robot. In the constructor,
 the supervisor should create the corresponding controller and assign it to the
 :attr:`~supervisor.Supervisor.current` variable. In order to load the controller,
 it is recommended to use the :meth:`~supervisor.Supervisor.create_controller` method,
@@ -160,7 +160,7 @@ the controller. The return value of the controller is passed to the simulator
 and subsequently to the robot's inputs. As the controller output may not be
 in the right format for the robot, you can overwrite the :meth:`~supervisor.Supervisor.execute`
 method and transform the output before returning it to the simulator
-(see :meth:`khepera3.K3Supervisor.execute` for an example)
+(see :meth:`supervisors.khepera3.K3Supervisor.execute` for an example)
 
 Using the state machine
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,7 +187,7 @@ the controller is switched e.g. to ``c1`` for ``condition1``.
  that is guaranteed to be called before any conditions are checked. In very
  complicated cases, that might not be covered by this state machine, you are welcome
  to overwrite the :meth:`~supervisor.Supervisor.execute` method and implement
- a more fine-grained behaviour.
+ a more fine-grained behavior.
 
 Run-time access to parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -212,11 +212,11 @@ This dock was generated with the following code::
         if p is None:
             p = self.parameters
         
-        return [('behaviour',[
+        return [('behavior',[
                     ('goal', [
-                        ('x',p.behaviour.goal.x),
-                        ('y',p.behaviour.goal.y)]),
-                    (('follow', 'Follow walls'), (p.behaviour.follow,['yes','no'])),
+                        ('x',p.behavior.goal.x),
+                        ('y',p.behavior.goal.y)]),
+                    (('follow', 'Follow walls'), (p.behavior.follow,['yes','no'])),
                     ]),
                 (('pid','PID close parameters','close'),[
                     (('kp','Proportional gain'), p.pid['close'].kp),
@@ -232,12 +232,12 @@ This dock was generated with the following code::
     
 As you see, every (key, value) tuple in the list that is returned from ``get_ui_description``
 corresponds to an interface element. The type of the element depends on the type of `value`.
-``('x',3.0)`` will create a spinbox, ``('color',('yellow',['red','yellow','green']))`` - a set
+``('x',3.0)`` will create a spin-box, ``('color',('yellow',['red','yellow','green']))`` - a set
 of radio-buttons `red`, `yellow` and `green` with `yellow` selected, and
-('goal', [ ('x',1.0), ('y', 1.0)] ) a grouping box with two spinboxes inside.
+``('goal', [ ('x',1.0), ('y', 1.0)] )`` a grouping box with two spin-boxes inside.
 
 The key may be a string or a tuple with two or three values. The string or the
-first field of the tuple is the name of the field in the structure, like ``p.behaviour``
+first field of the tuple is the name of the field in the structure, like ``p.behavior``
 above. It is also the name of an XML tag that corresponds to this element if
 the parameters are saved to a file. If the tuple has a second field, it is used
 as a label. In the case no label is supplied, the field name is capitalized and used
@@ -253,7 +253,7 @@ simplify :meth:`~supervisor.Supervisor.get_parameters`, from which such a struct
 
 .. note:: The implementation of the Khepera3 supervisors use the same structure
  ``self.parameters`` to both store the parameters and to pass parameters to controllers.
- This behaviour is neither compulsory nor ideal. In the general case, the controllers
+ This behavior is neither compulsory nor ideal. In the general case, the controllers
  might require differently structured information.
 
 Drawing additional stuff
@@ -271,4 +271,18 @@ can draw content directly related to the current state of the world.
 Creating a controller
 ---------------------
 
-A controller represents a specific robotic behaviour.
+A controller represents a specific robotic behavior. Its main method is
+:meth:`~controller.Controller.execute`, that accepts the state of the robot and
+the elapsed time as arguments and returns a structure suitable for controlling
+the robot. For example, the controllers implemented in pySimiam so far
+return a `(v, ω)` tuple  - the linear and angular speeds in the unicycle model.
+
+The controller can also have a set of parameters, set with :meth:`~controller.Controller.set_parameters`.
+Again, the structure of the parameters is up to the controller implementation.
+The supervisor using this controller should provide suitable arguments
+to the controller's constructor.
+
+Additionally, the controller should provide the means to reset its internal state
+by implementing :meth:`~controller.Controller.restart`. This method is called
+every time the supervisor switches from one controller to the next, and it might
+be necessary to reset the accumulated error, for example, as in a PID controller.
