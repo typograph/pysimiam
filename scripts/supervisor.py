@@ -17,7 +17,10 @@ class Supervisor:
         Any extension of pysimiam will require inheriting from this superclass.
         The important methods that have to be implemented to control a robot are
         :meth:`~Supervisor.estimate_pose`, :meth:`~Supervisor.process`,
-        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`
+        :meth:`~Supervisor.init_default_parameters` and :meth:`~Supervisor.get_ui_description`.
+        
+        The base class implements a state machine for switching between different
+        controllers. See :meth:`add_controller` for more information.
 
         .. attribute:: initial_pose 
             
@@ -32,7 +35,7 @@ class Supervisor:
             The estimated pose of the robot. This variable is updated automatically in
             the beginning of the calculation cycle using :py:meth:`~Supervisor.estimate_pose`
             
-        .. attribute:: ui_params
+        .. attribute:: parameters
         
             :type: :class:`~helpers.Struct`
 
@@ -44,13 +47,30 @@ class Supervisor:
         
             The current controller to be executed in :py:meth:`~Supervisor.execute`.
             The subclass can set this value in :py:meth:`~Supervisor.process`
-            or in the constructor.
+            or in the constructor. In case the state machine is used, the current
+            controller will be switched automatically.
+
+        .. attribute:: states
+
+            :type: {:class:`~controller.Controller`: [(condition()->bool,:class:`~controller.Controller`)]}
+        
+            The transition table of the state machine. The keys of the
+            dictionary are the state. The conditions are executed one after
+            another until one returns True or the list is through. If one
+            of the conditions evaluates to True, its corresponding controller
+            is made current.
             
         .. attribute:: robot
         
             :type: :class:`~helpers.Struct`
         
             The robot information structure given by the robot.
+
+        .. attribute:: robot_color
+        
+            :type: int
+        
+            The color of the robot in the view (useful for drawing).
     """
     def __init__(self, robot_pose, robot_info):
         """
@@ -61,9 +81,13 @@ class Supervisor:
         """
         self.initial_pose = robot_pose
         self.pose_est = robot_pose
-        self.ui_params = self.get_default_parameters()
         self.current = None
-        self.robot = None
+        self.robot = robot_info
+        self.robot_color = robot_info.color
+        self.init_default_parameters()
+        
+        # Dict controller -> (function, controller)
+        self.states = {}
 
     def get_parameters(self):
         """Get the parameter structure of the supervisor.
@@ -73,25 +97,24 @@ class Supervisor:
         :return: A supervisor-specific parameter structure.
         :rtype: :class:`~helpers.Struct`
         """
-        return self.ui_params
+        return self.parameters
 
-    def get_default_parameters(self):
-        """Return the default parameter structure, suitable for running this supervisor.
+    def init_default_parameters(self):
+        """Populate :attr:`parameters` with default values
         
         Must be implemented in subclasses.
         """
-        raise NotImplementedError("Supervisor.get_default_parameters")
+        raise NotImplementedError("Supervisor.init_default_parameters")
 
     def get_ui_description(self, params = None):
-        """Return a dictionary describing the parameters available to the user.
+        """Return a list describing the parameters available to the user.
 
         :param params: An instance of the paramaters structure as returned
                        from get_parameters. If not specified, this method
-                       should use :attr:`~Supervisor.ui_params`
+                       should use :attr:`~Supervisor.parameters`
         :type params:  :class:`~helpers.Struct`
         
-        :return: A dictionary describing the interface
-        :rtype: `collections.OrderedDict`
+        :return: A list describing the interface
         
         The structure returned by this function is used in the interface
         to show a window where the user can adjust the supervisor parameters.
@@ -100,32 +123,34 @@ class Supervisor:
         
         The format of the returned object is as follows:
         
-        - The object is a dictionary. It is recommended to use `collections.OrderedDict`
-          for the correct order of fields in the UI form.
-        - The key to the dictionary is either a string or a tuple. If it is a tuple,
-          then the first value is the name of the parameter field,
+        - The object is a list of tuples. The order of tuples defines the order
+          of fields.
+        - The first part of a tuple (key) is either a string or a tuple.
+          If it is a tuple, then the first value is the name of the parameter field,
           the second value is an UI label, and the third is an optional string
           identifier if the parameter structure has several fields, identical in
           structure. If the key is a string, it is used both as a label, capitalized,
           and as a field name.
-        - The values of the dictionary are either floats, in which case they describe
-          individual parameters, or dictionaries, structured the same way the root
-          dictionary is structured.
+        - The second part of a tuple (value) is either a float, in which case
+          it describes one parameter, or a (string, list of strings) tuple,
+          for multiple-choise paramaters, or lists, structured the same way
+          the root list is structured.
         
         Must be implemented in subclasses.
         """
         raise NotImplementedError("Supervisor.get_ui_description")
         
     def set_parameters(self,params):
-        """Update this supervisor parameters
+        """Update this supervisor parameters. The `params` will have the same
+        structure as specified by :meth:`get_ui_description`
 
         :param params: An instance of the paramaters structure as can be returned
                        from :meth:`~Supervisor.get_parameters`.
         :type params: :class:`~helpers.Struct`
         """
-        self.ui_params = params
+        self.parameters = params
 
-    def add_controller(self, module_string, parameters):
+    def create_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.
 
         :param module_string: a string specifying a class in a module.
@@ -137,6 +162,22 @@ class Supervisor:
         """
         controller_class = helpers.load_by_name(module_string, 'controllers')
         return controller_class(parameters)
+    
+    def add_controller(self,controller,*args):
+        """Add a transition table for a state with controller
+        
+           The arguments are (function, controller) tuples.
+           The functions cannot take any arguments.
+           Each step, the functions are executed in the order
+           they were supplied to this function. If a function
+           evaluates to True, the current controller switches to the
+           one specified with this function. The target controller
+           is restarted using :meth:`controller.Controller.restart`.
+           
+           The functions are guaranteed to be called after :meth:`process`.
+           Thus, :attr:`robot` should contain actual information about the robot.
+        """
+        self.states[controller] = args
 
     def execute(self, robot_info, dt):
         """Based on robot state and elapsed time, return the parameters
@@ -153,18 +194,39 @@ class Supervisor:
         
         #. Store robot information in :attr:`~Supervisor.robot`
         #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`
-        #. Set controller and get controller parameters from :meth:`~Supervisor.process`
+        #. Calculate state variables and get controller parameters from :meth:`~Supervisor.process`
+        #. Check if the controller has to be switched
         #. Execute currently selected controller with the parameters from previous step
         #. Return unicycle model parameters as an output (velocity, omega)
         """
         self.robot = robot_info
         self.pose_est = self.estimate_pose()
         params = self.process() #User-defined algorithm
+        
+        # Switch:
+        if self.current in self.states:
+            for f, c in self.states[self.current]:
+                if f():
+                    c.restart()
+                    self.current = c
+                    print "Switched to {}".format(c.__class__.__name__)
+                    break
+        
         output = self.current.execute(params,dt) #execute the current controller
         return output
 
+    def draw(self, renderer):
+        """Draw anything in the view.
+        
+        This will be called before anything else is drawn (except the grid)
+        
+        :param renderer: A renderer to draw with
+        :type renderer: :class:`~renderer.Renderer`
+        """
+        pass
+
     def process(self):
-        """Evaluate the information about the robot and select a controller.
+        """Evaluate the information about the robot and set state variables.
         
         :return: A parameter structure in the format appropriate for the current controller.
         :rtype: :class:`~helpers.Struct`

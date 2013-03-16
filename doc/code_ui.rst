@@ -7,9 +7,9 @@ Drawing
 .. autoclass:: renderer.Renderer
     :members:
 
-.. autoclass:: qtrenderer.QtRenderer
+.. autoclass:: qt_renderer.QtRenderer
 
-.. autoclass:: wxrenderer.wxGCRenderer
+.. autoclass:: wx_renderer.wxGCRenderer
 
 
 UI
@@ -25,7 +25,7 @@ The interaction is serialized
 PyQt4 implementation
 ^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: qtsimiam
+.. automodule:: qt_mainwindow
     :members:
         
 .. automodule:: qt_dockwindow
@@ -34,5 +34,5 @@ PyQt4 implementation
 wxPython implementation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: pysimiam
+.. automodule:: wx_mainwindow
     :members:

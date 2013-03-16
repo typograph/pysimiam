@@ -1,4 +1,6 @@
 from xmlobject import XMLObject
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as dom
 
 class XMLWriter(XMLObject):
     """
@@ -39,52 +41,32 @@ class XMLWriter(XMLObject):
             void
         """
 
-        # Root must be a dictionary       
-        if not isinstance(self._tree, dict):
-            raise Exception(
-                'XMLWriter._write_parameters] Tree must be a dictionary!')
- 
-        root_tag = self._tree.keys()[0]
-        
-        result = "<" + str(root_tag) + ">\n"
-        parameters = self._tree.itervalues().next()
-        for p in parameters.keys():
-            # parameter key must be either a string or a tuple
-            if isinstance(p, basestring):  
-                parameter_string = "<" + str(p) + " "
-            elif isinstance(p, tuple):
-                parameter_string = "<" + p[0] + " id=\"" + p[1] + "\" "
-            else:
-                raise Exception(
-                    '[XMLWriter._write_parameters] Invalid key: ' + str(p))  
-       
-            # Value of a parameter must be a dictionary 
-            if not isinstance(parameters[p], dict):
-                raise Exception(
-                    'XMLWriter._write_parameters] Attributes must be stored' 
-                    + 'in a dictionary!')
+        def write_subtree(root, tree):
+            for key, value in tree:
+                # Parameter key must be either a string or a tuple                
+                # Parameter value is either a list or a number/string:
+                if isinstance(value, list):
+                    if isinstance(key, basestring):
+                        tag = ET.SubElement(root, key)
+                    elif isinstance(key, tuple):
+                        tag = ET.SubElement(root, str(key[0]))
+                        tag.set("id",str(key[1]))
+                    else:
+                        raise Exception('[XMLWriter._write_parameters] Invalid key: {}'.format(key))
+                    write_subtree(tag, value)
+                else:
+                    if isinstance(key, basestring):
+                        root.set(key, str(value))
+                    else:
+                        raise Exception('[XMLWriter._write_parameters] Invalid key: {}'.format(key))
 
-            attribute_strings = []
-            for attribute in parameters[p].keys():
-                # Attribute must be {str: float} or {str: int}
-                if (not isinstance(parameters[p][attribute], float) and \
-                   not isinstance(parameters[p][attribute], int)) or \
-                   not isinstance(attribute, basestring):
-                    raise Exception(
-                        '[XMLWriter._write_parameters] Invalid entry: ' + \
-                        str(attribute) + ": " + str(parameters[p][attribute]))
-  
-                attribute_strings.append(
-                    str(attribute) + "=\"" 
-                    + str(parameters[p][attribute]) 
-                    + "\"")
-            parameter_string += " ".join(attribute_strings)
-            result = result + "    " + parameter_string + " />\n"
+        xml = ET.ElementTree(ET.Element('parameters'))
+        xml_root = xml.getroot()
  
-        result += "</" + str(root_tag) + ">\n"
-       
+        write_subtree(xml_root, self._tree)
+        
         with open(self._file, 'w') as f: 
-            f.write(result)
+            dom.parseString(ET.tostring(xml_root)).writexml(f,'','    ','\n')
 
     def _write_simulation(self):
         """ 

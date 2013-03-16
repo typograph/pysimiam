@@ -86,8 +86,10 @@ class Khepera3(Robot):
 
     def draw(self,r):
         r.set_pose(self.get_pose())
+        r.set_pen(0)
         r.set_brush(0xCCCCCC)
         r.draw_polygon(self._p2)
+        r.set_pen(0x01000000)
         r.set_brush(self.get_color())
         r.draw_polygon(self._p1)
         

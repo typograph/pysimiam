@@ -6,7 +6,7 @@ sys.path.insert(0, './scripts')
 import wx
 import os
 import wx.lib.newevent
-from wxrenderer import wxGCRenderer
+from wx_renderer import wxGCRenderer
 
 import simulator as sim
 import threading

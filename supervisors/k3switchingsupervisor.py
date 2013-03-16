@@ -1,32 +1,19 @@
-#
-# (c) PySimiam Team 2013
-#
-# Contact person: Tim Fuchs <typograph@elec.ru>
-#
-# This class was implemented as a weekly programming excercise
-# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
-#
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 
 class K3DefaultSupervisor(K3Supervisor):
-    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles.
-       It switches between the two depending on the distance to the closest
-       obstacle."""
+    """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""
     def __init__(self, robot_pose, robot_info):
-        """Create controllers and the state transitions"""
+        """Creates an avoid-obstacle controller and go-to-goal controller"""
         K3Supervisor.__init__(self, robot_pose, robot_info)
 
-        # Fill in poses for the controller
+        #Add controllers ( go to goal is default)
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.avoidobstacles = self.get_controller('avoidobstacles.AvoidObstacles', self.parameters)
+        self.gtg = self.get_controller('gotogoal.GoToGoal', self.parameters)
+        self.hold = self.get_controller('hold.Hold', None)
 
-        # Add controllers
-        self.avoidobstacles = self.create_controller('avoidobstacles.AvoidObstacles', self.parameters)
-        self.gtg = self.create_controller('gotogoal.GoToGoal', self.parameters)
-        self.hold = self.create_controller('hold.Hold', None)
-
-        # Transitions if at goal/obstacle
         self.add_controller(self.hold)
         self.add_controller(self.gtg,
                             (self.at_goal, self.hold),
@@ -36,49 +23,39 @@ class K3DefaultSupervisor(K3Supervisor):
                             (self.free, self.gtg),
                             )
 
-        # Start in the 'go-to-goal' state
         self.current = self.gtg
 
     def set_parameters(self,params):
-        """Set parameters for itself and the controllers"""
         K3Supervisor.set_parameters(self,params)
         self.gtg.set_parameters(self.parameters)
         self.avoidobstacles.set_parameters(self.parameters)
 
     def at_goal(self):
-        """Check if the distance to goal is small"""
         return self.distance_from_goal < self.robot.wheels.base_length/2
         
     def at_obstacle(self):
-        """Check if the distance to obstacle is small"""
         return self.distmin < self.robot.ir_sensors.rmax/2
         
     def free(self):
-        """Check if the distance to obstacle is large"""
         return self.distmin > self.robot.ir_sensors.rmax/1.5
 
     def process(self):
-        """Update state parameters for the controllers and self"""
+        """Selects the best controller based on ir sensor readings
+        Updates parameters.pose and parameters.ir_readings"""
 
-        # The pose for controllers
         self.parameters.pose = self.pose_est
-        # Sensor readings in real units
         self.parameters.sensor_distances = self.get_ir_distances()
         
-        # Distance to the goal
         self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
-        
-        # Distance to the closest obstacle        
         self.distmin = min(self.parameters.sensor_distances)
         
-        # Ensure the headings are calculated (for drawing)
+        # Ensure the headings are calculated
         self.avoidobstacles.get_heading(self.parameters)
         self.gtg.get_heading(self.parameters)
 
         return self.parameters
     
     def draw(self, renderer):
-        """Draw controller info"""
         K3Supervisor.draw(self,renderer)
 
         renderer.set_pose(self.pose_est)
@@ -87,12 +64,26 @@ class K3DefaultSupervisor(K3Supervisor):
         # Draw arrow to goal
         renderer.set_pen(0x00FF00)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.gtg.heading_angle),
-            arrow_length*sin(self.gtg.heading_angle))
+            arrow_length*cos(self.gtg.goal_angle),
+            arrow_length*sin(self.gtg.goal_angle))
 
         # Draw arrow away from obstacles
         renderer.set_pen(0xFF0000)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.avoidobstacles.heading_angle),
-            arrow_length*sin(self.avoidobstacles.heading_angle))          
+            arrow_length*cos(self.avoidobstacles.away_angle),
+            arrow_length*sin(self.avoidobstacles.away_angle))
+            
+        # Week 3
+        renderer.set_pen(0)
+        for v in self.avoidobstacles.vectors:
+            x,y,z = v
+            
+            renderer.push_state()
+            renderer.translate(x,y)
+            renderer.rotate(atan2(y,x))
+        
+            renderer.draw_line(0.01,0.01,-0.01,-0.01)
+            renderer.draw_line(0.01,-0.01,-0.01,0.01)
+            
+            renderer.pop_state()            
             

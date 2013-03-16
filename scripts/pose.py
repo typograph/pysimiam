@@ -78,8 +78,8 @@ class Pose(object):
         """Get the 3x3 transformation matrix associated with the pose."""
         #Z-axis ccw rotation transformation matrix
         T = np.array([\
-            [math.cos(self.theta), -math.sin(self.theta), self.x],\
-            [math.sin(self.theta), math.cos(self.theta), self.y],\
+            [np.cos(self.theta), -np.sin(self.theta), self.x],\
+            [np.sin(self.theta), np.cos(self.theta), self.y],\
             [0, 0, 1.0]])
         return T
 

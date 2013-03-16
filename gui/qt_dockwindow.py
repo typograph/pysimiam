@@ -4,6 +4,8 @@ from helpers import Struct
 from xmlreader import XMLReader
 from xmlwriter import XMLWriter
 from collections import OrderedDict
+from traceback import format_exception
+import sys
 
 # Constructing UI from parameters:
 # 
@@ -40,16 +42,52 @@ class Entry():
         
     def set_value(self, value):
         self.control.setValue(value)
+
+class ChoiceEntry():
+    def __init__(self,label,value,options):
+        self.label = label
+        self.value = value
+        self.options = options
+        self.radios = []
+    
+    def create_widgets(self,parent,layout):
+        """Create a label and a spinbox in layout"""
+        self.control = QtGui.QFrame(parent)
+        self.control.setFrameStyle(QtGui.QFrame.StyledPanel | QtGui.QFrame.Sunken)
+        vlayout = QtGui.QVBoxLayout(self.control)
+        vlayout.setContentsMargins(5,5,5,5)
+        vlayout.setSpacing(5)
+        self.control.setLayout(vlayout)
+        
+        for opt in self.options:
+            w = QtGui.QRadioButton(opt, self.control)
+            vlayout.addWidget(w)
+            self.radios.append(w)
+            if opt == self.value:
+                w.setChecked(True)
+        
+        layout.addRow(self.label,self.control)
+    
+    def get_value(self):
+        for r in self.radios:
+            if r.isChecked():
+                return str(r.text())
+        return self.value
+
+    def get_struct(self):
+        return self.get_value()
+        
+    def set_value(self, value):
+        self.value = value
+        i = self.options.index(value)
+        if i >= 0:
+            self.radios[i].toggle()
     
 class Group():
     def __init__(self,label,parameters):
-        if not isinstance(parameters,dict):
-            raise ValueError(
-                "Invalid tree leaf class {}".format(
-                    parameters.__class__.__name__))
         self.label = label
         self.leafs = OrderedDict()
-        for key in parameters:
+        for key, value in parameters:
             if isinstance(key,str):
                 dict_key = key
                 child_label = key.capitalize()
@@ -64,32 +102,32 @@ class Group():
             else:
                 raise ValueError("Invalid tree key")
             
-            v = parameters[key]
-            if isinstance(v,float):
-                self.leafs[dict_key] = Entry(child_label,v)
-            elif isinstance(v,int):
-                self.leafs[dict_key] = Entry(child_label,float(v))
+            if isinstance(value,float):
+                self.leafs[dict_key] = Entry(child_label,value)
+            elif isinstance(value,int):
+                self.leafs[dict_key] = Entry(child_label,float(value))
+            elif isinstance(value,tuple):
+                self.leafs[dict_key] = ChoiceEntry(child_label,value[0],value[1])
             else:
-                self.leafs[dict_key] = Group(child_label,v)
+                self.leafs[dict_key] = Group(child_label,value)
         
     def create_widgets(self, parent, layout):
         self.box = QtGui.QGroupBox(self.label,parent)
         form_layout = QtGui.QFormLayout(self.box)
+        form_layout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
         for leaf in self.leafs.values():
             leaf.create_widgets(self.box,form_layout)
         layout.addRow(self.box)
 
     def set_value(self, value):
-        if not isinstance(value,dict):
-            raise ValueError("Invalid parameter value {}".format(value))
-        for k, v in value.items():
+        for k, v in value:
             if k in self.leafs:
                 self.leafs[k].set_value(v)
             else:
                 raise KeyError("Key '{}' not accepted by supervisor".format(k))
         
     def get_value(self):
-        return dict([(key, self.leafs[key].get_value()) for key in self.leafs])
+        return [(key, self.leafs[key].get_value()) for key in self.leafs]
 
     def get_struct(self):
         p = Struct()
@@ -180,7 +218,8 @@ class ParamWidget(QtGui.QWidget):
             try:
                 writer.write()
             except Exception as e:
-                QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
+                #QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
+                QtGui.QMessageBox.critical(self,"Saving parameters failed","\n".join(format_exception(*sys.exc_info())))
     
     @pyqtSlot()
     def load_click(self):
@@ -194,7 +233,9 @@ class ParamWidget(QtGui.QWidget):
             try:
                 self.contents.use_xmlstruct(reader.read())
             except Exception as e:
-                QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
+
+                #QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
+                QtGui.QMessageBox.critical(self,"Loading parameters failed","\n".join(format_exception(*sys.exc_info())))
                 self.contents.use_xmlstruct(cache)
 
 class ParamDock(QtGui.QDockWidget):

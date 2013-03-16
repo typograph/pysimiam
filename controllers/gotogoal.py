@@ -1,55 +1,36 @@
-#PySimiam
-#Author: John Alexander
-#ChangeDate: 8 FEB 2013; 2300EST
-#Description: Example PID implementation for goal-seek (incomplete)
-from controller import Controller
+#
+# (c) PySimiam Team 2013
+#
+# Contact person: Tim Fuchs <typograph@elec.ru>
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+from pid_controller import PIDController
 import math
 import numpy
 
-class GoToGoal(Controller):
-    """Example of PID implementation for goal-seek"""
+class GoToGoal(PIDController):
+    """Go-to-goal steers the robot to a predefined position in the world."""
     def __init__(self, params):
-        """init
-        @params: 
+        """Initialize internal variables"""
+        PIDController.__init__(self,params)
 
-        """
-        Controller.__init__(self,params)
-
-        self.E_k = 0 # integrated error
-        self.e_k_1 = 0 # last step error
-
-    def set_parameters(self,params):
-        """Set the PID Values
-        @params: (float) kp, ki, kd
-        """
-        self.kp = params.kp
-        self.ki = params.ki
-        self.kd = params.kd
-
-    def execute(self,state,dt):
-        """Executes the controller behavior
-        @return --> unicycle model list [velocity, omega]
-        """
-        #Calculate the goal position
+    def get_heading(self, state):
+        """Get the direction from the robot to the goal as a vector."""
+        
+        # The goal:
         x_g, y_g = state.goal.x, state.goal.y
+        
+        # The robot:
         x_r, y_r, theta = state.pose
 
-        #Estimate the error in theta, use atan2
-        e_k = math.atan2(y_g - y_r, x_g - x_r) - theta
-        e_k = math.atan2(math.sin(e_k), math.cos(e_k))
-
-        #Integral error estimation
-        self.E_k += e_k*dt
+        # Where is the goal in the robot's frame of reference?
+        goal_angle = math.atan2(y_g - y_r, x_g - x_r) - theta
         
-        #Estimate first wheel speed
-        w_ = self.kp*e_k + \
-             self.ki*self.E_k + \
-             self.kd*(e_k - self.e_k_1)/dt
-
-        #store error
-        self.e_k_1 = e_k
-
-        #set velocity
-        dist = math.sqrt((x_g - x_r)**2 + (y_g - y_r)**2)
-        v_ = min(state.velocity.v*(dist)+0.05, state.velocity.v)
-        return [v_, w_]
+        # Alternative implementation:
+        # return numpy.dot(
+        #     numpy.linalg.pinv(state.pose.get_transformation()),
+        #     numpy.array([state.goal.x, state.goal.y, 1]))
+        
+        return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])        

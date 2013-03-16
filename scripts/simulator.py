@@ -12,6 +12,8 @@ from quadtree import QuadTree, Rect
 
 PAUSE = 0
 RUN = 1
+RUN_ONCE = 2
+DRAW_ONCE = 3
 
 class Simulator(threading.Thread):
     """The simulator manages simobjects and their collisions, commands supervisors
@@ -45,6 +47,7 @@ class Simulator(threading.Thread):
         self.__center_on_robot = False
         self.__orient_on_robot = False
         self.__show_sensors = True
+        self.__draw_supervisors = False
         self.__show_tracks = True
         
         self.__in_queue = in_queue
@@ -94,7 +97,7 @@ class Simulator(threading.Thread):
 
         helpers.unload_user_modules()
 
-        self.__state = PAUSE            
+        self.__state = DRAW_ONCE            
             
         self.__robots = []
         self.__obstacles = []
@@ -119,9 +122,12 @@ class Simulator(threading.Thread):
                     # Create supervisor
                     sup_class = helpers.load_by_name(supervisor_type,'supervisors')
                     
-                    supervisor = sup_class(robot.get_pose(), robot.get_info())
+                    info = robot.get_info()
+                    info.color = robot.get_color()
+                    supervisor = sup_class(robot.get_pose(), info)                    
                     name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
-                    if self.__supervisor_param_cache is not None:
+                    if self.__supervisor_param_cache is not None and \
+                       len(self.__supervisor_param_cache) > len(self.__supervisors):
                         supervisor.set_parameters(self.__supervisor_param_cache[len(self.__supervisors)])
                     self._out_queue.put(("make_param_window",
                                             (robot, name,
@@ -165,11 +171,9 @@ class Simulator(threading.Thread):
             self.__recalculate_default_zoom()
             if not self.__center_on_robot:
                 self.focus_on_world()
-            self.__draw()
             self.__supervisor_param_cache = None
+            self.step_simulation()
             
-        self.__state = PAUSE            
-
         self._out_queue.put(('reset',()))
 
     def __recalculate_default_zoom(self):
@@ -214,28 +218,38 @@ class Simulator(threading.Thread):
 
                 sleep(time_constant/self.__time_multiplier)
 
-                if self.__state == RUN:
+                self.__process_queue()
 
+                if self.__state == RUN or \
+                   self.__state == RUN_ONCE:
+
+                    self.__time += time_constant
+
+                    # First, move robots
+                    for i, robot in enumerate(self.__robots):
+                        robot.move(time_constant)
+                        self.__trackers[i].add_point(robot.get_pose())
+
+                    # Second, check for collisions and update sensors
+                    if self.__check_collisions():
+                        print "Collision detected!"
+                        self.__state = DRAW_ONCE
+
+                    # Now calculate supervisor outputs for the new position
                     for i, supervisor in enumerate(self.__supervisors):
                         info = self.__robots[i].get_info()
                         inputs = supervisor.execute( info, time_constant)
                         self.__robots[i].set_inputs(inputs)
 
-                    self.__time += time_constant
-
-                    for i, robot in enumerate(self.__robots):
-                        robot.move(time_constant)
-                        self.__trackers[i].add_point(robot.get_pose())
-
-                    # the parameters that might have been changed have no effect
-                    # on collisions
-                    if self.__check_collisions():
-                        print "Collision detected!"
-                        self.__state = PAUSE
-                        #self.__stop = True
-
                 # Draw to buffer-bitmap
-                self.__draw()
+                # Note that if the robot moves immediately after calculation,
+                # the supervisor would draw the previous state.
+                if self.__state != PAUSE:
+                    self.__draw()
+                    
+                if self.__state == DRAW_ONCE or \
+                   self.__state == RUN_ONCE:
+                    self.pause_simulation()
             
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
@@ -247,8 +261,7 @@ class Simulator(threading.Thread):
            This will draw the markers, the obstacles,
            the robots, their tracks and their sensors
         """
-        self.__process_queue()
-
+        
         if self.__robots and self.__center_on_robot:
             # Temporary fix - center onto first robot
             robot = self.__robots[0]
@@ -273,6 +286,10 @@ class Simulator(threading.Thread):
             if self.__show_sensors:
                 robot.draw_sensors(self.__renderer)
 
+        if self.__draw_supervisors:
+            for supervisor in self.__supervisors:
+                supervisor.draw(self.__renderer)
+
         # update view
         self.__update_view()
 
@@ -282,6 +299,13 @@ class Simulator(threading.Thread):
         """
         self._out_queue.put(('update_view',()))
         self._out_queue.join() # wait until drawn
+
+    def __draw_once(self):
+        if self.__state == PAUSE:
+            self.__state = DRAW_ONCE
+            
+    def refresh(self):
+        self.__draw_once()
         
     def focus_on_world(self):
         """Scale the view to include all of the world (including robots)"""
@@ -309,6 +333,7 @@ class Simulator(threading.Thread):
             bounds = include_bounds(bounds, obstacle.get_bounds())
         xl, yb, xr, yt = bounds
         self.__renderer.set_view_rect(xl,yb,xr-xl,yt-yb)
+        self.__draw_once()
 
     def focus_on_robot(self, rotate = True):
         """Center the view on the (first) robot and follow it.
@@ -317,23 +342,33 @@ class Simulator(threading.Thread):
         """
         self.__center_on_robot = True
         self.__orient_on_robot = rotate
+        self.__draw_once()
 
     def show_sensors(self, show = True):
         """Show or hide the robots' sensors on the simulation view
         """
         self.__show_sensors = show
+        self.__draw_once()
 
     def show_tracks(self, show = True):
         """Show/hide tracks for every robot on simulator view"""
         self.__show_tracks = show
+        self.__draw_once()
+
+    def show_supervisors(self, show = True):
+        """Show/hide the information from the supervisors"""
+        self.__draw_supervisors = show
+        self.__draw_once()
 
     def show_grid(self, show=True):
         """Show/hide gridlines on simulator view"""
         self.__renderer.show_grid(show)
+        self.__draw_once()
 
     def adjust_zoom(self,factor):
         """Zoom the view by *factor*"""
         self.__renderer.set_zoom_level(self.__zoom_default*factor)
+        self.__draw_once()
         
     def apply_parameters(self,robot,parameters):
         """Apply *parameters* to the supervisor of *robot*.
@@ -346,6 +381,7 @@ class Simulator(threading.Thread):
             print "Robot not found"
         else:
             self.__supervisors[index].set_parameters(parameters)
+        self.__draw_once()
 
     # Stops the thread
     def stop(self):
@@ -365,9 +401,15 @@ class Simulator(threading.Thread):
         self.__state = PAUSE
         self._out_queue.put(('paused',()))
 
+    def step_simulation(self):
+        """Do one step"""
+        if self.__state != RUN:
+            self.__state = RUN_ONCE
+        #self._out_queue.put(('paused',()))
+
     def reset_simulation(self):
         """Reset the simulation to the start position"""
-        self.__state = PAUSE
+        self.__state = DRAW_ONCE
         self.__reset_world()
 
     def set_time_multiplier(self,multiplier):

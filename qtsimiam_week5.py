@@ -12,10 +12,10 @@ from qt_mainwindow import SimulationWidget
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     simWidget = SimulationWidget()
+    simWidget.superv_action.trigger()
     simWidget.show()
     if len(sys.argv) > 1:
-        if len(sys.argv) == 2:
-            simWidget.load_world(sys.argv[1])
-        else:
-            print "Too many command-line options"
+        simWidget.load_world("week5_{}.xml".format(sys.argv[1]))
+    else:
+        simWidget.load_world("week5_blending.xml")
     app.exec_()
