@@ -10,7 +10,6 @@ from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
 from numpy import array, dot
-from collections import OrderedDict
 from simobject import Path
 
 from math import pi, sin, cos, log1p, sqrt, atan2

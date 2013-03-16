@@ -9,7 +9,6 @@
 from khepera3 import K3Supervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
-from collections import OrderedDict
 
 class K3AvoidSupervisor(K3Supervisor):
     """K3Avoid supervisor uses one avoid-obstacles controller to drive the robot through a cluttered environment without collisions."""

@@ -35,6 +35,8 @@ __loaded_modules = set()
 def unload_user_modules():
     """Unload all modules loaded so far with :func:`~helpers.load_by_name`"""
     global __loaded_modules
+    if 'helpers' in __loaded_modules:
+        __loaded_modules.remove('helpers')
     while __loaded_modules:
         module = __loaded_modules.pop()
         if module in sys.modules:
@@ -69,14 +71,17 @@ def load_by_name(module_string, path = None):
         # Cache already loaded modules
         old_modules = set(sys.modules)
 
-        # Load module
-        if path is not None:
-            module = __import__(path, globals(), locals(), [filename]).__dict__[filename]
-        else:
-            module = __import__(filename)
-
-        # Store the difference
-        __loaded_modules = __loaded_modules.union(set(sys.modules) - old_modules)
+        try:
+            # Load module
+            if path is not None:
+                module = __import__(path, globals(), locals(), [filename]).__dict__[filename]
+            else:
+                module = __import__(filename)
+        except Exception:
+            raise
+        finally:
+            # Store the difference
+            __loaded_modules = __loaded_modules.union(set(sys.modules) - old_modules)
         
         return module.__dict__[class_name]
 

@@ -10,7 +10,6 @@ from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
 from math import pi, sin, cos, log1p
-from collections import OrderedDict
 from simobject import Path
 
 class K3Supervisor(Supervisor):

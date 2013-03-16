@@ -9,7 +9,6 @@
 from khepera3 import K3Supervisor
 from helpers import Struct
 from numpy import array, dot
-from collections import OrderedDict
 
 from math import pi, sin, cos, log1p, sqrt, atan2
 
