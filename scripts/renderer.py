@@ -23,7 +23,8 @@ class Renderer:
         self._zoom = 1.0 # The zooming factor
         self._zoom_c = False # Whether the scaling is done from center
         self._show_grid = False # Show the grid
-        self._grid_spacing = 40.0 # default for unscaled
+        self._grid_spacing = 10.0 # default for unscaled
+        self.__grid_subdiv = 1 # Current subdivision step
         self.__view_rect = None # The rect to keep in view
         
         self.size = None
@@ -36,9 +37,10 @@ class Renderer:
     def show_grid(self, show=True):
         """Draw the grid on the canvas background by default.
         
-        The grid is adaptive, with minimum interline distance of 20 px,
+        The grid is adaptive, with minimum interline distance of 40 px,
         and a maximum of 80 px. In the case the interline distance has to
-        be smaller or larger, it is scaled by a factor of 2.
+        be smaller or larger, it is scaled. The interval is divided either
+        in half, in five parts or in ten parts, to keep the grid decimal.
         
         This method will clear the canvas
         """
@@ -161,12 +163,15 @@ class Renderer:
     def _adjust_grid(self, zoom_level):
         """Calculate the right interline distance for *zoom_level*
         """
-        self._grid_spacing *= zoom_level
-        while self._grid_spacing > 80:
-            self._grid_spacing /= 2
-        while self._grid_spacing < 20:
-            self._grid_spacing *= 2
-        self._grid_spacing /= zoom_level
+        self._grid_spacing *= zoom_level*self.__grid_subdiv
+        while self._grid_spacing < 40:
+            self._grid_spacing *= 10
+        while self._grid_spacing >= 400: 
+            self._grid_spacing /= 10
+        for self.__grid_subdiv in [1,2,5]:
+            if self._grid_spacing/self.__grid_subdiv < 80:
+                break
+        self._grid_spacing /= zoom_level*self.__grid_subdiv
    
     def set_zoom_level(self, zoom_level):
         """Zoom up the drawing by a factor of *zoom_level*
