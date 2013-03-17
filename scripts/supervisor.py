@@ -195,7 +195,7 @@ class Supervisor:
             #. Store robot information in :attr:`~Supervisor.robot`
             #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`
         #. Check if the controller has to be switched
-        #. Get controller parameters from :meth:`~Supervisor.get_controller_parameters`
+        #. Get controller state from :meth:`~Supervisor.get_controller_state`
         #. Execute currently selected controller with the parameters from previous step
         #. Return unicycle model parameters as an output (velocity, omega)
         """
@@ -211,7 +211,7 @@ class Supervisor:
                     break
 
         #execute the current controller
-        return self.current.execute(self.get_controller_parameters(),dt)
+        return self.current.execute(self.get_controller_state(),dt)
 
     def draw(self, renderer):
         """Draw anything in the view.
@@ -228,7 +228,7 @@ class Supervisor:
         self.robot = state
         self.pose_est = self.estimate_pose()
     
-    def get_controller_parameters(self):
+    def get_controller_state(self):
         """Get the parameters that the current controller needs for operation
 
         :return: A parameter structure in the format appropriate for the current controller.
@@ -238,7 +238,7 @@ class Supervisor:
             
         Must be implemented in subclasses
         """
-        raise NotImplementedError('Supervisor.get_controller_parameters')
+        raise NotImplementedError('Supervisor.get_controller_state')
         
     def estimate_pose(self):
         """Updates the pose using odometry calculations.

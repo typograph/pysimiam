@@ -12,9 +12,12 @@ class Template(K3Supervisor):
         #Set default controller
         self.current = self.gtg
 
-    def process_state_info(self):
+    def process_state_info(self, state):
         """Sets parameters for supervisors and selects a supervisor
         This code is run every time the supervisor executes"""
+        
+        K3Supervisor.process_state_info(self, state)
+        
         #Add some data to variable self.parameters
         #Below are some default parameters
         #-------------------------------------

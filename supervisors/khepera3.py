@@ -120,7 +120,7 @@ The UI may use the get_parameters function interface to create docker windows fo
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
 
-    def get_controller_parameters(self):
+    def get_controller_state(self):
         return self.parameters
             
     def execute(self, robot_info, dt):

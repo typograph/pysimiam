@@ -27,9 +27,9 @@ class GoToGoal(PIDController):
         x_r, y_r, theta = state.pose
 
         # Where is the goal in the robot's frame of reference?
-        return = math.atan2(y_g - y_r, x_g - x_r) - theta
+        return math.atan2(y_g - y_r, x_g - x_r) - theta
 
     def get_heading(self,state):
 
-        goal_angle = self.get_heading(state)
+        goal_angle = self.get_heading_angle(state)
         return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])

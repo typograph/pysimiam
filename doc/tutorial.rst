@@ -156,7 +156,7 @@ supply the state of the robot, as returned by :meth:`~robot.Robot.robot_info`,
 and the elapsed time. By default, the supervisor will use the
 :meth:`~supervisor.Supervisor.process_state_info` method to interpret the
 information about the robot and then use the structure returned by
-:meth:`~supervisor.Supervisor.get_controller_parameters` to execute
+:meth:`~supervisor.Supervisor.get_controller_state` to execute
 the controller. The return value of the controller is passed to the simulator
 and subsequently to the robot's inputs. As the controller output may not be
 in the right format for the robot, you can overwrite the :meth:`~supervisor.Supervisor.execute`
