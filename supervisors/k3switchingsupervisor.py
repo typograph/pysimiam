@@ -39,7 +39,7 @@ class K3DefaultSupervisor(K3Supervisor):
     def free(self):
         return self.distmin > self.robot.ir_sensors.rmax/1.5
 
-    def process(self):
+    def process_state_info(self, state):
         """Selects the best controller based on ir sensor readings
         Updates parameters.pose and parameters.ir_readings"""
 

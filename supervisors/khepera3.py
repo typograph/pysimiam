@@ -85,10 +85,6 @@ The UI may use the get_parameters function interface to create docker windows fo
             for reading in self.robot.ir_sensors.readings ]
 
         return ir_distances
-
-    def process(self):
-        """Update state parameters for the controllers and self"""
-        raise NotImplementedError('K3Supervisor.process')
     
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
@@ -123,6 +119,9 @@ The UI may use the get_parameters function interface to create docker windows fo
         y_new = y + y_dt
            
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
+
+    def get_controller_parameters(self):
+        return self.parameters
             
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""

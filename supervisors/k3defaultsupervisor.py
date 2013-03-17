@@ -57,8 +57,10 @@ class K3DefaultSupervisor(K3Supervisor):
         """Check if the distance to obstacle is large"""
         return self.distmin > self.robot.ir_sensors.rmax/1.5
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est

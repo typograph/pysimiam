@@ -42,8 +42,9 @@ class K3BlendingSupervisor(K3Supervisor):
         """Check if the distance to goal is small"""
         return self.distance_from_goal < self.robot.wheels.base_length/2
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -53,8 +54,6 @@ class K3BlendingSupervisor(K3Supervisor):
         
         # Sensor readings in real units
         self.parameters.sensor_distances = self.get_ir_distances()
-
-        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

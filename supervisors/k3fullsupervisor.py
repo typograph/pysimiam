@@ -26,8 +26,7 @@ class K3FullSupervisor(K3Supervisor):
         self.parameters.direction = 'left'
         self.parameters.distance = self.distmax*0.85
         
-        self.robot = robot_info
-        self.process()
+        self.process_state_info(robot_info)
         
         #Add controllers
         self.gtg = self.create_controller('GoToGoal', self.parameters)
@@ -126,8 +125,10 @@ class K3FullSupervisor(K3Supervisor):
             self.at_wall()
         return wall_far
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -149,8 +150,6 @@ class K3FullSupervisor(K3Supervisor):
                      if abs(p.theta) < 2.4] )
         
         self.distmin = min((sqrt(a[0]**2 + a[1]**2) for a in vectors))
-
-        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""
