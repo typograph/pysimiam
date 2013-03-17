@@ -51,14 +51,19 @@ class PIDController(Controller):
         """
         raise NotImplementedError("PIDController.get_heading")
     
+    def get_heading_angle(self, state):
+        """Return the heading as an angle"""
+
+        # The vector to follow
+        heading = self.get_heading(state)
+
+        return math.atan2(heading[1],heading[0])
+    
     def execute(self, state, dt):
         """Calculate errors and steer the robot"""
      
-        # The vector to follow
-        heading = self.get_heading(state)
-        
         # This is the direction we want to go
-        self.heading_angle = math.atan2(heading[1],heading[0])
+        self.heading_angle = self.get_heading_angle(state)
 
         # 1. Calculate simple proportional error
         # The direction is in the robot's frame of reference,

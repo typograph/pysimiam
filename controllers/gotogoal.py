@@ -16,7 +16,8 @@ class GoToGoal(PIDController):
         """Initialize internal variables"""
         PIDController.__init__(self,params)
 
-    def get_heading(self, state):
+    # Let's overwrite this way:
+    def get_heading_angle(self, state):
         """Get the direction from the robot to the goal as a vector."""
         
         # The goal:
@@ -26,11 +27,9 @@ class GoToGoal(PIDController):
         x_r, y_r, theta = state.pose
 
         # Where is the goal in the robot's frame of reference?
-        goal_angle = math.atan2(y_g - y_r, x_g - x_r) - theta
-        
-        # Alternative implementation:
-        # return numpy.dot(
-        #     numpy.linalg.pinv(state.pose.get_transformation()),
-        #     numpy.array([state.goal.x, state.goal.y, 1]))
-        
-        return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])        
+        return = math.atan2(y_g - y_r, x_g - x_r) - theta
+
+    def get_heading(self,state):
+
+        goal_angle = self.get_heading(state)
+        return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])
