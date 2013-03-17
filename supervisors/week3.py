@@ -31,16 +31,16 @@ class K3GTGSupervisor(K3Supervisor):
         K3Supervisor.set_parameters(self,params)
         self.gtg.set_parameters(self.parameters)
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
         
         # Update the trajectory
         self.tracker.add_point(self.pose_est)
-        
-        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

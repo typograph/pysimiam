@@ -538,7 +538,7 @@ You should also implement the condition functions. We suggest defining at least 
 * ``at_goal`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
 * ``obstacle_cleared`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
 
-When implementing various conditions, take note that the functions are called without any arguments. So, all of the parameters you want to access should be stored in the supervisor. You can precalculate anything you need in the ``process`` function that is guaranteed to be called before any conditions are checked. You may also find the following variables useful:
+When implementing various conditions, take note that the functions are called without any arguments. So, all of the parameters you want to access should be stored in the supervisor. You can precalculate anything you need in the ``process_state_info`` function that is guaranteed to be called before any conditions are checked. You may also find the following variables useful:
 
 - ``self.parameters.goal.x`` (float) - The X coordinate of the goal
 - ``self.parameters.goal.y`` (float) - The Y coordinate of the goal
@@ -557,8 +557,6 @@ To create the blending controller uncomment the lines mentioning the blending co
 
     # self.blending = self.create_controller('week5.Blending', self.parameters)
     # self.blending.set_parameters(self.parameters)
-    # self.blending.get_heading(self.parameters)
-
 
 Implement additional conditions:
 

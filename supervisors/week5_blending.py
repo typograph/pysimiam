@@ -30,16 +30,16 @@ class K3BlendingSupervisor(K3Supervisor):
         K3Supervisor.set_parameters(self,params)
         self.blending.set_parameters(self.parameters)
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
 
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
-        
-        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""

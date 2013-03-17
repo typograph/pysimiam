@@ -124,11 +124,12 @@ The UI may use the get_parameters function interface to create docker windows fo
         self.tracker.add_point(self.pose_est)
         return self.uni2diff(output)
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        Supervisor.process_state_info(self,state)
         
         self.parameters.pose = self.pose_est
-        return self.parameters
     
     def draw(self, renderer):
         """Draw a circular goal, path and ir_sensors"""
@@ -159,4 +160,7 @@ The UI may use the get_parameters function interface to create docker windows fo
             renderer.draw_line(0.01,-0.01,-0.01,0.01)
             
             renderer.pop_state()                                   
-        
+
+    def get_controller_state(self):
+        return self.parameters
+    

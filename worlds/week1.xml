@@ -8,6 +8,19 @@
         <pose theta="1.57079632679" x="-1.0" y="-0.5"/>
         <supervisor type="K3DefaultSupervisor"/>
     </robot>
+    <marker>
+        <pose theta="0" x="1" y="1"/>
+        <geometry>
+            <point x="0.05" y="0.0"/>
+            <point x="0.077" y="0.07"/>
+            <point x="0" y="0.05"/>
+            <point x="-0.07" y="0.07"/>
+            <point x="-0.05" y="0"/>
+            <point x="-0.07" y="-0.07"/>
+            <point x="0" y="-0.05"/>
+            <point x="0.07" y="-0.07"/>
+        </geometry>
+    </marker>
     <obstacle>
         <pose theta="0" x="-0.724264096692" y="-0.500000019535"/>
         <geometry>

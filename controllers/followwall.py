@@ -69,9 +69,9 @@ class FollowWall(PIDController):
         # Now make sure they are sorted from front to back
         sensors = sorted(sensors, key = lambda (p, d): abs(p.theta))
         
-        # No wall - drive forward
+        # No wall - drive a bit to the wall
         if len(sensors) == 0:
-            return numpy.array([1,0,1])
+            return numpy.array([0.8,dirfactor*0.6,1])
         
         # Calculate vectors for the sensors 
         self.vectors = numpy.array(
@@ -95,7 +95,7 @@ class FollowWall(PIDController):
 
                 # Which direction to go?
                 # either away from this corner or directly to it.
-                # The best way is probably to blend ahead with corner:
+                # let's blend ahead with corner:
                 theta_h = pose.theta*reading/self.sensor_max
                 return numpy.array([
                             reading*math.cos(theta_h),
@@ -103,12 +103,18 @@ class FollowWall(PIDController):
                             1])
             else:
                 # To minimize jittering, blend with the previous
-                # reading, and don't rotate more than 0.1 rad.
+                # reading, and don't rotate more than 0.2 rad.
                 prev_theta = math.atan2(self.along_wall_vector[1],
                                         self.along_wall_vector[0])
-                dtheta = prev_theta - pose.theta
-                if abs(dtheta) > 0.1:
-                    dtheta *= 0.1*abs(dtheta)
+                self.along_wall_vector = numpy.array([
+                            dirfactor*self.to_wall_vector[1],
+                            -dirfactor*self.to_wall_vector[0],
+                            1])
+                this_theta = math.atan2(self.along_wall_vector[1],
+                                        self.along_wall_vector[0])
+                dtheta = prev_theta - this_theta
+                if abs(dtheta) > 0.2:
+                    dtheta *= 0.2*abs(dtheta)
                 
                 self.along_wall_vector = numpy.array([
                             reading*math.cos(prev_theta - dtheta),
@@ -130,6 +136,10 @@ class FollowWall(PIDController):
         weight_steer = math.sqrt(self.to_wall_vector[0]**2
                             + self.to_wall_vector[1]**2) - self.distance
         weight_steer /= self.sensor_max/2
+        
+        # Extra weight for driving closer to corners
+        if len(self.vectors) == 1:
+            weight_steer += 0.3
                            
         return self.along_wall_vector + self.to_wall_vector*weight_steer
                

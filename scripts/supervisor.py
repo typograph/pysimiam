@@ -184,25 +184,23 @@ class Supervisor:
         for robot motion.
         
         :param robot_info: The state of the robot
-        :type robot_info: :class:`~helpers.Struct`
-        
+        :type robot_info: :class:`~helpers.Struct`        
         :param float dt: The amount of time elapsed since the last call of `execute`.
         
         :return: An object (normally a tuple) that will be passed to the robot's :meth:`~robot.Robot.set_inputs` method.
         
         The default implementation proceeds as follows:
         
-        #. Store robot information in :attr:`~Supervisor.robot`
-        #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`
-        #. Calculate state variables and get controller parameters from :meth:`~Supervisor.process`
+        #. Proccess the state information using :meth:`process_state_info`
+            #. Store robot information in :attr:`~Supervisor.robot`
+            #. Estimate the new robot pose with odometry and store it in :attr:`~Supervisor.pose_est`
         #. Check if the controller has to be switched
+        #. Get controller state from :meth:`~Supervisor.get_controller_state`
         #. Execute currently selected controller with the parameters from previous step
         #. Return unicycle model parameters as an output (velocity, omega)
         """
-        self.robot = robot_info
-        self.pose_est = self.estimate_pose()
-        params = self.process() #User-defined algorithm
-        
+        self.process_state_info(robot_info)
+
         # Switch:
         if self.current in self.states:
             for f, c in self.states[self.current]:
@@ -211,9 +209,9 @@ class Supervisor:
                     self.current = c
                     print "Switched to {}".format(c.__class__.__name__)
                     break
-        
-        output = self.current.execute(params,dt) #execute the current controller
-        return output
+
+        #execute the current controller
+        return self.current.execute(self.get_controller_state(),dt)
 
     def draw(self, renderer):
         """Draw anything in the view.
@@ -225,17 +223,22 @@ class Supervisor:
         """
         pass
 
-    def process(self):
-        """Evaluate the information about the robot and set state variables.
-        
+    def process_state_info(self, state):
+        """Evaluate the information about the robot and set state variables."""
+        self.robot = state
+        self.pose_est = self.estimate_pose()
+    
+    def get_controller_state(self):
+        """Get the parameters that the current controller needs for operation
+
         :return: A parameter structure in the format appropriate for the current controller.
         :rtype: :class:`~helpers.Struct`
         
         The result of this function will be used to run the controller.
-        
+            
         Must be implemented in subclasses
         """
-        raise NotImplementedError('Supervisor.process')
+        raise NotImplementedError('Supervisor.get_controller_state')
         
     def estimate_pose(self):
         """Updates the pose using odometry calculations.

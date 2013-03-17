@@ -69,14 +69,14 @@ class K3WallSupervisor(K3Supervisor):
         self.parameters.gains.ki = 2.0
         self.parameters.gains.kd = 0.0
 
-    def process(self):
+    def process_state_info(self,state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
         
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
-
-        return self.parameters
-    
+   
     def draw(self, renderer):
         """Draw controller info"""
         

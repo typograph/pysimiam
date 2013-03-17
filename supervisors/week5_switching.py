@@ -65,8 +65,10 @@ class K3SwitchingSupervisor(K3Supervisor):
         # End Week 5 Assignment
         return True
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -76,20 +78,17 @@ class K3SwitchingSupervisor(K3Supervisor):
         # Week 5 Assigment code can go here
         
         # End Week 5 Assignment
-        
-        # Ensure the headings are calculated
-        self.avoidobstacles.get_heading(self.parameters)
-        self.gtg.get_heading(self.parameters)
-        #self.blending.get_heading(self.parameters)
-
-        return self.parameters
-    
+            
     def draw(self, renderer):
         """Draw controller info"""
         K3Supervisor.draw(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5
+
+        # Ensure the headings are calculated
+        away_angle = self.avoidobstacles.get_heading_angle(self.parameters)
+        goal_angle = self.gtg.get_heading_angle(self.parameters)
         
         # Draw arrow to goal
         if self.current == self.gtg:
@@ -110,12 +109,13 @@ class K3SwitchingSupervisor(K3Supervisor):
             arrow_length*sin(self.avoidobstacles.heading_angle))
 
         if "blending" in self.__dict__:
+            blend_angle = self.blending.get_heading_angle(self.parameters)
             # Draw the blending
             if self.current == self.avoidobstacles:
                 renderer.set_pen(0xAAAA00)
             else:
                 renderer.set_pen(0x20AAAA00)
             renderer.draw_arrow(0,0,
-                arrow_length*cos(self.blending.heading_angle),
-                arrow_length*sin(self.blending.heading_angle))
+                arrow_length*cos(blending_angle),
+                arrow_length*sin(blending_angle))
             

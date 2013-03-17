@@ -12,9 +12,12 @@ class Template(K3Supervisor):
         #Set default controller
         self.current = self.gtg
 
-    def process(self):
+    def process_state_info(self, state):
         """Sets parameters for supervisors and selects a supervisor
         This code is run every time the supervisor executes"""
+        
+        K3Supervisor.process_state_info(self, state)
+        
         #Add some data to variable self.parameters
         #Below are some default parameters
         #-------------------------------------
@@ -26,10 +29,7 @@ class Template(K3Supervisor):
 
         #Set the current controller to use
         #self.current = self.gtg # default selection
-                
-
-        return self.parameters
-
+        
     def execute(self, robot_info, dt):
         """K3Supervisor procedures and converts unicycle output into differential drive output for the Khepera3"""
         #You should use this code verbatim

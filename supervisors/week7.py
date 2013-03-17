@@ -70,8 +70,10 @@ class K3FullSupervisor(K3Supervisor):
         """Check if the distance to obstacle is large"""
         return self.distmin > self.robot.ir_sensors.rmax*0.75
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -85,8 +87,6 @@ class K3FullSupervisor(K3Supervisor):
         # Distance to the closest obstacle        
         self.distmin = min(self.parameters.sensor_distances)
 
-        return self.parameters
-    
     def draw(self, renderer):
         """Draw controller info"""
         K3Supervisor.draw(self,renderer)

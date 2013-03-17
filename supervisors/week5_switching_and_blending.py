@@ -39,39 +39,39 @@ class K3DefaultSupervisor(K3Supervisor):
     def free(self):
         return self.distmin > self.robot.ir_sensors.rmax/1.5
 
-    def process(self):
+    def process_state_info(self, state):
         """Selects the best controller based on ir sensor readings
         Updates parameters.pose and parameters.ir_readings"""
+
+        K3Supervisor.process_state_info(self,state)
 
         self.parameters.pose = self.pose_est
         self.parameters.sensor_distances = self.get_ir_distances()
         
         self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         self.distmin = min(self.parameters.sensor_distances)
-        
-        # Ensure the headings are calculated
-        self.avoidobstacles.get_heading(self.parameters)
-        self.gtg.get_heading(self.parameters)
-
-        return self.parameters
-    
+            
     def draw(self, renderer):
         K3Supervisor.draw(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5
+
+        # Ensure the headings are calculated
+        away_angle = self.avoidobstacles.get_heading_angle(self.parameters)
+        goal_angle = self.gtg.get_heading_angle(self.parameters)
         
         # Draw arrow to goal
         renderer.set_pen(0x00FF00)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.gtg.heading_angle),
-            arrow_length*sin(self.gtg.heading_angle))
+            arrow_length*cos(goal_angle),
+            arrow_length*sin(goal_angle))
 
         # Draw arrow away from obstacles
         renderer.set_pen(0xFF0000)
         renderer.draw_arrow(0,0,
-            arrow_length*cos(self.avoidobstacles.heading_angle),
-            arrow_length*sin(self.avoidobstacles.heading_angle))
+            arrow_length*cos(away_angle),
+            arrow_length*sin(away_angle))
             
         # Week 4
         renderer.set_pen(0)

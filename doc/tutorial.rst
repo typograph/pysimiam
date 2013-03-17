@@ -154,8 +154,9 @@ parameters for the controller.
 The simulator will call the :meth:`~supervisor.Supervisor.execute` method and
 supply the state of the robot, as returned by :meth:`~robot.Robot.robot_info`,
 and the elapsed time. By default, the supervisor will use the
-:meth:`~supervisor.Supervisor.process` method to interpret the information
-about the robot and then use the structure returned by this method to execute
+:meth:`~supervisor.Supervisor.process_state_info` method to interpret the
+information about the robot and then use the structure returned by
+:meth:`~supervisor.Supervisor.get_controller_state` to execute
 the controller. The return value of the controller is passed to the simulator
 and subsequently to the robot's inputs. As the controller output may not be
 in the right format for the robot, you can overwrite the :meth:`~supervisor.Supervisor.execute`
@@ -183,7 +184,7 @@ the controller is switched e.g. to ``c1`` for ``condition1``.
 
 .. note:: Since the condition functions are called without any arguments, all
  of the parameters you want to access in them, should be stored in the supervisor.
- A good place to do that is the :meth:`~supervisor.Supervisor.process` method,
+ A good place to do that is the :meth:`~supervisor.Supervisor.process_state_info` method,
  that is guaranteed to be called before any conditions are checked. In very
  complicated cases, that might not be covered by this state machine, you are welcome
  to overwrite the :meth:`~supervisor.Supervisor.execute` method and implement

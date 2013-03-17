@@ -26,8 +26,7 @@ class K3FullSupervisor(K3Supervisor):
         self.parameters.direction = 'left'
         self.parameters.distance = self.distmax*0.85
         
-        self.robot = robot_info
-        self.process()
+        self.process_state_info(robot_info)
         
         #Add controllers
         self.gtg = self.create_controller('GoToGoal', self.parameters)
@@ -104,6 +103,8 @@ class K3FullSupervisor(K3Supervisor):
         # Did we make progress?
         if self.distance_from_goal >= self.best_distance:
             return False
+            
+        self.best_distance = self.distance_from_goal
 
         # Are we far enough from the wall,
         # so that we don't switch back immediately
@@ -111,8 +112,12 @@ class K3FullSupervisor(K3Supervisor):
             return False
             
         # Check if we have a clear shot to the goal
-        h_gtg = self.gtg.get_heading(self.parameters)
-        return numpy.dot(self.wall.to_wall_vector[:2],h_gtg[:2]) < 0
+        theta_gtg = self.gtg.get_heading_angle(self.parameters)
+        
+        if self.parameters.direction == 'left':
+            return sin(theta_gtg - self.wall.heading_angle) <= 0
+        else:
+            return sin(theta_gtg - self.wall.heading_angle) >= 0
 
     def unsafe(self):
         """Check if the distance to wall is too small"""        
@@ -126,8 +131,10 @@ class K3FullSupervisor(K3Supervisor):
             self.at_wall()
         return wall_far
 
-    def process(self):
+    def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
+
+        K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -149,8 +156,6 @@ class K3FullSupervisor(K3Supervisor):
                      if abs(p.theta) < 2.4] )
         
         self.distmin = min((sqrt(a[0]**2 + a[1]**2) for a in vectors))
-
-        return self.parameters
     
     def draw(self, renderer):
         """Draw controller info"""
