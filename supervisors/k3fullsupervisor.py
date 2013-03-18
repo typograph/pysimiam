@@ -104,7 +104,7 @@ class K3FullSupervisor(K3Supervisor):
         if self.distance_from_goal >= self.best_distance:
             return False
             
-        self.best_distance = self.distance_from_goal
+        #self.best_distance = self.distance_from_goal
 
         # Are we far enough from the wall,
         # so that we don't switch back immediately
@@ -113,11 +113,12 @@ class K3FullSupervisor(K3Supervisor):
             
         # Check if we have a clear shot to the goal
         theta_gtg = self.gtg.get_heading_angle(self.parameters)
+        dtheta = self.wall.heading_angle - theta_gtg
         
-        if self.parameters.direction == 'left':
-            return sin(theta_gtg - self.wall.heading_angle) <= 0
-        else:
-            return sin(theta_gtg - self.wall.heading_angle) >= 0
+        if self.parameters.direction == 'right':
+            dtheta = -dtheta
+            
+        return sin(dtheta) >= 0 and cos(dtheta) >= 0
 
     def unsafe(self):
         """Check if the distance to wall is too small"""        
