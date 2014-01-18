@@ -143,7 +143,7 @@ class PySimiamFrame(wx.Frame):
         elif event_id == ID_RESET:
             self._simulator_thread.reset_simulation()
         else:
-            print 'ButtonPress: unknown'
+            print('ButtonPress: unknown')
 
         event.Skip()
         #End _on_button
@@ -160,7 +160,7 @@ class PySimiamFrame(wx.Frame):
 
         res = dlg.ShowModal()
         if (res == wx.ID_OK):
-            print 'hi'
+            print('hi')
 
         dlg.Destroy()
 

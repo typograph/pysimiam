@@ -2,6 +2,7 @@
 # QtSimiam
 # Author: Tim Fuchs
 # Description: This is the top-level application for QtSimiam.
+from __future__ import print_function
 import sys
 sys.path.insert(0, './scripts')
 sys.path.insert(0, './gui')

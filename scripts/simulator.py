@@ -1,5 +1,8 @@
 import threading
-import Queue as queue
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
@@ -73,10 +76,10 @@ class Simulator(threading.Thread):
     def read_config(self, filename):
         '''Load in the objects from the world XML file '''
 
-        print 'reading initial configuration'
+        print('reading initial configuration')
         try:
             self.__world = XMLReader(filename, 'simulation').read()
-        except Exception, e:
+        except Exception as e:
             raise Exception('[Simulator.read_config] Failed to parse ' + filename \
                 + ': ' + str(e))
         else:
@@ -141,7 +144,7 @@ class Simulator(threading.Thread):
                     self.__trackers.append(simobject.Path(robot.get_pose(),robot))
                     self.__trackers[-1].set_color(robot.get_color())
                 except:
-                    print "[Simulator.construct_world] Robot creation failed!"
+                    print("[Simulator.construct_world] Robot creation failed!")
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
@@ -205,7 +208,7 @@ class Simulator(threading.Thread):
            The simulator will try to draw the world undependently of the
            simulation status, so that the commands from the UI get processed.
         """
-        print 'starting simulator thread'
+        print('starting simulator thread')
 
         time_constant = 0.02 # 20 milliseconds
         
@@ -232,7 +235,7 @@ class Simulator(threading.Thread):
 
                     # Second, check for collisions and update sensors
                     if self.__check_collisions():
-                        print "Collision detected!"
+                        print("Collision detected!")
                         self.__state = DRAW_ONCE
 
                     # Now calculate supervisor outputs for the new position
@@ -378,7 +381,7 @@ class Simulator(threading.Thread):
         """
         index = self.__robots.index(robot)
         if index < 0:
-            print "Robot not found"
+            print("Robot not found")
         else:
             self.__supervisors[index].set_parameters(parameters)
         self.__draw_once()
@@ -386,7 +389,7 @@ class Simulator(threading.Thread):
     # Stops the thread
     def stop(self):
         """Stop the simulator thread when the entire program is closed"""
-        print 'stopping simulator thread'
+        print('stopping simulator thread')
         self.__stop = True
         self._out_queue.put(('stopped',()))
 
@@ -477,7 +480,7 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                print "Collision between:\n", robot, "\n", obstacle
+                print("Collision between:\n", robot, "\n", obstacle)
             # end of test code
             return True
                 
@@ -494,14 +497,14 @@ class Simulator(threading.Thread):
                     try:
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
-                        print "Wrong simulator event parameters {}{}".format(name,args)
+                        print("Wrong simulator event parameters {}{}".format(name,args))
                         self._out_queue.put(("exception",sys.exc_info()))
                     except Exception as e:
                         self._out_queue.put(("exception",sys.exc_info()))
                 else:
-                    print "Unknown simulator event '{}'".format(name)
+                    print("Unknown simulator event '{}'".format(name))
             else:
-                print "Wrong simulator event format '{}'".format(tpl)
+                print("Wrong simulator event format '{}'".format(tpl))
             self.__in_queue.task_done()
     
 #end class Simulator

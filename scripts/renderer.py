@@ -194,7 +194,7 @@ class Renderer:
         self.pop_state() # Reset state
         self.pop_state() # Set zoom to 1     
         self.push_state() # Re-save the zoom-1
-        #print self._zoom_c, self._defpose
+        #print(self._zoom_c, self._defpose)
         if self._zoom_c:
             self.translate(self.size[0]/2,self.size[1]/2)
         self.scale(self._zoom)

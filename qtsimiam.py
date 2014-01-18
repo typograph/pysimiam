@@ -2,6 +2,7 @@
 # QtSimiam
 # Author: Tim Fuchs
 # Description: This is the top-level application for QtSimiam.
+#from __future__ import print_function
 import sys
 sys.path.insert(0, './scripts')
 sys.path.insert(0, './gui')
@@ -17,5 +18,5 @@ if __name__ == "__main__":
         if len(sys.argv) == 2:
             simWidget.load_world(sys.argv[1])
         else:
-            print "Too many command-line options"
+            print("Too many command-line options")
     app.exec_()

@@ -10,7 +10,10 @@ from qt_renderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
 
 import simulator as sim
-import Queue as queue
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 from traceback import format_exception
 
 class PlayPauseAction(QtGui.QAction):
@@ -324,7 +327,7 @@ class SimulationWidget(QtGui.QMainWindow):
         if not os.path.exists(filename):
             filename = os.path.join('worlds',filename)
             if not os.path.exists(filename):
-                print "Cannot open file {}".format(filename)
+                print("Cannot open file {}".format(filename))
                 return
         self.dockmanager.clear()
         self.sim_queue.put(('read_config',(filename,)))
@@ -433,12 +436,12 @@ class SimulationWidget(QtGui.QMainWindow):
                     try:
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
-                        print "Wrong UI event parameters {}{}".format(name,args)
+                        print("Wrong UI event parameters {}{}".format(name,args))
                         raise
                 else:
-                    print "Unknown UI event '{}'".format(name)
+                    print("Unknown UI event '{}'".format(name))
             else:
-                print "Wrong UI event format '{}'".format(tpl)
+                print("Wrong UI event format '{}'".format(tpl))
             self.in_queue.task_done()
             if not process_all:
                 return
