@@ -1,0 +1,8 @@
+{% extends "!layout.html" %}
+{%- block rootrellink %}
+{%- if logo %}
+<li><img class="logo" src="{{ pathto('_static/' + logo, 1) }}" style="vertical-align:middle; margin-top: -1px" alt="Logo"/></li>
+{%- endif %}
+<li><a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}</li>
+{% endblock %}
+{%- block sidebarlogo %}{%- endblock %}

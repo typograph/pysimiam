@@ -14,7 +14,7 @@ Module strings
     
 pySimiam loads user code dynamically. This includes robot definitions,
 supervisors and controllers. It is important to specify the type of
-the robot and its supervisor in the world XML file (see :ref:`worlds`),
+the robot and its supervisor in the world XML file (see :ref:`world_tutorial`),
 and the type of a controller in :meth:`supervisor.Supervisor.add_controller`
 
 The type is specified as a single string with the format ``"mymodule.MyClass"``.

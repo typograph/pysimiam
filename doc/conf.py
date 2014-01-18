@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('../gui'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode', 'sphinx.ext.todo']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -39,7 +39,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+#master_doc = 'index'
 
 # General information about the project.
 project = u'PySimiam'
@@ -112,12 +112,12 @@ html_theme = 'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = "appicon.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = "appicon_16x16.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -134,11 +134,16 @@ html_static_path = [] # ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+#html_sidebars = {
+#    'index': 'indexsidebar.html',
+#}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
-#html_additional_pages = {}
-
+html_additional_pages = {
+#    'download': 'download.html',
+    'index': 'indexcontent.html',
+}
 # If false, no module index is generated.
 #html_domain_indices = True
 
@@ -242,3 +247,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+[extensions]
+todo_include_todos=True

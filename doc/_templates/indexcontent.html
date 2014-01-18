@@ -1,0 +1,55 @@
+{% extends "defindex.html" %}
+{% block body %}
+  <h1>Welcome to PySimiam&#8217;s documentation!<a class="headerlink" href="#welcome-to-pysimiam-s-documentation" title="Permalink to this headline">¶</a></h1>
+  
+  <p>PySimiam is a robot simulator inspired by Jean-Pierre de la Croix&#8217;s program named Sim.I.Am. Parts of Jean-Pierre&#8217;s code is included specifically for application to the khepera3 robot. Special thanks to him for his hard work.</p>
+  
+  <div class="section" id="requirements">
+  <p><strong>Necessary libraries:</strong><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></p>
+  <p>Project depends on
+  <br/>PyQT &#8212;&gt; <a class="reference external" href="http://www.riverbankcomputing.com/software/pyqt/download">http://www.riverbankcomputing.com/software/pyqt/download</a>
+  <br/>Numpy &#8212;&gt; <a class="reference external" href="http://www.scipy.org/Download">http://www.scipy.org/Download</a>
+  <br/>Python 2.7 &#8212;&gt; <a class="reference external" href="http://www.python.org/getit/">http://www.python.org/getit/</a>
+  <br/><small>Note: Python 3 is not officially supported, but the simulator should run with it as well.</small></p>
+  </div>
+
+  {% block tables %}
+  <p><strong>Getting started with pySimiam:</strong></p>
+  <table class="contentstable" align="center"><tr>
+    <td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("tutorial") }}">Tutorial</a><br/>
+         <span class="linkdescr">Learn to use the program</span></p>
+    </td><td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("coursera") }}">Coursera class</a><br/>
+         <span class="linkdescr">Programming assignments for "Control of mobile robots"</span></p>
+    </td></tr>
+  </table>
+
+  <p><strong>Custom robots:</strong></p>
+  <table class="contentstable" align="center"><tr>
+    <td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("robot") }}">A new Robot</a><br/>
+         <span class="linkdescr">Implement your physical robot in software</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("code_user") }}">User API</a><br/>
+         <span class="linkdescr">Useful functions</span></p>
+    </td><td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("controller") }}">A new Controller</a><br/>
+         <span class="linkdescr">Define a new behaviour for you robot</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("supervisor") }}">A new Supervisor</a><br/>
+         <span class="linkdescr">Switch between behaviours in different circumstances</span></p>
+    </td></tr>
+  </table>
+
+  <p><strong>Extending pySimiam:</strong></p>
+  <table class="contentstable" align="center"><tr>
+    <td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("gui_library") }}">A new GUI library</a><br/>
+         <span class="linkdescr">Use a graphics library of your choice to render robots</span></p>
+    </td><td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("code") }}">Full API</a><br/>
+         <span class="linkdescr">Cogs and bolts and little tricks of the system</span></p>
+    </td></tr>
+  </table>
+  {% endblock %}
+
+{% endblock %}
