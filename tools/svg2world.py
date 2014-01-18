@@ -28,8 +28,8 @@ from the fill color. The stroke color is ignored.
 """
 
 # Change those to get other robots
-robot_class = "Khepera3"
-robot_supervisor = "K3BlendingSupervisor"
+default_robot_class = "Khepera3"
+default_robot_supervisor = "K3BlendingSupervisor"
 
 color_re = re.compile('fill:(#[0-9a-fA-F]{6})')
 ns_re = re.compile('^(\{[^\}]*\})?(.*)$')
@@ -202,7 +202,7 @@ def transform_coords(tstr,points):
     
     m = trans_re.match(tstr)
     if m is None:
-        print "Invalid transform format"
+        print("Invalid transform format")
         return [(x,-y) for x,y in points]
     
     tname = m.group(1)
@@ -251,7 +251,7 @@ def add_element(parent,tag,style,points,transform):
     
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print 'usage: svg2world.py input.svg output.xml'
+        print('usage: svg2world.py input.svg output.xml')
         quit()
 
     try:
@@ -260,8 +260,8 @@ if __name__ == "__main__":
         if root is None:
             raise ValueError("No top-level group in this file")
     except Exception as e:
-        print 'Invalid svg file'
-        print e
+        print('Invalid svg file')
+        print(e)
         quit()
         
     world = ET.ElementTree(ET.Element('simulation'))
@@ -275,6 +275,14 @@ if __name__ == "__main__":
             continue
         
         if len(points) < 3: # Robot
+            robot_class = path.get('robot')
+            if robot_class is None:
+              robot_class = default_robot_class
+              
+            robot_supervisor = path.get('supervisor')
+            if robot_supervisor is None:
+              robot_supervisor = default_robot_supervisor
+
             style = path.get('style')
             if style is not None:
                 color = color_re.search(style)
