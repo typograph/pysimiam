@@ -6,7 +6,7 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from pid_controller import PIDController
+from controllers.pid_controller import PIDController
 import math
 import numpy
 
@@ -67,7 +67,7 @@ class FollowWall(PIDController):
                           if 0 < p.theta*dirfactor < math.pi and d < self.sensor_max]
 
         # Now make sure they are sorted from front to back
-        sensors = sorted(sensors, key = lambda (p, d): abs(p.theta))
+        sensors = sorted(sensors, key = lambda p_d: abs(p_d[0].theta))
         
         # No wall - drive a bit to the wall
         if len(sensors) == 0:

@@ -46,7 +46,7 @@ class QuadTree(object):
         
         # Insert items
         self.insert_items(items)
-        #print "QuadTree:", self, self.items
+        #print("QuadTree:", self, self.items)
         
     def insert_items(self, items):
         """ Insert a list of SimObject items

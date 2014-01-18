@@ -18,7 +18,13 @@ class Template(Controller):
 
     def set_parameters(self, params):
         """Set PID values
-        @param: (float) kp, ki, kd
+        
+        :param params.kp: Proportional gain
+        :type params.kp: float
+        :param params.ki: Integral gain
+        :type params.ki: float
+        :param params.kd: Differential gain
+        :type params.kd: float
         """
         self.kp = params.kp
         self.ki = params.ki

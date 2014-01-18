@@ -79,14 +79,14 @@ class SimObject:
         other_poly = pylygon.Polygon(other.get_world_envelope())
         
         # TODO: use distance() for performance
-        #print "Dist:", self_poly.distance(other_poly)
+        #print("Dist:", self_poly.distance(other_poly))
         
         collision = self_poly.collidepoly(other_poly)
         if isinstance(collision, bool):
             if not collision: return False
         
         # Test code - print out collisions
-        #print "Collision between {} and {}".format(self, other)
+        #print("Collision between {} and {}".format(self, other))
         # end of test code
         
         return True

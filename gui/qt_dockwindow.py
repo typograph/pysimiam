@@ -200,7 +200,7 @@ class ParamWidget(QtGui.QWidget):
         try:
             self.contents.set_parameters(parameters)
         except ValueError as e:
-            print "Invalid parameters: {}".format(e)
+            print("Invalid parameters: {}".format(e))
     
     @pyqtSlot()
     def apply_click(self):

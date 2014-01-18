@@ -1,4 +1,4 @@
-from khepera3 import K3Supervisor
+from supervisors.khepera3 import K3Supervisor
 from math import sqrt, sin, cos, pi, atan2
 
 class K3BlendingSupervisor(K3Supervisor):

@@ -6,14 +6,14 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from pid_controller import PIDController
+from controllers.pid_controller import PIDController
 import math
 import numpy
 
 class AvoidObstacles(PIDController):
     """Avoid obstacles is an example controller that checks the sensors
        for any readings, constructs 'obstacle' vectors and directs the robot
-       in the direction of their weightd sum."""
+       in the direction of their weighted sum."""
     def __init__(self, params):
         '''Initialize internal variables'''
         PIDController.__init__(self,params)

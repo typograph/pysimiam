@@ -8,6 +8,15 @@ polygon object
 
 from __future__ import division
 from operator import mul
+try:
+    from functools import reduce
+except ImportError:
+    pass # Ignore in python2
+  
+try:
+  xrange
+except Exception:
+  xrange = range
 
 from numpy import array, cos, dot, fabs, lexsort, pi, sin, sqrt, vstack
 ##from pygame import Rect
@@ -20,7 +29,13 @@ def _turn(i, j, k):
     global P
     _P = P
     (p_x, p_y), (q_x, q_y), (r_x, r_y) = _P[i], _P[j], _P[k]
-    return cmp((q_x - p_x) * (r_y - p_y) - (r_x - p_x) * (q_y - p_y), 0)
+    trn = (q_x - p_x) * (r_y - p_y) - (r_x - p_x) * (q_y - p_y)
+
+    if trn > 0:
+        return 1
+    elif trn < 0:
+        return -1
+    return 0
 
 
 def _keep_left(hull, r):
@@ -50,9 +65,9 @@ _E = _MACHEPS * 10
 
 # utility functions
 _clamp = lambda a, v, b: max(a, min(b, v))              # clamp v between a and b
-_perp = lambda (x, y): array([-y, x])                   # perpendicular
+_perp = lambda x_y: array([-x_y[1], x_y[0]])            # perpendicular
 _prod = lambda X: reduce(mul, X)                        # product
-_mag = lambda (x, y): sqrt(x * x + y * y)               # magnitude, or length
+_mag = lambda x_y: sqrt(x_y[0] * x_y[0] + x_y[1] * x_y[1])               # magnitude, or length
 _normalize = lambda V: array([i / _mag(V) for i in V])  # normalize a vector
 _intersect = lambda A, B: (A[1] > B[0] and B[1] > A[0]) # intersection test
 _unzip = lambda zipped: zip(*zipped)                    # unzip a list of tuples
@@ -291,15 +306,16 @@ class Polygon(object):
         self.P = array([(x + p_x, y + p_y) for (p_x, p_y) in self.P])
 
 
-    def collidepoint(self, (x, y)):
+    def collidepoint(self, x_y):
         """
-        test if point (x, y) is outside, on the boundary, or inside polygon
+        test if point x_y = (x, y) is outside, on the boundary, or inside polygon
         uses raytracing algorithm
 
         returns 0 if outside
         returns -1 if on boundary
         returns 1 if inside
         """
+        x,y = x_y
         n, P = self.n, self.P
 
         # test if (x, y) on a vertex
@@ -502,7 +518,8 @@ class Polygon(object):
 
 
     @C.setter
-    def C(self, (x, y)):
+    def C(self, x_y):
+        x,y = x_y
         c_x, c_y = self.C
         x, y = x - c_x, y - c_y
         self.P = array([(p_x + x, p_y + y) for (p_x, p_y) in self.P])

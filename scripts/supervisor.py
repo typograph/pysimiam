@@ -133,7 +133,7 @@ class Supervisor:
           and as a field name.
         - The second part of a tuple (value) is either a float, in which case
           it describes one parameter, or a (string, list of strings) tuple,
-          for multiple-choise paramaters, or lists, structured the same way
+          for multiple-choice paramaters, or lists, structured the same way
           the root list is structured.
         
         Must be implemented in subclasses.
@@ -207,7 +207,7 @@ class Supervisor:
                 if f():
                     c.restart()
                     self.current = c
-                    print "Switched to {}".format(c.__class__.__name__)
+                    print("Switched to {}".format(c.__class__.__name__))
                     break
 
         #execute the current controller

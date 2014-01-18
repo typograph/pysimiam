@@ -44,7 +44,7 @@ class XMLObject(object):
             relaxng_doc = etree.parse(schema)
             relaxng = RelaxNG(relaxng_doc)
             xml_doc = etree.parse(self._file)
-        except etree.XMLSyntaxError, e:
+        except etree.XMLSyntaxError as e:
             raise Exception(
                 '[XMLObject.validate] Cannot validate xml: ' + str(e)) 
         

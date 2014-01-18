@@ -86,8 +86,8 @@ def load_by_name(module_string, path = None):
         return module.__dict__[class_name]
 
     except ImportError:
-        print "Module {} failed to load".format(filename)
+        print("Module {} failed to load".format(filename))
         raise
     except KeyError:
-        print "No class {} in module {}".format(class_name,filename)
+        print("No class {} in module {}".format(class_name,filename))
         raise
