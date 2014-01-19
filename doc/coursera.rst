@@ -24,7 +24,7 @@ You will need a reasonably modern computer to run the robot simulator. While the
 Bug Reporting
 ^^^^^^^^^^^^^
 
-If you run into a bug (issue) with the simulator, please provide a detailed description either in a message in the discussion forums, in an issue in the sourceforge `issue tracker <http://sourceforge.net/projects/pysimiam/issues>`_ or in an email to the developers. The bug will get fixed and a new version of the simulator will be available at sourceforge.
+If you run into a bug (issue) with the simulator, please provide a detailed description either in a message in the discussion forums, in an issue in the sourceforge `issue tracker <http://sourceforge.net/p/pysimiam/tickets/>`_ or in an email to the developers. The bug will get fixed and a new version of the simulator will be available at sourceforge.
 
 Mobile Robot
 ------------
