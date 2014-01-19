@@ -38,6 +38,8 @@ trans_re = re.compile('([^(]*)\(([\-0-9\.,]*)\)')
 path_subc = re.compile('[MmZzLlHhVvCcSsQqTtAa]\s*(?:,?\s*[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[1-9][0-9]*)?)*')
 path_num  = re.compile('[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[1-9][0-9]*)?')
 
+size_multiplier = 0.01 # All sizes are read in cm
+
 """
 This class will discard namespace information from the xml
 The SVG files tend to have it, but we don't want it
@@ -80,7 +82,7 @@ def parse_path(pstr):
     subcs = path_subc.findall(pstr)
     for subc in subcs:
         command = subc[0]
-        numbers = [float(nstr) for nstr in path_num.findall(subc)]
+        numbers = [float(nstr)*size_multiplier for nstr in path_num.findall(subc)]
 
         # Close path
         if command == 'z' or command == 'Z':
