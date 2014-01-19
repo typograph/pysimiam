@@ -18,6 +18,3 @@ Controllers
 
 .. automodule:: controllers.gotogoal
     :members:
-
-.. automodule:: controllers.avoidobstacles
-    :members:
