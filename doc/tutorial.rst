@@ -18,7 +18,7 @@ Python 2.7 [#python3]_ ---> http://www.python.org/getit/
 Downloading pySimiam
 ^^^^^^^^^^^^^^^^^^^^
 
-The lastest release of pySimiam is available from `Sourceforge <http://sourceforge.net/projects/pysimiam/files/releases/>`
+The lastest release of pySimiam is available from `Sourceforge <http://sourceforge.net/projects/pysimiam/files/releases/>`_
 
 Unzip the latest provided archive and you are good to go!
 
@@ -58,12 +58,6 @@ robots' supervisors. These parameters can be changed at runtime by clicking `App
 It is up to the supervisor to implement those runtime changes.
 You can also save and load important parameter sets by using `Save` and `Load` buttons.
 
-.. include: robot.rst
-
-.. include: controller.rst
-
-.. include: supervisor.rst
-
 .. rubric:: Footnotes
 
-.. [#python3] Note: Python 3 is not officially supported, but the simulator should run with it as well.
+.. [#python3] Python 3 is not officially supported, but the simulator should run with it as well. It you are using or have tried to use Python 3 and have encountered problems, please tell us.

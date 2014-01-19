@@ -12,7 +12,7 @@ Creating new worlds
 
 Although worlds can be written by hand (see next section), it might be more pleasant to create a world
 in a vector graphics editor. A tool named ``svg2world`` is provided with pySimiam
-to convert SVG [#svgformat] files to world files.
+to convert SVG [#svgformat]_ files to world files.
 
 ``svg2world`` only supports a subset of svg, notably all the groups except
 the top one are ignored. Only the contents of this top group are processed
