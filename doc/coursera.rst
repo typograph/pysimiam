@@ -1,6 +1,17 @@
 Using PySimiam in Coursera 'Control of mobile robots' course
 ************************************************************
 
+Welcome, Coursera students!
+
+Last year, during the first installment of the "Control of Mobile Robots" class,
+we have decided to build our own version of the robot simulator that doesn't need
+MATLAB. This year we have the exciting opportunity to make our simulator available
+to all of the students of the course, thanks to Dr. Magnus Egerstedt and the team.
+
+Our simulator is inspired by the original `Sim.I.Am <http://gritslab.gatech.edu/home/2013/10/sim-i-am/>`_ simulator, and the programming assignments, as well as the robot description
+were taken directly from the Sim.I.Am manual by Jean-Pierre de la Croix.
+Special thanks to him for his hard work.
+
 Introduction
 ============
 
@@ -123,7 +134,7 @@ The speed for the QuickBot can be obtained in the following way assuming that yo
     # Transform from v,w to v_r,v_l
     vel_r, vel_l = self.uni2diff(v,w);
     
-The angular wheel velocity for the QuickBot is limited. It is important to note that if the QuickBot is controlled ot move at maximum linear velocity, it is not possible to achieve any angular velocity, because the angular velocity of the wheel will have been maximized. Therefore, there exists a tradeoff between the linear and angular velocity of the QuickBot: *the faster the robot should turn, the slower it has to move forward*.
+The angular wheel velocity for the QuickBot is limited to about 80 RPM. It is important to note that if the QuickBot is controlled ot move at maximum linear velocity, it is not possible to achieve any angular velocity, because the angular velocity of the wheel will have been maximized. Therefore, there exists a tradeoff between the linear and angular velocity of the QuickBot: *the faster the robot should turn, the slower it has to move forward*.
 
 Wheel Encoders
 ^^^^^^^^^^^^^^
@@ -146,7 +157,7 @@ This week's exercises will help you learn about Python and the robot simulator:
 2. Familiarize yourself with the simulator by reading the section on :ref:`gui-tutorial`, this manual and running the simulator script ``qtsimiam_week1.py``.
   
   * Try different view modes, like focusing on the robot and zooming
-  * Change the parameters of the supervisor. For example, change the position of the goal and watch the robot direct itself towards it (to see the position of the goal you have to turn on supervisor info drawing).
+  * Change the parameters of the supervisor. For example, change the position of the goal and watch the robot direct itself towards it (to see the position of the goal you have to turn on supervisor info drawing). Also try changing the PID gains.
   * Crash you robot against a wall! The collision detection was not implemented in the supervisor, so the robot does not react to any obstacles and collides with them.
   
 3. You are welcome to read the :ref:`API documentation <user-api>` of the simulator parts and look at the simulator's code. The full understanding of the inner working is, however, not required to complete any of the assignments.

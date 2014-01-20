@@ -26,7 +26,7 @@ class QuickBotDefaultSupervisor(QuickBotSupervisor):
         self.hold = self.create_controller('hold.Hold', None)
 
         # Transitions if at goal/obstacle
-        self.add_controller(self.hold)
+        self.add_controller(self.hold, (lambda : not self.at_goal(), self.gtg))
         self.add_controller(self.gtg,
                             (self.at_goal, self.hold))
 
