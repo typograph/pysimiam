@@ -1,6 +1,17 @@
 Using PySimiam in Coursera 'Control of mobile robots' course
 ************************************************************
 
+Welcome, Coursera students!
+
+Last year, during the first installment of the "Control of Mobile Robots" class,
+we have decided to build our own version of the robot simulator that doesn't need
+MATLAB. This year we have the exciting opportunity to make our simulator available
+to all of the students of the course, thanks to Dr. Magnus Egerstedt and the team.
+
+Our simulator is inspired by the original `Sim.I.Am <http://gritslab.gatech.edu/home/2013/10/sim-i-am/>`_ simulator, and the programming assignments, as well as the robot description
+were taken directly from the Sim.I.Am manual by Jean-Pierre de la Croix.
+Special thanks to him for his hard work.
+
 Introduction
 ============
 
