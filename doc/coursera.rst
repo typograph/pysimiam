@@ -134,7 +134,7 @@ The speed for the QuickBot can be obtained in the following way assuming that yo
     # Transform from v,w to v_r,v_l
     vel_r, vel_l = self.uni2diff(v,w);
     
-The angular wheel velocity for the QuickBot is limited. It is important to note that if the QuickBot is controlled ot move at maximum linear velocity, it is not possible to achieve any angular velocity, because the angular velocity of the wheel will have been maximized. Therefore, there exists a tradeoff between the linear and angular velocity of the QuickBot: *the faster the robot should turn, the slower it has to move forward*.
+The angular wheel velocity for the QuickBot is limited to about 80 RPM. It is important to note that if the QuickBot is controlled ot move at maximum linear velocity, it is not possible to achieve any angular velocity, because the angular velocity of the wheel will have been maximized. Therefore, there exists a tradeoff between the linear and angular velocity of the QuickBot: *the faster the robot should turn, the slower it has to move forward*.
 
 Wheel Encoders
 ^^^^^^^^^^^^^^

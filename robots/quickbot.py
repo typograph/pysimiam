@@ -125,8 +125,6 @@ class QuickBot(Robot):
                                          [-0.0694,-0.0278, 1],
                                          [-0.0824,-0.0278, 1]])
         
-        self._shapes.center = np.array([[0,0.01,1],[0.01,0,1],[0,-0.01,1],[-0.01,0,1]])
-        
         # create IR sensors
         self.ir_sensors = []
               
@@ -195,8 +193,6 @@ class QuickBot(Robot):
         r.draw_polygon(self._shapes.bbb_eth)
         r.draw_polygon(self._shapes.bbb_usb)
         
-        r.draw_polygon(self._shapes.center)
-        
     def get_envelope(self):
         return self._shapes.base_plate
     
@@ -243,12 +239,10 @@ class QuickBot(Robot):
         else:
             (vl, vr) = args[0]
             
-        left_ms  = max(-2, min(2, vl))
-        right_ms = max(-2, min(2, vr))
+        left_ms  = max(-8.377, min(8.377, vl))
+        right_ms = max(-8.377, min(8.377, vr))
 
-        mult = 1
-
-        self.ang_velocity = (left_ms*mult, right_ms*mult)
+        self.ang_velocity = (left_ms, right_ms)
 
     def get_external_sensors(self):
         return self.ir_sensors
