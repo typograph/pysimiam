@@ -157,7 +157,7 @@ This week's exercises will help you learn about Python and the robot simulator:
 2. Familiarize yourself with the simulator by reading the section on :ref:`gui-tutorial`, this manual and running the simulator script ``qtsimiam_week1.py``.
   
   * Try different view modes, like focusing on the robot and zooming
-  * Change the parameters of the supervisor. For example, change the position of the goal and watch the robot direct itself towards it.
+  * Change the parameters of the supervisor. For example, change the position of the goal and watch the robot direct itself towards it. Also try changing the PID gains.
   * Crash you robot against a wall! The collision detection was not implemented in the supervisor, so the robot does not react to any obstacles and collides with them.
   
 3. You are welcome to read the :ref:`API documentation <user-api>` of the simulator parts and look at the simulator's code. The full understanding of the inner working is, however, not required to complete any of the assignments.
