@@ -20,7 +20,13 @@ UI
 Interaction between GUI and the Simulator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The interaction is serialized
+The interaction between the UI and the simulator happens through
+two thread-safe queues. One queue contains the commands for the simulator,
+the other queue contains messages from the simulator. The communication
+is implemented in the base ui class, `ui.SimUI`.
+
+.. automodule:: ui
+    :members:
 
 PyQt4 implementation
 ^^^^^^^^^^^^^^^^^^^^

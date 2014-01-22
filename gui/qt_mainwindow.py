@@ -9,12 +9,7 @@ import os
 from qt_renderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
 from qt_logdock import LogDock
-
-import simulator as sim
-try:
-    import Queue as queue
-except ImportError:
-    import queue
+from ui import SimUI
 from traceback import format_exception
 
 class PlayPauseAction(QtGui.QAction):
@@ -53,7 +48,7 @@ class PlayPauseAction(QtGui.QAction):
         self.callback = actset[2]
         self.setStatusTip(actset[3])
 
-class SimulationWidget(QtGui.QMainWindow):
+class SimulationWidget(SimUI, QtGui.QMainWindow):
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
         self.setWindowTitle("QtSimiam")
@@ -100,18 +95,8 @@ class SimulationWidget(QtGui.QMainWindow):
         self.sim_timer.setInterval(10)
         self.sim_timer.timeout.connect(self.update_time)
         
-        self.sim_queue = queue.Queue()
-        
-        # create the simulator thread
-        self.simulator_thread = sim.Simulator(self.viewer.renderer,
-                                               self.sim_queue)
+        SimUI.__init__(self,self.viewer.renderer)
 
-        self.in_queue = self.simulator_thread._out_queue
-                                               
-        self.dockmanager = DockManager(self)
-        self.dockmanager.apply_request.connect(self.apply_parameters)
-
-        self.simulator_thread.start()
         self.sim_timer.start()
 
     def create_actions(self):
@@ -325,7 +310,7 @@ class SimulationWidget(QtGui.QMainWindow):
 
     def closeEvent(self,event):
         self.sim_timer.stop()
-        self.sim_queue.put(('stop',()))
+        self.run_simulator_command('stop')
         while self.simulator_thread.isAlive():
             self.process_events(True)
             self.simulator_thread.join(0.1)
@@ -339,7 +324,7 @@ class SimulationWidget(QtGui.QMainWindow):
                 print("Cannot open file {}".format(filename))
                 return
         self.dockmanager.clear()
-        self.sim_queue.put(('read_config',(filename,)))
+        self.run_simulator_command('read_config',filename)
 
     def add_logdock(self):
         self.showlog_action.setEnabled(False)
@@ -361,21 +346,21 @@ class SimulationWidget(QtGui.QMainWindow):
     def on_rewind(self): # Start from the beginning
         self.speed_slider.setEnabled(False)
         #self.time_label.setText("00:00.0")
-        self.sim_queue.put(('reset_simulation',()))
+        self.run_simulator_command('reset_simulation')
 
     @QtCore.pyqtSlot()
     def on_run(self): # Run/unpause
-        self.sim_queue.put(('start_simulation',()))
+        self.run_simulation()
 
     @QtCore.pyqtSlot()
     def on_pause(self): # Pause
         self.speed_slider.setEnabled(False)        
-        self.sim_queue.put(('pause_simulation',()))
+        self.pause_simulation()
 
     @QtCore.pyqtSlot()
     def on_step(self): # Pause
-        #self.speed_slider.setEnabled(False)        
-        self.sim_queue.put(('step_simulation',()))
+        #self.speed_slider.setEnabled(False)
+        self.step_simulation()
 
     @QtCore.pyqtSlot()
     def on_open_world(self):
@@ -385,51 +370,51 @@ class SimulationWidget(QtGui.QMainWindow):
 
     @QtCore.pyqtSlot()
     def refresh_view(self):
-        self.sim_queue.put(('refresh',()))
+        self.run_simulator_command('refresh')
             
     @QtCore.pyqtSlot(bool)
     def show_grid(self,show):
-        self.sim_queue.put(('show_grid',(show,)))
+        self.run_simulator_command('show_grid',show)
 
     @QtCore.pyqtSlot(bool)
     def show_sensors(self,show):
-        self.sim_queue.put(('show_sensors',(show,)))
+        self.run_simulator_command('show_sensors',show)
             
     @QtCore.pyqtSlot(bool)
     def show_tracks(self,show):
-        self.sim_queue.put(('show_tracks',(show,)))
+        self.run_simulator_command('show_tracks',show)
             
     @QtCore.pyqtSlot(bool)
     def show_supervisors(self,show):
-        self.sim_queue.put(('show_supervisors',(show,)))
+        self.run_simulator_command('show_supervisors',show)
             
     @QtCore.pyqtSlot()
     def zoom_scene(self):
         self.zoom_slider.setEnabled(False)
         self.rotate_action.setEnabled(False)
-        self.sim_queue.put(('focus_on_world',()))
+        self.run_simulator_command('focus_on_world')
 
     @QtCore.pyqtSlot()
     def zoom_robot(self):
         self.zoom_slider.setEnabled(True)
         self.rotate_action.setEnabled(True)
-        self.sim_queue.put(('focus_on_robot',(self.rotate_action.isChecked(),)))
-        self.sim_queue.put(('adjust_zoom',(5.0**(self.zoom_slider.value()/100.0),)))
+        self.run_simulator_command('focus_on_robot',self.rotate_action.isChecked())
+        self.run_simulator_command('adjust_zoom',5.0**(self.zoom_slider.value()/100.0))
 
     @QtCore.pyqtSlot()
     def rot_robot(self):
-        self.sim_queue.put(('focus_on_robot',(self.rotate_action.isChecked(),)))
+        self.run_simulator_command('focus_on_robot',self.rotate_action.isChecked())
             
     @QtCore.pyqtSlot(int)
     def scale_zoom(self,value):
         zoom = 5.0**(value/100.0)
-        self.sim_queue.put(('adjust_zoom',(zoom,)))
+        self.run_simulator_command('adjust_zoom',zoom)
         self.zoom_label.setText(" Zoom: %.1fx "%(zoom))
 
     @QtCore.pyqtSlot(int)
     def scale_time(self,value):
         m = 10.0**((value-self.zoom_factor)/100.0)
-        self.sim_queue.put(('set_time_multiplier',(m,)))
+        self.run_simulator_command('set_time_multiplier',m)
         self.speed_label.setText(" Speed: %.1fx "%m)
 
     @QtCore.pyqtSlot()
@@ -441,30 +426,9 @@ class SimulationWidget(QtGui.QMainWindow):
             self.status_label.setText(
                 "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
         self.process_events(True)
-    
-    def process_events(self, process_all = False):
-        while not self.in_queue.empty():
-            tpl = self.in_queue.get()
-            if isinstance(tpl,tuple) and len(tpl) == 2:
-                name, args = tpl
-                # Scramble
-                name = "simulator_{}".format(name)
-                if name in self.__class__.__dict__:
-                    try:
-                        self.__class__.__dict__[name](self,*args)
-                    except TypeError:
-                        print("Wrong UI event parameters {}{}".format(name,args))
-                        raise
-                else:
-                    print("Unknown UI event '{}'".format(name))
-            else:
-                print("Wrong UI event format '{}'".format(tpl))
-            self.in_queue.task_done()
-            if not process_all:
-                return
-    
+        
     def apply_parameters(self, robot_id, params):
-        self.sim_queue.put(('apply_parameters', (robot_id, params)))
+        self.run_simulator_command('apply_parameters', robot_id, params)
             
 ### Simulator events
 
