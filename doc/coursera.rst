@@ -161,3 +161,14 @@ This week's exercises will help you learn about Python and the robot simulator:
   * Crash you robot against a wall! The collision detection was not implemented in the supervisor, so the robot does not react to any obstacles and collides with them.
   
 3. You are welcome to read the :ref:`API documentation <user-api>` of the simulator parts and look at the simulator's code. The full understanding of the inner working is, however, not required to complete any of the assignments.
+
+Grading
+-------
+
+.. image:: submission1.png
+    :width: 267px
+    :align: left
+
+This week you only need to be able to run the simulator to get full grades. To submit your results for grading, enter your login and password from the `Assignments page <https://class.coursera.org/conrob-002/assignment/list>`_ (these are not your Coursera login and password - those will not work) into the corresponding fields of the grading window (see screenshot), and press the "Test 1: Running the simulator button". The tester will load the *week1* world and wait for the robot to reach the goal (or collide with something). Any submission errors will be displayed in the corresponding field.
+
+If you have closed the submission window, you can call it back by pressing the 'coursera' button in the menu or on the toolbar.
