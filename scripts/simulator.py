@@ -3,6 +3,7 @@ try:
     import Queue as queue
 except ImportError:
     import queue
+from collections import deque
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
@@ -11,6 +12,7 @@ import sys
 
 import pose
 import simobject
+import supervisor
 from quadtree import QuadTree, Rect
 
 PAUSE = 0
@@ -70,13 +72,15 @@ class Simulator(threading.Thread):
 
         self.__world = None
         
+        self.__log_queue = deque()
+        
         # Internal objects
         self.__qtree = None
 
     def read_config(self, filename):
         '''Load in the objects from the world XML file '''
 
-        print('reading initial configuration')
+        self.log('reading initial configuration')
         try:
             self.__world = XMLReader(filename, 'simulation').read()
         except Exception as e:
@@ -127,7 +131,8 @@ class Simulator(threading.Thread):
                     
                     info = robot.get_info()
                     info.color = robot.get_color()
-                    supervisor = sup_class(robot.get_pose(), info)                    
+                    supervisor = sup_class(robot.get_pose(), info)
+                    supervisor.set_logqueue(self.__log_queue)
                     name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None and \
                        len(self.__supervisor_param_cache) > len(self.__supervisors):
@@ -144,7 +149,7 @@ class Simulator(threading.Thread):
                     self.__trackers.append(simobject.Path(robot.get_pose(),robot))
                     self.__trackers[-1].set_color(robot.get_color())
                 except:
-                    print("[Simulator.construct_world] Robot creation failed!")
+                    self.log("[Simulator.construct_world] Robot creation failed!")
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing_type == 'obstacle':
@@ -208,7 +213,7 @@ class Simulator(threading.Thread):
            The simulator will try to draw the world undependently of the
            simulation status, so that the commands from the UI get processed.
         """
-        print('starting simulator thread')
+        self.log('starting simulator thread')
 
         time_constant = 0.02 # 20 milliseconds
         
@@ -233,16 +238,21 @@ class Simulator(threading.Thread):
                         robot.move(time_constant)
                         self.__trackers[i].add_point(robot.get_pose())
 
+                    self.fwd_logqueue()
+
                     # Second, check for collisions and update sensors
                     if self.__check_collisions():
-                        print("Collision detected!")
+                        #print("Collision detected!")
                         self.__state = DRAW_ONCE
+
+                    self.fwd_logqueue()
 
                     # Now calculate supervisor outputs for the new position
                     for i, supervisor in enumerate(self.__supervisors):
                         info = self.__robots[i].get_info()
                         inputs = supervisor.execute( info, time_constant)
                         self.__robots[i].set_inputs(inputs)
+                        self.fwd_logqueue()
 
                 # Draw to buffer-bitmap
                 # Note that if the robot moves immediately after calculation,
@@ -253,10 +263,13 @@ class Simulator(threading.Thread):
                 if self.__state == DRAW_ONCE or \
                    self.__state == RUN_ONCE:
                     self.pause_simulation()
+
+                self.fwd_logqueue()
             
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
                 self.pause_simulation()
+                self.fwd_logqueue()
 
     def __draw(self):
         """Draws the world and items in it.
@@ -381,7 +394,7 @@ class Simulator(threading.Thread):
         """
         index = self.__robots.index(robot)
         if index < 0:
-            print("Robot not found")
+            self.log("Robot not found")
         else:
             self.__supervisors[index].set_parameters(parameters)
         self.__draw_once()
@@ -389,7 +402,7 @@ class Simulator(threading.Thread):
     # Stops the thread
     def stop(self):
         """Stop the simulator thread when the entire program is closed"""
-        print('stopping simulator thread')
+        self.log('stopping simulator thread')
         self.__stop = True
         self._out_queue.put(('stopped',()))
 
@@ -480,7 +493,7 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                print("Collision between:\n", robot, "\n", obstacle)
+                self.log("Collision with {}".format(obstacle), obj = robot)
             # end of test code
             return True
                 
@@ -497,14 +510,33 @@ class Simulator(threading.Thread):
                     try:
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
-                        print("Wrong simulator event parameters {}{}".format(name,args))
+                        self.log("Wrong simulator event parameters {}{}".format(name,args))
                         self._out_queue.put(("exception",sys.exc_info()))
                     except Exception as e:
                         self._out_queue.put(("exception",sys.exc_info()))
                 else:
-                    print("Unknown simulator event '{}'".format(name))
+                    self.log("Unknown simulator event '{}'".format(name))
             else:
-                print("Wrong simulator event format '{}'".format(tpl))
+                self.log("Wrong simulator event format '{}'".format(tpl))
             self.__in_queue.task_done()
+    
+    def log(self, message, obj=None):
+        if obj is None:
+            obj = self
+        print("{}: {}".format(obj.__class__.__name__,message))
+        self._out_queue.put(("log",(message,obj.__class__.__name__,None)))
+        
+    def fwd_logqueue(self):
+        while self.__log_queue:
+            obj, message = self.__log_queue.popleft()
+            
+            color = None
+            # Get the color
+            if isinstance(obj,simobject.SimObject):
+                color = obj.get_color()
+            elif isinstance(obj,supervisor.Supervisor):
+                color = obj.robot_color
+                
+            self._out_queue.put(("log",(message,obj.__class__.__name__,color)))
     
 #end class Simulator

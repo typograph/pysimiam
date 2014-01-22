@@ -8,6 +8,7 @@ from PyQt4 import QtGui, QtCore
 import os
 from qt_renderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
+from qt_logdock import LogDock
 
 import simulator as sim
 try:
@@ -91,6 +92,9 @@ class SimulationWidget(QtGui.QMainWindow):
 
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
+        
+        self.logdock = None
+        self.add_logdock()
 
         self.sim_timer = QtCore.QTimer(self)
         self.sim_timer.setInterval(10)
@@ -209,6 +213,9 @@ class SimulationWidget(QtGui.QMainWindow):
         self.rotate_action.setCheckable(True)
         self.rotate_action.setChecked(False)
         self.rotate_action.setEnabled(False)
+
+        self.showlog_action = QtGui.QAction("Show log",self)
+        self.showlog_action.triggered.connect(self.add_logdock)
         
         self.about_action = \
             QtGui.QAction(QtGui.QIcon.fromTheme("help-about",
@@ -219,15 +226,15 @@ class SimulationWidget(QtGui.QMainWindow):
         
     def create_toolbars(self):
         
-        tbar = QtGui.QToolBar("Control",self)
-        tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
+        self.simulator_toolbar = QtGui.QToolBar("Control",self)
+        self.simulator_toolbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         
-        tbar.addAction(self.open_world_action)
-        tbar.addSeparator()
+        self.simulator_toolbar.addAction(self.open_world_action)
+        self.simulator_toolbar.addSeparator()
         
-        tbar.addAction(self.rev_action)
-        tbar.addAction(self.run_action)
-        tbar.addAction(self.step_action)
+        self.simulator_toolbar.addAction(self.rev_action)
+        self.simulator_toolbar.addAction(self.run_action)
+        self.simulator_toolbar.addAction(self.step_action)
         
         self.speed_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.speed_slider.setToolTip("Adjust speed")
@@ -238,26 +245,26 @@ class SimulationWidget(QtGui.QMainWindow):
         self.speed_slider.setValue(0)
         self.speed_slider.setEnabled(False)
         self.speed_slider.valueChanged[int].connect(self.scale_time)
-        tbar.addWidget(self.speed_slider)
+        self.simulator_toolbar.addWidget(self.speed_slider)
         
         self.speed_label = QtGui.QLabel(" Speed: 1.0x ",self)
         self.speed_label.setToolTip("Current speed multiplier")
-        tbar.addWidget(self.speed_label)
+        self.simulator_toolbar.addWidget(self.speed_label)
                        
-        self.addToolBar(tbar)
+        self.addToolBar(self.simulator_toolbar)
 
-        tbar = QtGui.QToolBar("View",self)
-        tbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
+        self.view_toolbar = QtGui.QToolBar("View",self)
+        self.view_toolbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
 
-        tbar.addAction(self.grid_action)        
-        tbar.addAction(self.sens_action)
-        tbar.addAction(self.trace_action)
-        tbar.addAction(self.superv_action)
-        tbar.addSeparator()
+        self.view_toolbar.addAction(self.grid_action)        
+        self.view_toolbar.addAction(self.sens_action)
+        self.view_toolbar.addAction(self.trace_action)
+        self.view_toolbar.addAction(self.superv_action)
+        self.view_toolbar.addSeparator()
         
-        tbar.addAction(self.zoom_world_action)
-        tbar.addAction(self.zoom_robot_action)
-        tbar.addAction(self.rotate_action)
+        self.view_toolbar.addAction(self.zoom_world_action)
+        self.view_toolbar.addAction(self.zoom_robot_action)
+        self.view_toolbar.addAction(self.rotate_action)
         
         self.zoom_slider = QtGui.QSlider(QtCore.Qt.Horizontal,self)
         self.zoom_slider.setTickPosition(QtGui.QSlider.NoTicks)
@@ -268,14 +275,14 @@ class SimulationWidget(QtGui.QMainWindow):
         self.zoom_slider.setValue(0)
         self.zoom_slider.setEnabled(False)
         self.zoom_slider.valueChanged[int].connect(self.scale_zoom)
-        tbar.addWidget(self.zoom_slider)
+        self.view_toolbar.addWidget(self.zoom_slider)
         self.zoom_label = QtGui.QLabel(" Zoom: 1.0x ",self)
         self.zoom_label.setToolTip("Current zoom factor")
-        tbar.addWidget(self.zoom_label)
+        self.view_toolbar.addWidget(self.zoom_label)
         
         self.zoom_factor = 0
                        
-        self.addToolBar(tbar)
+        self.addToolBar(self.view_toolbar)
 
     def create_menu(self):
         menu = QtGui.QMenuBar(self)
@@ -306,6 +313,8 @@ class SimulationWidget(QtGui.QMainWindow):
         run_menu.addAction(self.rev_action)
         
         help_menu = menu.addMenu("&Help")
+        help_menu.addAction(self.showlog_action)
+        help_menu.addSeparator()
         help_menu.addAction(self.about_action)
         
     def create_statusbar(self):      
@@ -332,6 +341,14 @@ class SimulationWidget(QtGui.QMainWindow):
         self.dockmanager.clear()
         self.sim_queue.put(('read_config',(filename,)))
 
+    def add_logdock(self):
+        self.showlog_action.setEnabled(False)
+        if self.logdock is None:
+            self.logdock = LogDock(self)
+            self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.logdock)
+        else:
+            self.logdock.show()
+        self.logdock.closed.connect(self.showlog_action.setEnabled)
     # Slots
     def about(self):
         QtGui.QMessageBox.about(self,"About QtSimiam",
@@ -482,6 +499,9 @@ class SimulationWidget(QtGui.QMainWindow):
     def simulator_exception(self,e_type, e_value, e_traceback):
         QtGui.QMessageBox.critical(self,"{}: {}".format(e_type.__name__,e_value),"\n".join(format_exception(e_type,e_value,e_traceback)))
         self.run_action.setEnabled(False)
+        
+    def simulator_log(self, message, objclass, objcolor):
+        self.logdock.append(message,objclass,objcolor)
             
 #end QtSimiamFrame class
 
