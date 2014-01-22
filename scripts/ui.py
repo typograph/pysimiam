@@ -21,6 +21,8 @@ class SimUI:
     """
     def __init__(self, renderer):
         
+        self.event_handler = None
+        
         self.sim_queue = queue.Queue()
         
         # create the simulator thread
@@ -30,6 +32,16 @@ class SimUI:
         
         self.simulator_thread.start()
     
+    def register_event_handler(self, event_handler):
+        """Register a callback that will be executed to process the 
+        """
+        self.event_handler = event_handler
+        
+    def unregister_event_handler(self):
+        """Unregister a previously registered event handler.
+        """
+        self.event_handler = None
+        
     def process_events(self, process_all = False):
         """Processes one or all incoming events from the simulator. A single
            event is a tuple (name,args). During the processing of the event,
@@ -46,16 +58,22 @@ class SimUI:
             tpl = self.in_queue.get()
             if isinstance(tpl,tuple) and len(tpl) == 2:
                 name, args = tpl
-                # Scramble
-                name = "simulator_{}".format(name)
-                if name in self.__class__.__dict__:
-                    try:
-                        self.__class__.__dict__[name](self,*args)
-                    except TypeError:
-                        print("Wrong UI event parameters {}{}".format(name,args))
-                        raise
-                else:
-                    print("Unknown UI event '{}'".format(name))
+                
+                intercepted = False
+                if self.event_handler is not None:
+                    intercepted = self.event_handler(name,args)
+                    
+                if not intercepted:
+                    # Scramble
+                    name = "simulator_{}".format(name)
+                    if name in self.__class__.__dict__:
+                        try:
+                            self.__class__.__dict__[name](self,*args)
+                        except TypeError:
+                            print("Wrong UI event parameters {}{}".format(name,args))
+                            raise
+                    else:
+                        print("Unknown UI event '{}'".format(name))
             else:
                 print("Wrong UI event format '{}'".format(tpl))
             self.in_queue.task_done()
@@ -119,7 +137,9 @@ class SimUI:
            in the case the object is connected to one, and None otherwise.
         """
         raise NotImplementedError('SimUI.simulator_log')
-   
+
+    # Commands for the tester:
+    
     def run_simulation(self):
         """Unpause the simulation."""
         self.run_simulator_command('start_simulation')
@@ -132,4 +152,62 @@ class SimUI:
         """Advance the simulation one step if it is paused."""
         self.run_simulator_command('step_simulation')
 
+    def start_testing(self):
+        """Prepare the simulation environment for testing, e.g. disable
+           user controls of the simulation progress."""
+        pass
 
+    def stop_testing(self):
+        """Return UI back to normal operation."""
+        pass
+    
+    #def get_view_parameters(self):
+        #pass
+    
+    #def set_view_parameters(self,params):
+        #pass
+    
+    #def new_renderer(self):
+        #pass
+    
+    #def pop_renderer(self):
+        #pass
+
+    #def start_test(self):
+        #"""This function will pause and 'cache' the currently running
+           #simulation. A new `simulator.Simulator` will be started with
+           #the control belonging to the tester object.
+        #"""
+        #self.antiteststruct = Struct()
+        #self.antiteststruct.wasrunning = False
+        ## 1) Pause simulator
+        #if self.simulator_thread.is_running():
+            #self.antiteststruct.wasrunning = True # Remember the setting
+            #self.run_simulator_command('pause_simulation') # Pause simulation
+            #self.process_events(True) # Process all events
+            
+        ## 2) Create new simulator
+        #self.antiteststruct.simulator = simulator_thread
+        #self.simulator_thread = sim.Simulator(self.instantiate_new_renderer(), self.sim_queue)
+        #self.simulator_thread.start()
+    
+    #def stop_test(self):
+        #"""This function will restore the cached simulation and 
+           #simulation. A new `simulator.Simulator` will be started with
+           #the control belonging to the tester object.
+        #"""
+        #view_params = self.get_view_parameters()
+        
+        ## 1) Stop simulator
+        #self.run_simulator_command('stop')
+        #while self.simulator_thread.isAlive():
+            #self.process_events(True)
+            #self.simulator_thread.join(0.1)
+                
+        ## 2) Switch to old simulator
+        #self.pop_renderer()
+        #self.simulator_thread = self.antiteststruct.simulator
+        
+        ## 3) continue running
+        #if self.antiteststruct.wasrunning:
+            #self.run_simulator_command('pause_simulation')
