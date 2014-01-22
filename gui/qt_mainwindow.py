@@ -8,6 +8,7 @@ from PyQt4 import QtGui, QtCore
 import os
 from qt_renderer import QtRenderer
 from qt_dockwindow import ParamDock, DockManager
+from qt_courseradock import CourseraDock
 from qt_logdock import LogDock
 from ui import SimUI
 from traceback import format_exception
@@ -88,8 +89,12 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
         
+        self.coursera_dock = None
         self.logdock = None
         self.add_logdock()
+
+        self.dockmanager = DockManager(self)
+        self.dockmanager.apply_request.connect(self.apply_parameters)
 
         self.sim_timer = QtCore.QTimer(self)
         self.sim_timer.setInterval(10)
@@ -297,6 +302,8 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         run_menu.addAction(self.step_action)
         run_menu.addAction(self.rev_action)
         
+        self.run_menu = run_menu
+        
         help_menu = menu.addMenu("&Help")
         help_menu.addAction(self.showlog_action)
         help_menu.addSeparator()
@@ -326,14 +333,39 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.dockmanager.clear()
         self.run_simulator_command('read_config',filename)
 
+    def setTestSuite(self,TestClass):
+        self.menuBar().addSeparator()
+        self.coursera_action = self.menuBar().addAction("&Submit assignment")
+        
+        tb = QtGui.QToolButton(self)
+        tb.setDefaultAction(self.coursera_action)
+        self.coursera_action.setIcon(QtGui.QIcon("./res/image/coursera.png"))
+        self.simulator_toolbar.insertWidget(self.rev_action, tb)
+        self.simulator_toolbar.insertSeparator(self.rev_action)
+        
+        self.coursera_action.triggered.connect(self.create_coursera_widget)
+
+        self.tester = TestClass(self)
+        self.create_coursera_widget()
+     
+    def create_coursera_widget(self):
+        self.coursera_action.setEnabled(False)
+        if self.coursera_dock is None:
+            self.coursera_dock = CourseraDock(self, self.tester)
+            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.coursera_dock)
+            self.coursera_dock.closed.connect(self.coursera_action.setEnabled)
+        else:
+            self.coursera_dock.show()
+
     def add_logdock(self):
         self.showlog_action.setEnabled(False)
         if self.logdock is None:
             self.logdock = LogDock(self)
             self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.logdock)
+            self.logdock.closed.connect(self.showlog_action.setEnabled)
         else:
             self.logdock.show()
-        self.logdock.closed.connect(self.showlog_action.setEnabled)
+        
     # Slots
     def about(self):
         QtGui.QMessageBox.about(self,"About QtSimiam",
@@ -429,6 +461,16 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         
     def apply_parameters(self, robot_id, params):
         self.run_simulator_command('apply_parameters', robot_id, params)
+        
+    def start_testing(self):
+        self.open_world_action.setEnabled(False)
+        self.run_menu.setEnabled(False)
+        self.simulator_toolbar.setEnabled(False)
+
+    def stop_testing(self):
+        self.open_world_action.setEnabled(True)
+        self.run_menu.setEnabled(True)
+        self.simulator_toolbar.setEnabled(True)
             
 ### Simulator events
 
