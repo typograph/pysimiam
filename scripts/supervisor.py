@@ -84,6 +84,7 @@ class Supervisor:
         self.current = None
         self.robot = robot_info
         self.robot_color = robot_info.color
+        self.logqueue = None
         self.init_default_parameters()
         
         # Dict controller -> (function, controller)
@@ -207,7 +208,7 @@ class Supervisor:
                 if f():
                     c.restart()
                     self.current = c
-                    print("Switched to {}".format(c.__class__.__name__))
+                    self.log("Switched to {}".format(c.__class__.__name__))
                     break
 
         #execute the current controller
@@ -251,3 +252,12 @@ class Supervisor:
         Must be implemented in subclasses.
         """
         raise NotImplementedError('Supervisor.estimate_pose')
+    
+    def set_logqueue(self,logqueue):
+        self.logqueue = logqueue
+    
+    def log(self, message):
+        print("{}: {}".format(self.__class__.__name__,message))
+        if self.logqueue is not None:
+            self.logqueue.append((self,message))
+        
