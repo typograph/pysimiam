@@ -101,4 +101,37 @@ class WeekTest:
         
         self.testcase = None
         self.callback = None
+
+class Week1(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 1"
+    
+    self.week = 1
+    self.tests.append(Week1Test1(self))
+    
+class Week1Test1(WeekTestCase):
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Running the simulator"
+        self.test_id = "k3pa0rK4"
+
+    def __call__(self,event,args):
+        if event == "log":
+            message, objclass, objcolor = args
+            if message == "Switched to Hold":
+                self.stop_test()
+                self.testsuite.respond("-1")
+        return False
         
+    def start_test(self):
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.load_world('week1.xml')
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.run_simulation()
+        
+    def stop_test(self):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.stop_testing()       
+
