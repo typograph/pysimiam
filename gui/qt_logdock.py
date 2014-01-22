@@ -30,9 +30,7 @@ class LogDock(QtGui.QDockWidget):
             clr.setBackground(QtGui.QColor(color))
 
     def closeEvent(self,event):
-        self.closed.emit(True)
-        event.accept()
-        
-    def hideEvent(self,event):
-        self.closed.emit(True)
-        event.accept()
+        super(LogDock,self).closeEvent(event)
+        if event.isAccepted():
+            print('closed')
+            self.closed.emit(True)
