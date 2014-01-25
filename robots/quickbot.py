@@ -148,7 +148,6 @@ class QuickBot(Robot):
         self.info.wheels.radius = 0.0325
         self.info.wheels.base_length = 0.09925
         self.info.wheels.ticks_per_rev = 16
-        self.info.speed_factor = 0
         self.info.wheels.left_ticks = 0
         self.info.wheels.right_ticks = 0
         
