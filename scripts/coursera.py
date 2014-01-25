@@ -39,8 +39,8 @@ class WeekTest:
         self.testname = 'Name not set'
     
     def setuser(self, login, password):
-        self.login = str(login)
-        self.password = str(password)
+        self.login = str(login).strip()
+        self.password = str(password).strip()
     
     def run_tests(self,tests = None):
         if tests is None:
