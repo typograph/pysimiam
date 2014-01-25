@@ -165,13 +165,13 @@ class Week2Test1(WeekTestCase):
         except ValueError:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
                     
-        from supervisors.week2_solved import QuickBotSupervisor2
+        from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
         from pose import Pose
         
         info = QuickBot(Pose()).get_info()
         info.color = 0
-        s = QuickBotSupervisor2(Pose(),info)
+        s = QuickBotSupervisor(Pose(),info)
         
         vl, vr = s.uni2diff((v,w))
         
@@ -196,7 +196,7 @@ class Week2Test2(WeekTestCase):
         except ValueError:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
                     
-        from supervisors.week2_solved import QuickBotSupervisor2
+        from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
         from pose import Pose
         from helpers import Struct
@@ -205,7 +205,7 @@ class Week2Test2(WeekTestCase):
         bot = QuickBot(Pose())
         info = bot.get_info()
         info.color = 0
-        s = QuickBotSupervisor2(Pose(),info)
+        s = QuickBotSupervisor(Pose(),info)
         params = Struct()
         params.goal = theta*180/pi
         params.velocity = v
@@ -242,7 +242,7 @@ class Week2Test3(WeekTestCase):
         except ValueError:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
                     
-        from supervisors.week2_solved import QuickBotSupervisor2
+        from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot, QuickBot_IRSensor
         from pose import Pose
         
@@ -254,7 +254,7 @@ class Week2Test3(WeekTestCase):
         
         info = bot.get_info()
         info.color = 0
-        s = QuickBotSupervisor2(Pose(),info)
+        s = QuickBotSupervisor(Pose(),info)
         # Just in case a student iterates in a weird way
         s.robot.ir_sensors.readings = [id1,id2,id1,id2,id1]
         ird = s.get_ir_distances()

@@ -2,23 +2,23 @@
 <simulation>
     <robot type="QuickBot">
         <pose theta="1.57079632679" x="0.35105952" y="-2.8297908"/>
-        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+        <supervisor type="week2.QuickBotSupervisor"/>
     </robot>
     <robot type="QuickBot">
         <pose theta="1.57079632679" x="2.7" y="-0.37362183"/>
-        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+        <supervisor type="week2.QuickBotSupervisor"/>
     </robot>
     <robot type="QuickBot">
         <pose theta="0.636141904993" x="0.4514127" y="-1.6258923"/>
-        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+        <supervisor type="week2.QuickBotSupervisor"/>
     </robot>
     <robot type="QuickBot">
         <pose theta="-0.490371829535" x="1.4549444" y="-1.5255674"/>
-        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+        <supervisor type="week2.QuickBotSupervisor"/>
     </robot>
     <robot type="QuickBot">
         <pose theta="1.3106889623" x="2.358123" y="-1.6258923"/>
-        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+        <supervisor type="week2.QuickBotSupervisor"/>
     </robot>
     <obstacle color="#8b8b8b">
         <pose theta="0" x="0.15035312" y="-3.0142465"/>
