@@ -285,6 +285,8 @@ class Renderer:
            or linear (close=False) arrowhead shape.
         """
         self.push_state()
+        
+        self.translate(x1,y1)
         self.rotate(atan2(y2-y1,x2-x1))
         self.scale(sqrt((x1-x2)**2 + (y1-y2)**2))
         
