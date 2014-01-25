@@ -106,7 +106,7 @@ class CourseraDock(QtGui.QDockWidget):
         self.enable_testing(True)
         
     def check_logpass(self):
-        self.enable_testing(bool(str(self.login.text())) and bool(str(self.password.text())))
+        self.enable_testing(bool(str(self.login.text()).strip()) and bool(str(self.password.text()).strip()))
         
     def closeEvent(self,event):
         super(CourseraDock,self).closeEvent(event)
