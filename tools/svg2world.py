@@ -316,10 +316,10 @@ if __name__ == "__main__":
 
     # Obstacles    
     for rect in root.findall('rect'):
-        x = float(rect.get('x'))
-        y = float(rect.get('y'))
-        w = float(rect.get('width'))
-        h = float(rect.get('height'))
+        x = float(rect.get('x'))*size_multiplier
+        y = float(rect.get('y'))*size_multiplier
+        w = float(rect.get('width'))*size_multiplier
+        h = float(rect.get('height'))*size_multiplier
         
         name = rect.get('id')
         if name is not None and name.startswith('marker'):
