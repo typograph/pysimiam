@@ -14,12 +14,12 @@ from simobject import Path
 
 from math import pi, sin, cos, log1p, sqrt, atan2
 
-class K3Supervisor(Supervisor):
-    """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the :class:`~k3defaultsupervisor.K3DefaultSupervisor` class in which this class is used to reduce noisy code interactions.
+class QuickBotSupervisor(Supervisor):
+    """The QuickBotSupervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting QuickBot supervisor. 
 
-Most importantly, the K3Supervisor object implements the system functions necessary to operate a Khepera3, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.
+    Most importantly, the QuickBotSupervisor object implements the system functions necessary to operate a QuickBot, namely the uni2diff unicycle to differential motion model conversion, the Jacobian problem, and any other computationally complex interface.
 
-The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors."""
+    The UI may use the get_parameters function interface to create docker windows for real-time update of the PID parameters. This is an advanced implementation and is not required for students to properly implement their own supervisors."""
     def __init__(self, robot_pose, robot_info):
         """Initialize internal variables"""
         Supervisor.__init__(self, robot_pose, robot_info)
@@ -32,20 +32,14 @@ The UI may use the get_parameters function interface to create docker windows fo
         self.tracker = Path(robot_pose, 0)
         
         # Create & set the controller
-        self.current = self.create_controller('GoToGoal', self.parameters)
+        self.current = self.create_controller('GoToAngle', self.parameters)
                     
     def init_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
         p = Struct()
-        p.goal = Struct()
-        p.goal.x = 1.0
-        p.goal.y = 1.0
-        p.velocity = Struct()
-        p.velocity.v = 0.2
-        p.gains = Struct()
-        p.gains.kp = 10.0
-        p.gains.ki = 2.0
-        p.gains.kd = 0.0
+        p.goal = 45.0
+        p.velocity = 0.2
+        p.pgain = 3.0
         
         self.parameters = p
         
@@ -54,18 +48,15 @@ The UI may use the get_parameters function interface to create docker windows fo
         if p is None:
             p = self.parameters
         
-        return [('goal', [('x',p.goal.x), ('y',p.goal.y)]),
-                ('velocity', [('v', p.velocity.v)]),
-                (('gains',"PID gains"), 
-                    [(('kp','Proportional gain'), p.gains.kp),
-                     (('ki','Integral gain'), p.gains.ki),
-                     (('kd','Differential gain'), p.gains.kd)])]
+        return [(('goal', 'Target angle'), p.goal),
+                ('velocity', p.velocity),
+                (('pgain',"Proportional gain"), p.pgain)]
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         self.parameters.goal = params.goal
         self.parameters.velocity = params.velocity
-        self.parameters.gains = params.gains
+        self.parameters.pgain = params.pgain
         self.current.set_parameters(self.parameters)
                                   
     def uni2diff(self,uni):
@@ -84,17 +75,6 @@ The UI may use the get_parameters function interface to create docker windows fo
         
         return (vl,vr)
             
-    def get_ir_distances(self):
-        """Converts the IR distance readings into a distance in meters"""
-        
-        #Insert Week 2 Assignment Code Here
-
-        ir_distances = [0]*len(self.robot.ir_sensors.readings) #populate this list
-
-        #End Assignment week2
-
-        return ir_distances
-
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
         
@@ -117,7 +97,18 @@ The UI may use the get_parameters function interface to create docker windows fo
         #End Week 2 Assignment Code
             
         return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
-            
+    
+    def get_ir_distances(self):
+        """Converts the IR distance readings into a distance in meters"""
+        
+        #Insert Week 2 Assignment Code Here
+
+        ir_distances = [0]*len(self.robot.ir_sensors.readings) #populate this list
+
+        #End Assignment week2
+
+        return ir_distances
+
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
@@ -135,16 +126,19 @@ The UI may use the get_parameters function interface to create docker windows fo
         """Draw a circular goal, path and ir_sensors"""
         
         # Draw goal
-        renderer.set_pose(Pose(self.parameters.goal.x, self.parameters.goal.y))
-        renderer.set_brush(self.robot_color)
-        r = self.robot.wheels.base_length/2
-        renderer.draw_ellipse(0,0,r,r)
+        renderer.set_pose(Pose(self.pose_est.x,self.pose_est.y,pi*self.parameters.goal/180))
+        renderer.set_pen(0)
+#        renderer.draw_line(0.03,0,100,0)
+        renderer.draw_arrow(0.05,0,0.5,0,close=True)
         
         # Draw robot path
         self.tracker.draw(renderer)
         
+        renderer.set_pose(self.pose_est)
+        renderer.set_brush(0)
+        renderer.draw_ellipse(0,0,0.01,0.01)
+               
         # Draw IR distances
-        # Calculate vectors:
         crosses = array([ dot(p.get_transformation(), [d,0,1])
                           for d, p in zip(self.get_ir_distances(), self.robot.ir_sensors.poses) ] )
                                 

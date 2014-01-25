@@ -172,3 +172,161 @@ Grading
 This week you only need to be able to run the simulator to get full grades. To submit your results for grading, enter your login and password from the `Assignments page <https://class.coursera.org/conrob-002/assignment/list>`_ (these are not your Coursera login and password - those will not work) into the corresponding fields of the grading window (see screenshot), and press the "Test 1: Running the simulator button". The tester will load the *week1* world and wait for the robot to reach the goal (or collide with something). Any submission errors will be displayed in the corresponding field.
 
 If you have closed the submission window, you can call it back by pressing the 'coursera' button in the menu or on the toolbar.
+
+Week 2. Understanding the robot
+===============================
+
+In this week's exercises you will teach the supervisor to process the information from the robot.
+
+.. image:: week2_null.png
+   :align: left
+   :width: 200px
+
+The simulator for this week can be run with::
+    
+    >>> python qtsimiam_week2.py
+
+Alongside with the robot, some of the information provided by the supervisor is shown. The black dot in the middle of the robot is the current position of the robot, according to the supervisor. The arrow points in the direction of the goal angle (you can set it in supervisor properties). The crosses show the supervisor interpretation of the IR sensor signals. As your robot starts to move, you will also see two trajectories - one being the real trajectory of the robot, and the other calculated by the supervisor.
+
+As you start the simulation for the first time, your robot will not move. To make it move, you will need to implement three components of the QuickBot supervisor, located in ``supervisors/week2.py``. Remember, that it is not necessary to restart the simulator program every time you make change the code. It should suffice to restart the simulation, by pushing the blue double arrow button.
+
+Transformation from unicycle to differential drive dynamics
+--------------------------------------------------------------------
+
+The function used by the supervisor to convert from unicycle dynamics `(v, ω)` to differential drive dynamics (left and right *angular* wheel speeds (|vl|, |vr|)) is named ``uni2diff``::
+
+    def uni2diff(self, uni):
+        (v,w) = uni
+
+        #Insert Week 2 Assignment Code Here
+
+        # R = self.robot.wheels.radius
+        # L = self.robot.wheels.base_length
+
+        vl = 0
+        vr = 0
+
+        #End Week 2 Assignment Code
+
+        return (vl, vr)
+
+This function get as its input ``uni``, a python tuple with two values. The function has to return left and right wheel speeds also as a tuple.
+
+You are given the values:
+
+- ``w`` (float) - angular velocity `ω`
+- ``v`` (float) - linear velocity `v`
+- ``self.robot.wheels.radius`` (float) - `R`, the radius of robot's wheels
+- ``self.robot.wheels.base_length`` (float) - `L`, the distance between wheels
+
+You have to set the values:
+
+- ``vl`` (float) - angular velocity of the left wheel |vl|
+- ``vr`` (float) - angular velocity of the right wheel |vr|
+
+Your job is to assign values to ``vl`` and ``vr`` such that the velocity and omega unicycle input correspond to the robot's left and right wheel velocities. Please refer to section on :ref:`coursera-diffdrivedyn` for the mathematical formulae.
+
+Testing
+^^^^^^^
+
+With the ``uni2diff`` implemented, your robot will start to move as soon as you start the simulation, and as long as you don't change the goal angle, it will move in a circle. If the goal angle is negative, the robot will move clockwise, if positive, counterclockwise, Note, that the supervisor perceives the robot as stanionary (the black dot doesn't move with the robot). To change this, you need to implement odometry.
+
+Odometry
+--------
+ 
+Implement odometry for the robot, such that as the robot moves around, its pose `(x, y, θ)` is estimated based on how far each of the wheels have turned. Assume that the robot starts at (0,0,0).
+ 
+The video lectures and, for example the `OrcBoard tutorial <www.orcboard.org/wiki/images/1/1c/OdometryTutorial.pdf>`_, cover how odometry is computed. The general idea behind odometry is to use wheel encoders to measure the distance the wheels have turned over a small period of time, and use this information to approximate the change in pose of the robot.
+
+.. note:: the video lecture may refer to robot's orientation as `ϕ`.
+
+The pose of the robot is composed of its position `(x, y)` and its orientation θ on a 2 dimensional plane. The currently estimated pose is stored in the variable ``self.pose_est``, which bundles ``x``, ``y``, and ``theta`` (θ). The supervisor updates the estimate of its pose by calling the ``estimate_pose`` function. This function is called every ``dt`` seconds, where ``dt`` is 0.02s::
+
+    def estimate_pose(self):
+      
+        #Insert Week 2 Assignment Code Here
+
+        # Get tick updates
+        #self.robot.wheels.left_ticks
+        #self.robot.wheels.right_ticks
+        
+        # Save the wheel encoder ticks for the next estimate
+        
+        #Get the present pose estimate
+        x, y, theta = self.pose_est          
+                
+        #Use your math to update these variables... 
+        theta_new = 0 
+        x_new = 0
+        y_new = 0
+        
+        #End Week 2 Assignment Code
+            
+        return Pose(x_new, y_new, (theta_new + pi)%(2*pi)-pi)
+
+You are given these variables:
+
+- ``self.robot.wheels.radius`` (float) - the radius of robot's wheels
+- ``self.robot.wheels.base_length`` (float) - the distance between wheels
+- ``self.robot.wheels.ticks_per_rev`` (integer) - number of ticks registered per one full wheel revolution
+- ``self.robot.wheels.left_ticks`` (integer) - accumulated ticks on the left wheel
+- ``self.robot.wheels.right_ticks`` (integer) - accumulated ticks on the right wheel
+
+Note that ``self.robot.wheels.left_ticks`` and ``.right_ticks`` represent
+the tick numbering of the encoder and not the elapsed ticks. You will need
+to implement a memory variable to store previous values and to calculate
+the elapsed ticks. One example of how to do this might be::
+
+   self.prev_right_ticks = self.robot.wheels.right_ticks
+   self.prev_left_ticks = self.robot.wheels.left_ticks
+
+Note that ``self.prev_left_ticks`` and ``self.prev_right_ticks`` have to be initialized
+in the constructor. The code is already in place for you in the ``__init__()`` method.
+
+Your objective is to solve for the change in `x`, `y`, and `θ`
+and from those values update the variables `x_new`, `y_new`, and `theta_new`.
+The values `x_new`, `y_new`, and `theta_new` will be used to update
+the estimated pose for the supervisor. 
+
+Testing
+^^^^^^^
+
+Congratulations! If you have implemented the odometry correctly, the robot moves around and aligns itself to the direction specified as goal angle. If it doesn't, there are several ways  to debug your code. First, it is always possible to insert ``print`` statements anywhere in your program to put some output into the console. Inside the supervisor class, you can also use the ``self.log`` function to output information into the simulator log. Second, you can use the `Python debugger <http://docs.python.org/2/library/pdb.html#module-pdb>`_. Note that the supervisor is running in a separate thread. Third, you can debug your supervisor graphically, by changing its ``draw`` function.
+
+Convertion from raw IR values to distances in meters
+----------------------------------------------------
+
+The IR sensors return not the distance in meters, but a `reading`. To retrieve the distances measured by the IR proximity sensor, you will need to implement a conversion from the raw IR values to distances in the ``get_ir_distances`` function::
+
+    def get_ir_distances(self):
+        """Converts the IR distance readings into a distance in meters"""
+        
+        #Insert Week 2 Assignment Code Here
+
+        ir_distances = [0]*len(self.robot.ir_sensors.readings) #populate this list
+
+        #End Assignment week2
+
+        return ir_distances
+
+You are provided with the variable:
+
+- ``self.robot.ir_sensors.readings`` (list of float) - the readings from QuickBot's IR sensors
+
+.. image:: week2_full.png
+    :align: left
+    :width: 200px
+
+The section on :ref:`coursera-irsensors` contains a table with the values of readings for some sensor-object distances. You should interpolate these values and use you interpolation so that raw values in the range [200, 1375] are converted to distances in the range [0.04, 0.3] m. One simple way to do that is to use your favorite numeric analysis program and to fit the the provided points with a high-degree polynomial. The Numpy library, that you have already installed, can also be used to do the fitting, see the `polynomial module <http://docs.scipy.org/doc/numpy/reference/routines.polynomials.polynomial.html>`_, especially the functions `polyfit` and `polyval`.
+
+After the conversion is implemented, your robot should look like on the image on the left.
+ 
+Testing
+^^^^^^^
+
+To test the IR sensor readings, we recommend to open another world file, ``week2ir.xml``, from the simulator window. This world has five robots in it, all of which are close to different walls, and have different sets of IR sensors firing. You should see a black cross at the end of each sensor's cone if you have implemented the conversion for each sensor correctly. In the case the conversion doesn't work as expected, try printing the ``ir_distances`` array at the end of the ``get_ir_distances`` function and watch for errors.
+
+Grading
+-------
+
+The three parts are graded separately. For the odometry, an error of 10% of the estimated pose is allowed, due to the low resolution of the encoders.

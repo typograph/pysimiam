@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<simulation>
+    <robot type="QuickBot">
+        <pose theta="1.57079632679" x="0.35105952" y="-2.8297908"/>
+        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+    </robot>
+    <robot type="QuickBot">
+        <pose theta="1.57079632679" x="2.7" y="-0.37362183"/>
+        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+    </robot>
+    <robot type="QuickBot">
+        <pose theta="0.636141904993" x="0.4514127" y="-1.6258923"/>
+        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+    </robot>
+    <robot type="QuickBot">
+        <pose theta="-0.490371829535" x="1.4549444" y="-1.5255674"/>
+        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+    </robot>
+    <robot type="QuickBot">
+        <pose theta="1.3106889623" x="2.358123" y="-1.6258923"/>
+        <supervisor type="week2_solved.QuickBotSupervisor2"/>
+    </robot>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.15035312" y="-3.0142465"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.50176586" y="0.0"/>
+            <point x="0.50176586" y="-0.10032488"/>
+            <point x="0.0" y="-0.10032488"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.55176579" y="-2.4122972"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.10035317" y="0.0"/>
+            <point x="0.10035317" y="-0.60194927"/>
+            <point x="0.0" y="-0.60194927"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.7910968" y="-0.026530552"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.10035317" y="0.0"/>
+            <point x="0.10035317" y="-1.3883539"/>
+            <point x="0.0" y="-1.3883539"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.2893311" y="-0.026530552"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.50176586" y="0.0"/>
+            <point x="0.50176586" y="-0.10032488"/>
+            <point x="0.0" y="-0.10032488"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="1.99855081652" y="-1.96185958986"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="-0.0314390054918" y="-0.095274478354"/>
+            <point x="-0.603247143589" y="0.0933063865615"/>
+            <point x="-0.571808138097" y="0.188580864916"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.52711826846" y="-1.81428182291"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0242572217229" y="-0.0973498936953"/>
+            <point x="-0.560006852112" y="-0.242852188968"/>
+            <point x="-0.584264073835" y="-0.145502295272"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.80863521197" y="-1.35822119148"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0828145186813" y="-0.0566630741584"/>
+            <point x="-0.257259807169" y="-0.553410089577"/>
+            <point x="-0.340074325851" y="-0.496747015418"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="1.42674247732" y="-1.77327861487"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0179132683448" y="-0.0987136109304"/>
+            <point x="-0.574535458064" y="-0.206162923255"/>
+            <point x="-0.592448726409" y="-0.107449312325"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.834293787118" y="-1.88072789399"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0886198705738" y="-0.0470747170313"/>
+            <point x="-0.193908084498" y="-0.578643993498"/>
+            <point x="-0.282527955072" y="-0.531569276466"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.30106458174" y="-0.68173000615"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0886198705738" y="-0.0470747170313"/>
+            <point x="-0.193908084498" y="-0.578643993498"/>
+            <point x="-0.282527955072" y="-0.531569276466"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.08924307024" y="-1.16166035156"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0179132683448" y="-0.0987136109304"/>
+            <point x="-0.574535458064" y="-0.206162923255"/>
+            <point x="-0.592448726409" y="-0.107449312325"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="1.5461466576" y="-1.27254875658"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="-0.0314390054918" y="-0.095274478354"/>
+            <point x="-0.603247143589" y="0.0933063865615"/>
+            <point x="-0.571808138097" y="0.188580864916"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.974338520866" y="-1.08396785749"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0242572217229" y="-0.0973498936953"/>
+            <point x="-0.560006852112" y="-0.242852188968"/>
+            <point x="-0.584264073835" y="-0.145502295272"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.390074378926" y="-1.22947018989"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.0828145186813" y="-0.0566630741584"/>
+            <point x="-0.257259807169" y="-0.553410089577"/>
+            <point x="-0.340074325851" y="-0.496747015418"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="2.2893311" y="-0.12685543"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.10035317" y="0.0"/>
+            <point x="0.10035317" y="-0.60194927"/>
+            <point x="0.0" y="-0.60194927"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#8b8b8b">
+        <pose theta="0" x="0.05" y="-1.7262172"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="0.10035317" y="0.0"/>
+            <point x="0.10035317" y="-1.3883539"/>
+            <point x="0.0" y="-1.3883539"/>
+        </geometry>
+    </obstacle>
+</simulation>
