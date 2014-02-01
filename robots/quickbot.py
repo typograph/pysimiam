@@ -147,9 +147,11 @@ class QuickBot(Robot):
         # these were the original parameters
         self.info.wheels.radius = 0.0325
         self.info.wheels.base_length = 0.09925
-        self.info.wheels.ticks_per_rev = 16
+        self.info.wheels.ticks_per_rev = 16.0
         self.info.wheels.left_ticks = 0
         self.info.wheels.right_ticks = 0
+        
+        self.info.wheels.max_velocity = 8.377
         
         self.left_revolutions = 0.0
         self.right_revolutions = 0.0
@@ -238,8 +240,8 @@ class QuickBot(Robot):
         else:
             (vl, vr) = args[0]
             
-        left_ms  = max(-8.377, min(8.377, vl))
-        right_ms = max(-8.377, min(8.377, vr))
+        left_ms  = max(-self.info.wheels.max_velocity, min(self.info.wheels.max_velocity, vl))
+        right_ms = max(-self.info.wheels.max_velocity, min(self.info.wheels.max_velocity, vr))
 
         self.ang_velocity = (left_ms, right_ms)
 

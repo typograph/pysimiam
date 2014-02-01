@@ -44,8 +44,8 @@ class GoToGoal(Controller):
         
         #End Week 3 Assigment
 
-    def get_heading(self, state):
-        """Get the vector pointing in the right direction in the form [x, y, 1]."""
+    def get_heading_angle(self, state):
+        """Get the heading angle in the world frame of reference."""
         
         #Insert Week 3 Assignment Code Here
         # Here is an example of how to get goal position
@@ -54,9 +54,8 @@ class GoToGoal(Controller):
         #x_g, y_g = state.goal.x, state.goal.y
         #x_r, y_r, theta = state.pose
         
-        #End Week 3 Assigment
-        
-        return [1, 0, 1]
+        return 0
+        #End Week 3 Assigment        
 
     def execute(self, state, dt):
         """Executes avoidance behavior based on state and dt.
@@ -64,8 +63,7 @@ class GoToGoal(Controller):
         dt --> elapsed time
         return --> unicycle model list [velocity, omega]"""
         
-        heading = self.get_heading(state)
-        self.heading_angle = math.atan2(heading[1],heading[0])
+        self.heading_angle = self.get_heading_angle(state)
         
         #Insert Week 3 Assignment Code Here
         

@@ -61,20 +61,20 @@ You will have access to the array of five IR sensors that encompass the QuickBot
    :header: "Distance (m)", "Voltage (V)", "ADC out"
    :widths: 12, 12, 12
 
-    0.04 , 2.750 , 1375
-    0.05 , 2.350 , 1175
-    0.06 , 2.050 , 1025
-    0.07 , 1.750 , 875
-    0.08 , 1.550 , 775
-    0.09 , 1.400 , 700
-    0.10 , 1.275 , 637
-    0.12 , 1.075 , 537
-    0.14 , 0.925 , 462
-    0.16 , 0.805 , 402
-    0.18 , 0.725 , 362
-    0.20 , 0.650 , 325
-    0.25 , 0.500 , 250
-    0.30 , 0.400 , 200
+    0.04 , 2.750 , 917
+    0.05 , 2.350 , 783
+    0.06 , 2.050 , 683
+    0.07 , 1.750 , 583
+    0.08 , 1.550 , 517
+    0.09 , 1.400 , 467
+    0.10 , 1.275 , 425
+    0.12 , 1.075 , 358
+    0.14 , 0.925 , 308
+    0.16 , 0.805 , 268
+    0.18 , 0.725 , 242
+    0.20 , 0.650 , 217
+    0.25 , 0.500 , 167
+    0.30 , 0.400 , 133
     
 Your supervisor can access the IR array through the ``robot_info`` object that is passed into the ``execute`` function. For example::
 
@@ -87,7 +87,7 @@ To use the sensor readings, you will have to convert them to actual distances. F
     :nowrap:
 
     \begin{equation*}
-      V_{\text{ADC}} = \frac{1000\cdot V_{\text{analog}}}{2} = 500\cdot V_{\text{analog}}
+      V_{\text{ADC}} = \left\lfloor\frac{1000\cdot V_{\text{analog}}}{3}\right\rfloor
     \end{equation*}
 
 
@@ -330,3 +330,165 @@ Grading
 -------
 
 The three parts are graded separately. For the odometry, an error of 10% of the estimated pose is allowed, due to the low resolution of the encoders.
+
+Week 3. Reaching the goal
+=========================
+
+The simulator for this week can be run with::
+    
+    >>> python qtsimiam_week3.py
+
+You are encouraged (but not required) to reuse your code from week 2, by replacing the `uni2diff`, `estimate_pose` and `get_ir_distances` implementations in `pysimiam/supervisors/quickbot.py`` with your solutions. Do not copy the complete file, as some of the other methods are different, and will break the simulation. Also, if you want to reuse your solution to `get_ir_distances`, note that the ADC conversion factor (and all ADC voltages from the table) has changed to 1000/3, as an earlier mistake was corrected.
+
+Implementing the PID
+--------------------
+
+This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior. The controller that has to implement this behaviour is located at ``controllers/week3.py``. The important methods to implement are `reset`, `get_heading_angle` and `execute` ::
+
+    def reset(self):
+        #Week 3 Assignment Code:
+        #Place any variables you would like to store here
+        #You may use these variables for convenience
+        self.E = 0 # Integrated error
+        self.e_1 = 0 # Previous error calculation
+
+        #End Week 3 Assigment
+
+    def get_heading_angle(self, state):
+        """Get the heading angle in the world frame of reference."""
+        
+        #Insert Week 3 Assignment Code Here
+        # Here is an example of how to get goal position
+        # and robot pose data. Feel free to name them differently.
+        
+        #x_g, y_g = state.goal.x, state.goal.y
+        #x_r, y_r, theta = state.pose
+        
+        return 0
+        #End Week 3 Assigment        
+
+    def execute(self, state, dt):
+        """Executes avoidance behavior based on state and dt.
+        state --> the state of the robot and the goal
+        dt --> elapsed time
+        return --> unicycle model list [velocity, omega]"""
+        
+        self.heading_angle = self.get_heading_angle(state)
+
+        #Insert Week 3 Assignment Code Here
+
+        w_ = 0
+        v_ = 0
+
+        #End Week 3 Assignment
+        return [v, w] 
+
+In the `reset` function, the controller variables are initialized with the default values. It is called once at the creation of the controller, and possibly several times during its lifetime, in case the supervisor switches between two controllers. The direction to the goal is calculated in the `get_heading` function, that returns a vector pointing at the goal in the robot's reference frame. This function is called in the `execute` function to steer the robot. The `execute` function is called every time the supervisor uses the go-to-goal behaviour. The following variables are available inside `get_heading` and `execute`:
+
+- ``state.goal.x`` (float) - The X coordinate of the goal
+- ``state.goal.y`` (float) - The Y coordinate of the goal
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the robot.
+
+To extract the pose data, you can use a command like this::
+
+   (x, y, theta) = state.pose
+
+For those, who are curious where the ``state`` variable comes from: it is computed by ``Supervisor.get_controller_state()``, that is reimplemented in ``QuickBotSupervisor``. You can find additional information in the documentation for :ref:`controller-tutorial` and in :class:`~controller.Controller` and :class:`~supervisor.Supervisor` API.
+
+First, calculate the the heading angle for the robot. Let `u` be the vector from the robot located at `(x,y)` to the goal located at `(x_g,y_g)` in the world reference frame, then `theta_g` is the angle `u` makes with the `x`-axis (positive `theta_g` is in the counterclockwise direction). Use the `x` and `y` components of `u` and the ``math.atan2`` function to compute `theta_g`. `theta_g` has to be returned from the `get_heading_angle` method, to be used in `execute`.
+
+Second, calculate the error between the obtained and the current heading angle of the robot in `execute`. Make sure to keep the error between [`-π`, `π`].
+ 
+Third, calculate the proportional, integral, and derivative terms for the PID regulator that steers the robot to the goal.
+ 
+As before, the robot will drive at a constant linear velocity `v`, but it is up to the PID regulator to steer the robot to the goal, i.e compute the correct angular velocity `ω`. The PID regulator needs three parts implemented:
+ 
+    #. The first part is the proportional term ``e_P``. It is simply the current error ``e_k``. ``e_P`` is multiplied by the proportional gain ``self.kp`` when computing ``w``.
+
+    #. The second part is the integral term ``e_I``. The integral needs to be approximated in discrete time using the total accumulated error ``self.E_k``, the current error ``e_k``, and the time step ``dt``. ``e_I`` is multiplied by the integral gain ``self.ki`` when computing ``w``, and is also saved as ``self.E_k`` for the next time step.
+
+    #. The third part is the derivative term ``e_D``. The derivative needs to be approximated in discrete time using the current error ``e_k``, the previous error ``self.e_k_1``, and the the time step ``dt``. ``e_D`` is multiplied by the derivative gain ``self.kd`` when computing ``w``, and the current error ``e_k`` is saved as the previous error ``self.e_k_1`` for the next time step.
+
+.. todo:: graphs
+
+Testing
+^^^^^^^
+
+To test your code, the simulator is set up to use the PID regulator in ``controllers/week3.py`` to drive the robot to a goal location. You can change the linear velocity of the robot, the gains and the goal location using the dock window on the right.
+
+Make sure the goal is located inside the walls, i.e. the `x` and `y` coordinates of the goal should be in the range [-1.5, 1.5]. Otherwise the robot will crash into a wall on its way to the goal!
+
+#. To test the heading to the goal, check that the green arrow points to the goal. You can also use a ``print`` statement, set the goal location to (1,1) and check that ``theta_g`` is approximately :math:`\frac{\pi}{4} \approx 0.785` initially, and as the robot moves forward (since `v = 0.1` and `ω = 0`) ``theta_g`` should increase.
+
+#. To test the error calculation and the PID math, run the simulator and check if the robot drives to the goal location. The trajectory of the robot can be shown using the `View > Show/hide robot trajectories` menu.
+
+Ensuring the right `ω`
+----------------------
+
+.. |vld| replace:: `v`\ :sub:`l,d`
+.. |vrd| replace:: `v`\ :sub:`r,d`
+.. |vmax| replace:: `v`\ :sub:`max`
+.. |wmax| replace:: `ω`\ :sub:`max`
+
+This week we'll also tackle the first of two limitations of the motors on the QuickBot. The first limitation is that the robot's motors have a maximum angular velocity, and the second limitation is that the motors stall at low speeds. We will discuss the latter limitation in a later week and focus our attention on the first limitation. Suppose that we pick a linear velocity `v` that requires the motors to spin at 90% power. Then, we want to change `ω` from 0 to some value that requires 20% more power from the right motor, and 20% less power from the left motor. This is not an issue for the left motor, but the right motor cannot turn at a capacity greater than 100%. The results is that the robot cannot turn with the `ω` specified by our controller.
+  
+Since our PID controllers focus more on steering than on controlling the linear velocity, we want to prioritize `ω` over `v` in situations, where we cannot satisfy `ω` with the motors. In fact, we will simply reduce `v` until we have sufficient headroom to achieve `ω` with the robot. The function `ensure_w` in ``supervisors/week3.py`` is designed to ensure that `ω` is achieved even if the original combination of `v` and `ω` exceeds the maximum `vl` and `vr`.
+
+The code that needs to be completed is in ``supervisors/week3.py``, in the method ``ensure_w``::
+    
+    def ensure_w(self,v_lr):
+      
+        v_l, v_r = v_lr
+        
+        #Week 3 Assignment Code:
+               
+        #End Week 3 Assigment
+        
+        return v_l, v_r    
+
+``v_lr`` is a tuple containing left and right wheel velocities |vld| and |vrd|, as returned from ``uni2diff``.  A motor's maximum forward angular velocity is ``self.robot.wheels.max_velocity`` (|vmax|). You need to ensure that the two velocities |vl| and |vr| that are returned from ``ensure_w`` and sent to the robot do not exceed |vmax|. If `v` and/or `ω` are so large that |vld| and/or |vrd| exceed |vmax|, then `v` needs to be reduced to ensure `ω` is achieved. If `ω` is larger than the maximum available angular velocity `ω`\ :sub:`max`, you need to achieve at least `ω`\ :sub:`max`.
+
+Remember, `ω` is determined by the difference between the two wheel velocities, while `v` is proportional to their sum. Try to keep the difference the same, but decrease or increase the sum, so that |vl| and |vr| are both between -|vmax| and |vmax|. Consider the following diagrams:
+
+.. figure:: ensure_w_0.png
+    :width: 400px
+    
+    Both |vld| and |vrd| are inside the range: no correction needed.
+
+.. figure:: ensure_w_1.png
+   :width: 400px
+   
+   |vrd| is outside of the range: both velocities are shifted by |vrd|-|vmax|.
+
+.. figure:: ensure_w_2.png 
+   :width: 400px
+   
+   |vld| is outside the range: both velocities are shifted by -|vld|-|vmax|.
+
+.. figure:: ensure_w_3.png
+   :width: 400px
+   
+   Both |vld| and |vrd| are outside of the range: `ω` > |wmax|.  We have to set `ω` = |wmax| and `v`= 0.
+
+.. figure:: ensure_w_4.png 
+   :width: 400px
+   
+   Only |vrd| is outside of the range, but again `ω` > |wmax|. We have to set `ω` = |wmax| and `v`= 0.
+
+Note that the diagrams assume for simplicity that |vrd| > |vld|, that is `ω` > 0.
+    
+Testing
+^^^^^^^
+
+Set the robot velocity to 10. If the robot does not turn with this settings, then `ω` is not ensured by ``ensure_w``. Add ``print`` statements to check ``v_r-v_l`` (`ω`) and ``v_l+v_r`` (`v`) in the beginning and at the end of ``ensure_w``.
+
+Grading
+-------
+
+The grader will test the following conditions this week:
+
+    * **Arriving at the goal location**: Does the robot reach the goal location (within 5cm of the location)?
+    * **Tuning the PID gains for performance**: Are the PID gains tuned such that the settle time is less than three second and the overshoot is no greater than 10% of the reference signal (angle to the goal location)?
+    * **Reshaping the output for the hardware**: If the output of the controller (`v`,`ω`) is greater than what the motors support, is the linear velocity `v` scaled back to ensure `ω` is achieved?
+

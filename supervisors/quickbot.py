@@ -11,6 +11,7 @@ from helpers import Struct
 from pose import Pose
 from math import pi, sin, cos, log1p
 from simobject import Path
+import numpy
 
 class QuickBotSupervisor(Supervisor):
     """The QuickBotSupervisor inherits from the superclass 'supervisor.Supervisor'
@@ -26,6 +27,12 @@ class QuickBotSupervisor(Supervisor):
        The UI may use the get_parameters function interface to create docker windows
        for real-time update of the PID parameters. This is an advanced implementation
        and is not required for students to properly implement their own supervisors."""
+       
+    ir_coeff = numpy.array([  1.16931064e+07,  -1.49425626e+07,
+                              7.96904053e+06,  -2.28884314e+06,
+                              3.80068213e+05,  -3.64435691e+04,
+                              1.89558821e+03])
+       
     def __init__(self, robot_pose, robot_info):
         """Initialize internal variables"""
         Supervisor.__init__(self, robot_pose, robot_info)
@@ -85,17 +92,7 @@ class QuickBotSupervisor(Supervisor):
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
         
-        ir_distances = [ \
-                            6.9102954665694e-01 \
-                          - 3.1412389062494e-03 *reading \
-                          + 7.9044887227795e-06 *reading**2 \
-                          - 1.1785219658536e-08 *reading**3 \
-                          + 1.0253386689857e-11 *reading**4 \
-                          - 4.7767484008798e-15 *reading**5 \
-                          + 9.1559082598082e-19 *reading**6 \
-            for reading in self.robot.ir_sensors.readings ]
-
-        return ir_distances
+        return numpy.polyval(self.ir_coeff, self.robot.ir_sensors.readings)
     
     def estimate_pose(self):
         """Update self.pose_est using odometry"""
@@ -142,6 +139,7 @@ class QuickBotSupervisor(Supervisor):
     def draw_background(self, renderer):
         """Draw a circular goal"""
         renderer.set_pose(Pose(self.parameters.goal.x, self.parameters.goal.y))
+        renderer.set_pen(0)
         renderer.set_brush(self.robot_color)
-        r = self.robot_size/2
-        renderer.draw_ellipse(0,0,r,r)
+        for r in numpy.arange(self.robot_size/2,0,-0.01):
+            renderer.draw_ellipse(0,0,r,r)
