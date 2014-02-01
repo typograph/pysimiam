@@ -7,7 +7,7 @@ from collections import deque
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
-from math import sqrt
+import math
 import sys
 
 import pose
@@ -61,6 +61,9 @@ class Simulator(threading.Thread):
         # Zoom on scene - Move to read_config later
         self.__time_multiplier = 1.0
         self.__time = 0.0
+
+        # Plots
+        self.plot_expressions = []
 
         # World objects
         self.__robots = []
@@ -190,7 +193,7 @@ class Simulator(threading.Thread):
         maxsize = 0
         for robot in self.__robots:
             xmin, ymin, xmax, ymax = robot.get_bounds()
-            maxsize = max(maxsize,sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
+            maxsize = max(maxsize,math.sqrt(float(xmax-xmin)**2 + float(ymax-ymin)**2))
         if maxsize == 0:
             self.__zoom_default = 1
         else:
@@ -253,6 +256,9 @@ class Simulator(threading.Thread):
                         inputs = supervisor.execute( info, time_constant)
                         self.__robots[i].set_inputs(inputs)
                         self.fwd_logqueue()
+
+                    if self.plot_expressions:
+                        self.announce_plotables()
 
                 # Draw to buffer-bitmap
                 # Note that if the robot moves immediately after calculation,
@@ -402,6 +408,52 @@ class Simulator(threading.Thread):
         else:
             self.__supervisors[index].set_parameters(parameters)
         self.__draw_once()
+
+    def add_plotable(self,expression):
+        """A plotable is an expression that yields a numerical
+           value. It is evaluated every cycle and the values are announced by the
+           simulator in the ``plot_update`` signal.
+           
+           The expression has access to the following variables:
+           ``robot`` - the first robot in the scene
+           ``supervisor`` - the supervisor of this robot
+           ``math`` - the math module
+           """
+        if expression is not None and expression not in self.plot_expressions:
+            self.plot_expressions.append(expression)
+
+    def announce_plotables(self):
+        plots = {'time':self.__time}
+        for expr in self.plot_expressions:
+            try:
+                plots[expr] = \
+                    eval(expr,{},
+                         {'robot':self.__robots[0],
+                          'supervisor':self.__supervisors[0],
+                          'math':math})
+            except Exception as e:
+                self.log(str(e))
+                plots[expr] = 0
+        self._out_queue.put(('plot_update',(plots,)))
+
+    def plotables(self):
+        """ Returns a list with some examples of plotables"""
+        return {
+            "Robot's X coordinate":"robot.get_pose().x",
+            "Robot's Y coordinate":"robot.get_pose().y",
+            "Robot's orientation":"robot.get_pose().theta",
+            "Robot's orientation (degrees)":"robot.get_pose().theta*57.29578",
+            "Estimated X coordinate":"supervisor.pose_est.x",
+            "Estimated Y coordinate":"supervisor.pose_est.y",
+            "Estimated orientation":"supervisor.pose_est.theta",
+            "Estimated orientation (degrees)":"supervisor.pose_est.theta*57.29578",
+            "Left wheel speed":"robot.ang_velocity[0]",
+            "Right wheel speed":"robot.ang_velocity[1]",
+            "Linear velocity":"robot.diff2uni(robot.ang_velocity)[0]",
+            "Angular velocity":"robot.diff2uni(robot.ang_velocity)[1]"
+            # The possibilities are infinite
+            #"":"",
+            }
 
     # Stops the thread
     def stop(self):

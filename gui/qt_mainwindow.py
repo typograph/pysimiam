@@ -12,6 +12,7 @@ from qt_courseradock import CourseraDock
 from qt_logdock import LogDock
 from ui import SimUI
 from traceback import format_exception
+from qt_plotwindow import create_predefined_plot_window # ,create_plot_window
 
 class PlayPauseAction(QtGui.QAction):
     def __init__(self, parent, run_slot, pause_slot):
@@ -85,6 +86,9 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.viewer.resized.connect(self.refresh_view)
         scrollArea.setWidget(self.viewer)
         scrollArea.setWidgetResizable(True)
+        
+        self.__clear_graph_on_start = False
+        self.plots = []
 
         #self.setDockOptions(QtGui.QMainWindow.AllowNestedDocks)
         self.setDockOptions(QtGui.QMainWindow.DockOptions())
@@ -321,6 +325,8 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         while self.simulator_thread.isAlive():
             self.process_events(True)
             self.simulator_thread.join(0.1)
+        while self.plots:
+            self.plots.pop().close()            
         super(SimulationWidget,self).closeEvent(event)
 
     def load_world(self,filename):
@@ -471,6 +477,16 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.open_world_action.setEnabled(True)
         self.run_menu.setEnabled(True)
         self.simulator_toolbar.setEnabled(True)
+
+    def _new_plot(self,exprs, plot):
+        if exprs:
+            plot.show()
+            self.plots.append(plot)
+            for expr in exprs:
+                self.run_simulator_command('add_plotable',expr)        
+                
+    def add_graph(self, description):
+        self._new_plot(*create_predefined_plot_window(description))
             
 ### Simulator events
 
@@ -481,6 +497,10 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
     def simulator_running(self):
         self.speed_slider.setEnabled(True)
         self.step_action.setEnabled(False)
+        if self.__clear_graph_on_start:
+            self.__clear_graph_on_start = False
+            for plot in self.plots:
+                plot.clear_data()
     
     def simulator_paused(self):
         self.speed_slider.setEnabled(False)
@@ -494,7 +514,8 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.run_action.reset()
         self.run_action.setEnabled(True)
         self.status_label.setText("Simulation ready")
-
+        self.__clear_graph_on_start = True
+ 
     def simulator_stopped(self):
         # FIXME this function isn't necessary
         self.speed_slider.setEnabled(False)
@@ -508,6 +529,10 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         
     def simulator_log(self, message, objclass, objcolor):
         self.logdock.append(message,objclass,objcolor)
+        
+    def simulator_plot_update(self,data):
+        for plot in self.plots:
+            plot.add_data(data)        
             
 #end QtSimiamFrame class
 
