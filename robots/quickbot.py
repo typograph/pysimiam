@@ -15,6 +15,11 @@ from helpers import Struct
 
 class QuickBot_IRSensor(ProximitySensor):
     """Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors"""
+    
+    ir_coeff = np.array([  8.56495710e-18,  -3.02930608e-14,   4.43025017e-11,
+                          -3.49052288e-08,   1.61452174e-05,  -4.44025236e-03,
+                           6.74137385e-01])
+    
     def __init__(self,pose,robot):
         # values copied from SimIAm    
         ProximitySensor.__init__(self, pose, robot, (0.04, 0.3, np.radians(6)))
@@ -23,11 +28,11 @@ class QuickBot_IRSensor(ProximitySensor):
         """Returns the distance calculation from the distance readings of the proximity sensors""" 
         
         if dst < self.rmin :
-            return 1375
+            return 917
         elif dst > self.rmax:
-            return 200
+            return 133
         else:
-            return 2745 - 49068*dst + 451054*dst**2 - 2208900*dst**3 + 5451751*dst**4 - 5324527*dst**5
+            return np.polyval(self.ir_coeff,dst)
 
 class QuickBot(Robot):
     """Inherts for the simobject--->robot class for behavior specific to the Khepera3""" 
