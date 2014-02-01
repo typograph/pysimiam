@@ -1,6 +1,6 @@
-#!/usr/bin/python
-# QtSimiam
-# Author: Tim Fuchs
+#!/usr/bin/env python
+# QtSimiam for Coursera Week 1
+# Author: Tim Fuchs <typograph@elec.ru>
 # Description: This is the top-level application for QtSimiam.
 from __future__ import print_function
 import sys
