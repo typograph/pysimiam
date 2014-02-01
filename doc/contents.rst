@@ -4,10 +4,12 @@ Website Tree
    :maxdepth: 3
 
    tutorial
+   coursera
    world
    robot
    supervisor
    controller
+   code_user
    gui_library
    code
 
