@@ -71,7 +71,7 @@ class Plot:
         
         for variable in self.variables:
             if variable.expression not in data:
-                print "No value for {}".format(variable.expression)
+                print("No value for {}".format(variable.expression))
             else:
                 variable.add_point(data['time'], data[variable.expression])
         self.plot.setXRange(max(0,data['time']-10),data['time'])

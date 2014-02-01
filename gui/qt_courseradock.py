@@ -46,8 +46,12 @@ class CourseraDock(QtGui.QDockWidget):
         self.password.textEdited.connect(self.check_logpass)
         
         self.cache = QSettings('pySimiam','coursera')
-        self.login.setText(self.cache.value('username','').toString())
-        self.password.setText(self.cache.value('password','').toString())
+        if sys.version_info[0] < 3:
+            self.login.setText(self.cache.value('username','').toString())
+            self.password.setText(self.cache.value('password','').toString())
+        else:
+            self.login.setText(self.cache.value('username',''))
+            self.password.setText(self.cache.value('password',''))
         
         self.tests = []
         
@@ -112,7 +116,10 @@ class CourseraDock(QtGui.QDockWidget):
         self.enable_testing(True)
         
     def check_logpass(self):
-        valid_ = bool(str(self.login.text())) and bool(str(self.password.text()))
+        if sys.version_info[0] < 3:
+            valid_ = not self.login.text().isEmpty() and not self.password.text().isEmpty()
+        else:
+            valid_ = bool(self.login.text()) and bool(self.password.text())
         if valid_:
             self.cache.setValue('username',self.login.text())
             self.cache.setValue('password',self.password.text())
