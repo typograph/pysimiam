@@ -39,8 +39,8 @@ class GoToGoal(Controller):
         #Week 3 Assignment Code:
         #Place any variables you would like to store here
         #You may use these variables for convenience
-        self.E = 0 # Integrated error
-        self.e_1 = 0 # Previous error calculation
+        self.E_k = 0 # Integrated error
+        self.e_k_1 = 0 # Previous error calculation
         
         #End Week 3 Assigment
 
@@ -67,8 +67,29 @@ class GoToGoal(Controller):
         
         #Insert Week 3 Assignment Code Here
         
-        w_ = 0
-        v_ = 0
+        # error between the heading angle and robot's angle
+        e_k = 0
+        
+        # error for the proportional term
+        e_P = 0
+        
+        # error for the integral term. Hint: Approximate the integral using
+        # the accumulated error, self.E_k, and the error for
+        # this time step, e_k.
+        e_I = 0
+                    
+        # error for the derivative term. Hint: Approximate the derivative
+        # using the previous error, obj.e_k_1, and the
+        # error for this time step, e_k.
+        e_D = 0    
+        
+        w_ = self.kp*e_P+ self.ki*e_I + self.kd*e_D
+        
+        v_ = state.velocity.v
+        
+        # save errors
+        self.e_k_1 = e_k
+        self.E_k = e_I
         
         #End Week 3 Assignment
         

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     simWidget.show()
     simWidget.load_world("week3.xml")
     simWidget.add_graph([
-            [("Robot Theta", "robot.get_pose().theta", 'red'),
+            [("Robot theta", "robot.get_pose().theta", 'red'),
              ("Angle to goal","math.atan2(supervisor.parameters.goal.y - robot.get_pose().y,supervisor.parameters.goal.x - robot.get_pose().x)", 'blue')]
             ])
     app.exec_()

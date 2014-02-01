@@ -345,13 +345,13 @@ Implementing the PID
 
 This week you will be implementing the different parts of a PID regulator that steers the robot successfully to some goal location. This is known as the go-to-goal behavior. The controller that has to implement this behaviour is located at ``controllers/week3.py``. The important methods to implement are `reset`, `get_heading_angle` and `execute` ::
 
-    def reset(self):
+    def restart(self):
         #Week 3 Assignment Code:
         #Place any variables you would like to store here
         #You may use these variables for convenience
-        self.E = 0 # Integrated error
-        self.e_1 = 0 # Previous error calculation
-
+        self.E_k = 0 # Integrated error
+        self.e_k_1 = 0 # Previous error calculation
+        
         #End Week 3 Assigment
 
     def get_heading_angle(self, state):
@@ -374,14 +374,36 @@ This week you will be implementing the different parts of a PID regulator that s
         return --> unicycle model list [velocity, omega]"""
         
         self.heading_angle = self.get_heading_angle(state)
-
+        
         #Insert Week 3 Assignment Code Here
-
-        w_ = 0
-        v_ = 0
-
+        
+        # error between the heading angle and robot's angle
+        e_k = 0
+        
+        # error for the proportional term
+        e_P = 0
+        
+        # error for the integral term. Hint: Approximate the integral using
+        # the accumulated error, self.E_k, and the error for
+        # this time step, e_k.
+        e_I = 0
+                    
+        # error for the derivative term. Hint: Approximate the derivative
+        # using the previous error, obj.e_k_1, and the
+        # error for this time step, e_k.
+        e_D = 0    
+        
+        w_ = self.kp*e_P+ self.ki*e_I + self.kd*e_D
+        
+        v_ = state.velocity.v
+        
+        # save errors
+        self.e_k_1 = e_k
+        self.E_k = e_I
+        
         #End Week 3 Assignment
-        return [v, w] 
+        
+        return [v_, w_]
 
 In the `reset` function, the controller variables are initialized with the default values. It is called once at the creation of the controller, and possibly several times during its lifetime, in case the supervisor switches between two controllers. The direction to the goal is calculated in the `get_heading` function, that returns a vector pointing at the goal in the robot's reference frame. This function is called in the `execute` function to steer the robot. The `execute` function is called every time the supervisor uses the go-to-goal behaviour. The following variables are available inside `get_heading` and `execute`:
 
@@ -389,6 +411,9 @@ In the `reset` function, the controller variables are initialized with the defau
 - ``state.goal.y`` (float) - The Y coordinate of the goal
 - ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
 - ``state.velocity.v`` (float) - The given target velocity of the robot.
+- ``self.kp`` (float) - The proportional gain.
+- ``self.ki`` (float) - The integral gain.
+- ``self.kd`` (float) - The differential gain.
 
 To extract the pose data, you can use a command like this::
 
@@ -410,7 +435,21 @@ As before, the robot will drive at a constant linear velocity `v`, but it is up 
 
     #. The third part is the derivative term ``e_D``. The derivative needs to be approximated in discrete time using the current error ``e_k``, the previous error ``self.e_k_1``, and the the time step ``dt``. ``e_D`` is multiplied by the derivative gain ``self.kd`` when computing ``w``, and the current error ``e_k`` is saved as the previous error ``self.e_k_1`` for the next time step.
 
-.. todo:: graphs
+Now, you need to tune your PID gains to get a fast settle time (`θ` matches `θ`\ :sub:`goal` within 10% in three seconds or less) and there should be little overshoot (maximum `θ` should not increase beyond 10% of the reference value `θ`\ :sub:`goal`). What you don't want to see are the following two graphs when the robot tries to reach goal location ``(x_g,y_g)=(0,-1)``:
+
+    
+.. figure:: week3GTG_overshooting.png
+   :align: center
+    
+   Nearly 20% overshoot.
+
+    
+.. figure:: week3GTG_slowsettling.png
+   :align: center
+    
+   Undershoot - very large setting time.
+
+    
 
 Testing
 ^^^^^^^
@@ -447,34 +486,41 @@ The code that needs to be completed is in ``supervisors/week3.py``, in the metho
         
         return v_l, v_r    
 
-``v_lr`` is a tuple containing left and right wheel velocities |vld| and |vrd|, as returned from ``uni2diff``.  A motor's maximum forward angular velocity is ``self.robot.wheels.max_velocity`` (|vmax|). You need to ensure that the two velocities |vl| and |vr| that are returned from ``ensure_w`` and sent to the robot do not exceed |vmax|. If `v` and/or `ω` are so large that |vld| and/or |vrd| exceed |vmax|, then `v` needs to be reduced to ensure `ω` is achieved. If `ω` is larger than the maximum available angular velocity `ω`\ :sub:`max`, you need to achieve at least `ω`\ :sub:`max`.
+``v_lr`` is a tuple containing left and right wheel velocities |vld| and |vrd|, as returned from ``uni2diff``.  A motor's maximum forward angular velocity is ``self.robot.wheels.max_velocity`` (|vmax|). You need to ensure that the two velocities |vl| and |vr| that are returned from ``ensure_w`` and sent to the robot do not exceed |vmax|. If `v` and/or `ω` are so large that |vld| and/or |vrd| exceed |vmax|, then `v` needs to be reduced to ensure `ω` is achieved. If `ω` is larger than the maximum available angular velocity |wmax|, you need to achieve at least |wmax|.
 
 Remember, `ω` is determined by the difference between the two wheel velocities, while `v` is proportional to their sum. Try to keep the difference the same, but decrease or increase the sum, so that |vl| and |vr| are both between -|vmax| and |vmax|. Consider the following diagrams:
 
 .. figure:: ensure_w_0.png
-    :width: 400px
-    
-    Both |vld| and |vrd| are inside the range: no correction needed.
+   :width: 400px
+   :align: center
+     
+   Both |vld| and |vrd| are inside the range: no correction needed.
 
 .. figure:: ensure_w_1.png
    :width: 400px
+   :align: center
    
    |vrd| is outside of the range: both velocities are shifted by |vrd|-|vmax|.
 
 .. figure:: ensure_w_2.png 
    :width: 400px
+   :align: center
    
    |vld| is outside the range: both velocities are shifted by -|vld|-|vmax|.
 
 .. figure:: ensure_w_3.png
    :width: 400px
+   :align: center
    
-   Both |vld| and |vrd| are outside of the range: `ω` > |wmax|.  We have to set `ω` = |wmax| and `v`= 0.
+   Both |vld| and |vrd| are outside of the range: `ω` \> |wmax|.
+   We have to set `ω` = |wmax| and `v`= 0.
 
 .. figure:: ensure_w_4.png 
    :width: 400px
+   :align: center
    
-   Only |vrd| is outside of the range, but again `ω` > |wmax|. We have to set `ω` = |wmax| and `v`= 0.
+   Only |vrd| is outside of the range, but again `ω` \> |wmax|.
+   We have to set `ω` = |wmax| and `v`= 0.
 
 Note that the diagrams assume for simplicity that |vrd| > |vld|, that is `ω` > 0.
     
