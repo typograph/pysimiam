@@ -228,6 +228,13 @@ class Week2Test2(WeekTestCase):
         xe,ye,te = s.pose_est
         xr,yr,tr = bot.get_pose()
         
+        if xr == 0:
+            xr = 0.0000001
+        if yr == 0:
+            yr = 0.0000001
+        if tr == 0:
+            tr = 0.0000001
+        
         self.testsuite.respond("{:0.3f},{:0.3f},{:0.3f}".format(abs((xr-xe)/xr), abs((yr-ye)/yr), abs(abs(tr-te)%(2*pi)/tr)))
 
 class Week2Test3(WeekTestCase):
