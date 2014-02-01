@@ -157,9 +157,9 @@ class K3FullSupervisor(K3Supervisor):
         
         self.distmin = min((sqrt(a[0]**2 + a[1]**2) for a in vectors))
     
-    def draw(self, renderer):
+    def draw_foreground(self, renderer):
         """Draw controller info"""
-        K3Supervisor.draw(self,renderer)
+        K3Supervisor.draw_foreground(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5

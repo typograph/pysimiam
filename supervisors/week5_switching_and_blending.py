@@ -51,8 +51,8 @@ class K3DefaultSupervisor(K3Supervisor):
         self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
         self.distmin = min(self.parameters.sensor_distances)
             
-    def draw(self, renderer):
-        K3Supervisor.draw(self,renderer)
+    def draw_foreground(self, renderer):
+        K3Supervisor.draw_foreground(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5

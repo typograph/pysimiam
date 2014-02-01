@@ -53,7 +53,7 @@ class K3AvoidSupervisor(K3Supervisor):
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
     
-    def draw(self, renderer):
+    def draw_foreground(self, renderer):
         """Draw controller info"""
 
         renderer.set_pose(self.pose_est)

@@ -77,7 +77,7 @@ class K3WallSupervisor(K3Supervisor):
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
    
-    def draw(self, renderer):
+    def draw_foreground(self, renderer):
         """Draw controller info"""
         
         """Draw follow wall"""

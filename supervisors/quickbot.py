@@ -139,7 +139,7 @@ class QuickBotSupervisor(Supervisor):
         output = Supervisor.execute(self, robot_info, dt)
         return self.uni2diff(output)
 
-    def draw(self, renderer):
+    def draw_background(self, renderer):
         """Draw a circular goal"""
         renderer.set_pose(Pose(self.parameters.goal.x, self.parameters.goal.y))
         renderer.set_brush(self.robot_color)

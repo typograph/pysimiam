@@ -87,9 +87,9 @@ class K3FullSupervisor(K3Supervisor):
         # Distance to the closest obstacle        
         self.distmin = min(self.parameters.sensor_distances)
 
-    def draw(self, renderer):
+    def draw_foreground(self, renderer):
         """Draw controller info"""
-        K3Supervisor.draw(self,renderer)
+        K3Supervisor.draw_foreground(self,renderer)
 
         # Make sure to have all headings:
         renderer.set_pose(self.pose_est)

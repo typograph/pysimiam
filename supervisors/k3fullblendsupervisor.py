@@ -55,8 +55,8 @@ class K3BlendingSupervisor(K3Supervisor):
         vl, vr = self.uni2diff((v,w))
         return (vl, vr) 
 
-    def draw(self, renderer):
-        K3Supervisor.draw(self,renderer)
+    def draw_foreground(self, renderer):
+        K3Supervisor.draw_foreground(self,renderer)
         renderer.set_pose(self.pose_est)
 
         # Draw direction from obstacles

@@ -121,10 +121,12 @@ class QuickBotSupervisor(Supervisor):
         Supervisor.process_state_info(self,state)
         
         self.parameters.pose = self.pose_est
-    
-    def draw(self, renderer):
-        """Draw a circular goal, path and ir_sensors"""
         
+        print("process_state_info")
+    
+    def draw_background(self, renderer):
+        """Draw a circular goal and path"""
+
         # Draw goal
         renderer.set_pose(Pose(self.pose_est.x,self.pose_est.y,pi*self.parameters.goal/180))
         renderer.set_pen(0)
@@ -134,6 +136,9 @@ class QuickBotSupervisor(Supervisor):
         # Draw robot path
         self.tracker.draw(renderer)
         
+    def draw_foreground(self, renderer):
+        """Draw ir_sensors"""
+               
         renderer.set_pose(self.pose_est)
         renderer.set_brush(0)
         renderer.draw_ellipse(0,0,0.01,0.01)

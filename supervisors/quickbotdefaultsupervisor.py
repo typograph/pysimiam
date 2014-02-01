@@ -57,9 +57,9 @@ class QuickBotDefaultSupervisor(QuickBotSupervisor):
           
         return self.parameters
     
-    def draw(self, renderer):
+    def draw_background(self, renderer):
         """Draw controller info"""
-        QuickBotSupervisor.draw(self,renderer)
+        QuickBotSupervisor.draw_background(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5

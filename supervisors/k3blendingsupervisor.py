@@ -55,9 +55,9 @@ class K3BlendingSupervisor(K3Supervisor):
         # Sensor readings in real units
         self.parameters.sensor_distances = self.get_ir_distances()
     
-    def draw(self, renderer):
+    def draw_foreground(self, renderer):
         """Draw controller info"""
-        K3Supervisor.draw(self,renderer)
+        K3Supervisor.draw_foreground(self,renderer)
 
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5

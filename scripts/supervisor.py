@@ -214,10 +214,16 @@ class Supervisor:
         #execute the current controller
         return self.current.execute(self.get_controller_state(),dt)
 
-    def draw(self, renderer):
-        """Draw anything in the view.
+    def draw_background(self, renderer):
+        """Draw anything in the view before anything else is drawn (except the grid)
         
-        This will be called before anything else is drawn (except the grid)
+        :param renderer: A renderer to draw with
+        :type renderer: :class:`~renderer.Renderer`
+        """
+        pass
+
+    def draw_foreground(self, renderer):
+        """Draw anything in the view after everything else is drawn
         
         :param renderer: A renderer to draw with
         :type renderer: :class:`~renderer.Renderer`

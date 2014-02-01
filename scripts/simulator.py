@@ -288,6 +288,10 @@ class Simulator(threading.Thread):
 
         self.__renderer.clear_screen()
 
+        if self.__draw_supervisors:
+            for supervisor in self.__supervisors:
+                supervisor.draw_background(self.__renderer)
+
         for bg_object in self.__background:
             bg_object.draw(self.__renderer)
         for obstacle in self.__obstacles:
@@ -304,7 +308,7 @@ class Simulator(threading.Thread):
 
         if self.__draw_supervisors:
             for supervisor in self.__supervisors:
-                supervisor.draw(self.__renderer)
+                supervisor.draw_foreground(self.__renderer)
 
         # update view
         self.__update_view()
