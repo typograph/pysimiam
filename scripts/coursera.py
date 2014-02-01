@@ -17,10 +17,22 @@ class CourseraException(Exception):
     pass
 
 class WeekTestCase:
+    
+    RX = re.compile(r"(?P<name>[a-zA-Z_]+)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
+    
     def __init__(self, week):
         self.testsuite = week
         self.name = "Name not set"
         self.test_id = "XXXYYYZZZ"
+        
+    def parseChallenge(self,challenge):
+        result = {}
+        for m in self.RX.finditer(challenge):
+            try:
+                result[m.group('name')] = float(m.group('value'))
+            except Exception:
+                raise CourseraException("Unknown challenge format. Please contact developers for assistance.")                
+        return result
 
 class WeekTest:
     coursera_challenge_url = "http://class.coursera.org/conrob-002/assignment/challenge"
@@ -147,23 +159,20 @@ class Week2(WeekTest):
     self.tests.append(Week2Test3(self))
     
 class Week2Test1(WeekTestCase):
-    
-    RX = re.compile(r'v=(?P<v>[^;]+);w=(?P<w>[^;]+);')
-    
+    """Test 1: Test uni2diff"""
     def __init__(self, week):
         self.testsuite = week
         self.name = "Unicycle to differential-drive\ntransformation"
         self.test_id = "QihGedxL"
         
     def start_test(self,challenge):
-        m = self.RX.match(challenge)
-        if m is None:
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'w' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
-        try:
-            v = float(m.group('v'))
-            w = float(m.group('w'))
-        except ValueError:
-            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        v = vals['v']
+        w = vals['w']
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
@@ -178,23 +187,19 @@ class Week2Test1(WeekTestCase):
         self.testsuite.respond("{:0.3f},{:0.3f}".format(vr,vl)) # Note the inverse order
         
 class Week2Test2(WeekTestCase):
-    
-    RX = re.compile(r'v=(?P<v>[^;]+);theta_d=(?P<theta>[^;]+);')
-    
     def __init__(self, week):
         self.testsuite = week
         self.name = "Odometry"
         self.test_id = "TQkrYtec"
         
     def start_test(self,challenge):
-        m = self.RX.match(challenge)
-        if m is None:
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'theta' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
-        try:
-            v = float(m.group('v'))
-            theta = float(m.group('theta'))
-        except ValueError:
-            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        v = vals['v']
+        theta = vals['theta']
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
@@ -225,22 +230,19 @@ class Week2Test2(WeekTestCase):
 
 class Week2Test3(WeekTestCase):
     
-    RX = re.compile(r'dist_1=(?P<d1>[^;]+);dist_2=(?P<d2>[^;]+);')
-    
     def __init__(self, week):
         self.testsuite = week
         self.name = "Converting raw IR sensor values\nto distances"
         self.test_id = "yptGGVPr"
         
     def start_test(self,challenge):
-        m = self.RX.match(challenge)
-        if m is None:
+        vals = self.parseChallenge(challenge)
+        
+        if 'd1' not in vals or 'd2' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
-        try:
-            d1 = float(m.group('d1'))
-            d2 = float(m.group('d2'))
-        except ValueError:
-            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        d1 = vals['d1']
+        d2 = vals['d2']
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot, QuickBot_IRSensor
