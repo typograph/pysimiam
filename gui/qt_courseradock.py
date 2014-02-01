@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper, QSettings
 from helpers import Struct
 from collections import OrderedDict
 from traceback import format_exception
@@ -45,6 +45,10 @@ class CourseraDock(QtGui.QDockWidget):
         self.password.setEchoMode(QtGui.QLineEdit.Password)
         self.password.textEdited.connect(self.check_logpass)
         
+        self.cache = QSettings('pySimiam','coursera')
+        self.login.setText(self.cache.value('username','').toString())
+        self.password.setText(self.cache.value('password','').toString())
+        
         self.tests = []
         
         fl = QtGui.QFormLayout(panel)
@@ -82,6 +86,8 @@ class CourseraDock(QtGui.QDockWidget):
 
         #vl.setStretch(2,1)
         vl.addStretch(1)
+        
+        self.check_logpass() # Enable if login/password match
     
     def enable_testing(self,enable):
         for btn in self.tests:
@@ -106,7 +112,11 @@ class CourseraDock(QtGui.QDockWidget):
         self.enable_testing(True)
         
     def check_logpass(self):
-        self.enable_testing(bool(str(self.login.text())) and bool(str(self.password.text())))
+        valid_ = bool(str(self.login.text())) and bool(str(self.password.text()))
+        if valid_:
+            self.cache.setValue('username',self.login.text())
+            self.cache.setValue('password',self.password.text())
+        self.enable_testing(valid_)
         
     def closeEvent(self,event):
         super(CourseraDock,self).closeEvent(event)
