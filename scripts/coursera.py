@@ -12,6 +12,8 @@ except Exception:
 import hashlib
 import base64
 import re
+import math
+import helpers
 
 class CourseraException(Exception):
     pass
@@ -262,3 +264,206 @@ class Week2Test3(WeekTestCase):
         ird = s.get_ir_distances()
                     
         self.testsuite.respond("{:0.3f},{:0.3f}".format(abs((d1-ird[0])/d1), abs((d2-ird[1])/d2)))
+
+class Week3(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 3"
+    
+    self.week = 3
+    self.tests.append(Week3Test1(self))
+    self.tests.append(Week3Test2(self))
+    self.tests.append(Week3Test3(self))
+
+class Week3Test1(WeekTestCase):
+    """Run the simulator until the robot reaches the goal or collides with the wall.
+       Stops after 30 seconds."""    
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Arriving at the goal location"
+        self.test_id = "pKyj9jyA"
+        
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
+
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 30:
+            self.stop_test()
+            self.testsuite.respond("1")
+        
+        if event == "plot_update": # get distance to goal from the simulator
+            dst = args[0][self.dst2goal]
+            if dst < 0.05:
+                self.stop_test()
+                self.testsuite.respond("1")
+        elif event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test()
+                self.testsuite.respond("0")
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+            # FIXME What follows is a hack, that will only work
+            # in the current GUI implementation. 
+            # For a better solution we need to change the API again
+            params[0][1][0] = ('x',self.goal[0])
+            params[0][1][1] = ('y',self.goal[1])
+            params[1][1][0] = ('v',self.v)
+
+            p = helpers.Struct()
+            p.goal = helpers.Struct()
+            p.goal.x = self.goal[0]
+            p.goal.y = self.goal[1]
+            p.velocity = helpers.Struct()
+            p.velocity.v = self.v
+            p.gains = helpers.Struct()
+            p.gains.kp = params[2][1][0][1]
+            p.gains.ki = 2.0
+            p.gains.kd = 0.0
+            
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, p)
+
+        #elif event == 'reset' # World constructed, safe    
+            
+        return False
+        
+    def stop_test(self):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()   
+ 
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        self.v = vals['v']
+        self.goal = (vals['x_g'],vals['y_g'])
+
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world('week3.xml')
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)
+        
+        #self.testsuite.gui.dockmanager.docks[self.dockname].widget().apply_click()
+        
+        self.testsuite.gui.run_simulation()
+        
+class Week3Test2(WeekTestCase):
+    """Test 2: check if the PID gains do not lead to oscillations"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Tuning the PID gains for performance"
+        self.test_id = "2aZEky7h"
+        
+        self.dtheta = '((math.atan2(supervisor.parameters.goal.y - robot.get_pose().y, supervisor.parameters.goal.x - robot.get_pose().x) - robot.get_pose().theta + math.pi)%(2*math.pi) -math.pi)/math.atan2(supervisor.parameters.goal.y,supervisor.parameters.goal.x)'
+          
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 15: # Not more than 15 minutes
+            self.stop_test()
+        
+        if event == "plot_update": # get dtheta
+            dtheta = abs(args[0][self.dtheta])
+
+            self.i_iter += 1
+            if dtheta < self.dtheta_min:
+                self.dtheta_min = dtheta
+            if dtheta < 0.1:
+                self.i_dec += 1
+                if self.i_dec > self.i_dec_max:
+                    self.settletime = (self.i_iter-self.i_dec_max)*0.02
+                    self.stop_test()
+            else:
+                self.i_dec = -1
+        elif event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test()
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+            # FIXME What follows is a hack, that will only work
+            # in the current GUI implementation. 
+            # For a better solution we need to change the API again
+            params[0][1][0] = ('x',self.goal[0])
+            params[0][1][1] = ('y',self.goal[1])
+            params[1][1][0] = ('v',self.v)
+
+            p = helpers.Struct()
+            p.goal = helpers.Struct()
+            p.goal.x = self.goal[0]
+            p.goal.y = self.goal[1]
+            p.velocity = helpers.Struct()
+            p.velocity.v = self.v
+            p.gains = helpers.Struct()
+            p.gains.kp = params[2][1][0][1]
+            p.gains.ki = 2.0
+            p.gains.kd = 0.0
+            
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, p)
+
+        #elif event == 'reset' # World constructed, safe    
+            
+        return False
+        
+    def stop_test(self):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()   
+        self.testsuite.respond("{:0.3f},{:0.3f}".format(self.settletime,self.dtheta_min))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        self.v = vals['v']
+        self.goal = (vals['x_g'],vals['y_g'])
+
+        self.i_iter = -1
+        self.i_dec = -1
+        self.i_dec_max = 50 # Simiam has 0.05 tc and 20 max
+        self.settletime = -1
+        
+        self.dtheta_min = math.pi
+
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world('week3.xml')
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dtheta)
+        
+        #self.testsuite.gui.dockmanager.docks[self.dockname].widget().apply_click()
+        
+        self.testsuite.gui.run_simulation()
+    
+class Week3Test3(WeekTestCase):
+    """Test 3: check if ensure_w works"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Reshaping the output for the hardware"
+        self.test_id = "BlIrXfQO"
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'w' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        vd = vals['v']
+        wd = vals['w']
+
+        QuickBotSupervisor = helpers.load_by_name('week3.QBGTGSupervisor','supervisors')
+        QuickBot = helpers.load_by_name('QuickBot','robots')
+        from pose import Pose
+        
+        bot = QuickBot(Pose())
+        info = bot.get_info()
+        info.color = 0
+        s = QuickBotSupervisor(Pose(),info)
+        
+        vld, vrd = s.uni2diff((vd,wd))
+        vl, vr = s.ensure_w((vld,vrd))
+        v, w = bot.diff2uni((vl,vr))
+
+        self.testsuite.respond("{:0.3f}".format(abs(w-wd)/wd))

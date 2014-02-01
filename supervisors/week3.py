@@ -68,7 +68,7 @@ class QBGTGSupervisor(QuickBotSupervisor):
                                 (self.pose_est.x - self.parameters.goal.x)**2
                               + (self.pose_est.y - self.parameters.goal.y)**2)
         
-        return distance_to_goal < 0.05
+        return distance_to_goal < 0.02
 
             
     def ensure_w(self,v_lr):
