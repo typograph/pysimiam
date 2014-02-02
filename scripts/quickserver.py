@@ -1,8 +1,8 @@
 import socket
 import re
 
-baseIP = 'localhost'
-robotIP = '192.168.0.7' # need to change this value for it to work
+baseIP = '192.168.0.119'
+robotIP = '192.168.0.110' # need to change this value for it to work
 port = 5005
 
 class quickserver:
@@ -56,13 +56,13 @@ class quickserver:
 
     def write(self, command):
         """Write data in the `command` variable to the socket at a low level."""
-        self.comsocket.sendto(command, (self.baseIP, self.port))
+        self.comsocket.sendto(command, (self.robotIP, self.port))
 
     def read(self):
         """Read data from the socket at low level"""
         #Need a try/catch to generate fail return (None object ref)
         try:
-            line = self.robotSocket.recv(1024) #receives up to 1024 bytes
+            line = self.comsocket.recv(1024) #receives up to 1024 bytes
         except socket.error as msg:
             print 'Message not received, timeout'
             #Send a halt-message to avoid bumping into things
@@ -82,7 +82,7 @@ class quickserver:
 
     def get_encoder_ticks(self):
         """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
-        self.write('$ENVAL=?\n')
+        self.write('$ENVAL=?*\n')
         data = self.read()
         if data is not None:
             res = self.regex.findall(data)
@@ -98,7 +98,7 @@ class quickserver:
         
     def get_encoder_velocity(self):
         """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
-        self.write('$ENVEL=?\n')
+        self.write('$ENVEL=?*\n')
         data = self.read()
         if data is not None:
             res = self.regex.findall(data)
@@ -133,8 +133,8 @@ class quickserver:
             self.send_halt() #stop the bot, for good measure
 
             #Shutdown is not required, but network programmers frown when they don't see it.
-            self.comsocket.shutdown()
+            #self.comsocket.shutdown()
             self.comsocket.close()
-            self.comsocket = Null
+            self.comsocket = None 
         except socket.error as msg:
             print msg
