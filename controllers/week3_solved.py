@@ -40,15 +40,15 @@ class GoToGoalX(GoToGoal):
         error = (self.heading_angle - state.pose.theta + math.pi)%(2*math.pi) - math.pi
 
         # 2. Calculate integral error
-        self.E += error*dt
-        self.E = (self.E + math.pi)%(2*math.pi) - math.pi
+        self.E_k += error*dt
+        self.E_k = (self.E_k + math.pi)%(2*math.pi) - math.pi
 
         # 3. Calculate differential error
-        dE = (error - self.e_1)/dt
-        self.e_1 = error #updates the e_1 var
+        dE = (error - self.e_k_1)/dt
+        self.e_k_1 = error #updates the e_1 var
 
         # 4. Calculate desired omega
-        w_ = self.kp*error + self.ki*self.E + self.kd*dE
+        w_ = self.kp*error + self.ki*self.E_k + self.kd*dE
         
         # The linear velocity is given to us:
         return (state.velocity.v, w_)
