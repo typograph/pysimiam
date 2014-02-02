@@ -1,14 +1,16 @@
 import socket
 
-host = "mangerine.local"
+host = "192.168.0.110"
+target = "192.168.0.119"
 port = 5005
+
 class quickclient:
     def __init__(self):
         self.ssocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ssocket.settimeout(2.0)
+        self.ssocket.settimeout(5.0)
 
         try:
-            self.ssocket.bind((host, port))
+            self.ssocket.bind((host, port)) # allavailable
         except socket.error as msg:
             print msg
 
@@ -19,8 +21,12 @@ class quickclient:
         except socket.error as msg:
             print msg
 
+    def write(self, command):
+        self.ssocket.sendto(command, (target, port))
 
-    def send(self, msg):
-        self.ssocket.send('what\'s up?')
-        
-        
+    def close(self):
+        try:
+            #self.ssocket.shutdown()
+            self.ssocket.close()
+        except socket.error as msg:
+            print msg
