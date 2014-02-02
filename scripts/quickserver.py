@@ -24,8 +24,9 @@ class quickserver:
     ==========================  ========================================================================
 
 
-    Specifically, the following variable is critical to setting the quickbot communication::
+    Specifically, the following variables are critical to setting the quickbot communication::
     =========== ===========
+    ``baseIP``  192.168.0.6
     ``robotIP`` 192.168.0.7
     =========== ===========
 
