@@ -296,7 +296,7 @@ class Week3Test1(WeekTestCase):
     def __call__(self,event,args):
         if self.testsuite.gui.simulator_thread.get_time() > 30:
             self.stop_test()
-            self.testsuite.respond("1")
+            self.testsuite.respond("0")
         
         if event == "plot_update": # get distance to goal from the simulator
             dst = args[0][self.dst2goal]
@@ -313,22 +313,14 @@ class Week3Test1(WeekTestCase):
             # FIXME What follows is a hack, that will only work
             # in the current GUI implementation. 
             # For a better solution we need to change the API again
-            params[0][1][0] = ('x',self.goal[0])
-            params[0][1][1] = ('y',self.goal[1])
-            params[1][1][0] = ('v',self.v)
-
-            p = helpers.Struct()
-            p.goal = helpers.Struct()
-            p.goal.x = self.goal[0]
-            p.goal.y = self.goal[1]
-            p.velocity = helpers.Struct()
-            p.velocity.v = self.v
-            p.gains = helpers.Struct()
-            p.gains.kp = params[2][1][0][1]
-            p.gains.ki = 2.0
-            p.gains.kd = 0.0
-            
-            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, p)
+            params[0][1][0] = ('x',self.p.goal.x)
+            params[0][1][1] = ('y',self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
 
         #elif event == 'reset' # World constructed, safe    
             
@@ -345,8 +337,21 @@ class Week3Test1(WeekTestCase):
         if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
         
-        self.v = vals['v']
-        self.goal = (vals['x_g'],vals['y_g'])
+        self.p = helpers.Struct()
+        self.p.goal = helpers.Struct()
+        self.p.goal.x = vals['x_g']
+        self.p.goal.y = vals['y_g']
+        self.p.velocity = helpers.Struct()
+        self.p.velocity.v = vals['v']
+        self.p.gains = helpers.Struct()
+        self.p.gains.kp = 3
+        self.p.gains.ki = 6
+        self.p.gains.kd = 0.01
+        
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            self.p.gains = dock.widget().contents.get_struct().gains
 
         self.testsuite.gui.start_testing()
         self.testsuite.gui.register_event_handler(self)
@@ -365,24 +370,23 @@ class Week3Test2(WeekTestCase):
         self.test_id = "2aZEky7h"
         
         self.dtheta = '((math.atan2(supervisor.parameters.goal.y - robot.get_pose().y, supervisor.parameters.goal.x - robot.get_pose().x) - robot.get_pose().theta + math.pi)%(2*math.pi) -math.pi)/math.atan2(supervisor.parameters.goal.y,supervisor.parameters.goal.x)'
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
           
     def __call__(self,event,args):
         if self.testsuite.gui.simulator_thread.get_time() > 15: # Not more than 15 minutes
             self.stop_test()
         
         if event == "plot_update": # get dtheta
-            dtheta = abs(args[0][self.dtheta])
-
-            self.i_iter += 1
+            
+            dtheta = args[0][self.dtheta]
+            self.dthetas.append(abs(dtheta))
             if dtheta < self.dtheta_min:
-                self.dtheta_min = dtheta
-            if dtheta < 0.1:
-                self.i_dec += 1
-                if self.i_dec > self.i_dec_max:
-                    self.settletime = (self.i_iter-self.i_dec_max)*0.02
-                    self.stop_test()
-            else:
-                self.i_dec = -1
+                self.dtheta_min = dtheta           
+                
+            dst2goal = abs(args[0][self.dst2goal])
+            if dst2goal < 0.05:
+                self.stop_test()
+                
         elif event == "log": # watch for collisions
             message, objclass, objcolor = args
             if message.startswith("Collision with"):
@@ -392,22 +396,14 @@ class Week3Test2(WeekTestCase):
             # FIXME What follows is a hack, that will only work
             # in the current GUI implementation. 
             # For a better solution we need to change the API again
-            params[0][1][0] = ('x',self.goal[0])
-            params[0][1][1] = ('y',self.goal[1])
-            params[1][1][0] = ('v',self.v)
-
-            p = helpers.Struct()
-            p.goal = helpers.Struct()
-            p.goal.x = self.goal[0]
-            p.goal.y = self.goal[1]
-            p.velocity = helpers.Struct()
-            p.velocity.v = self.v
-            p.gains = helpers.Struct()
-            p.gains.kp = params[2][1][0][1]
-            p.gains.ki = 2.0
-            p.gains.kd = 0.0
-            
-            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, p)
+            params[0][1][0] = ('x',self.p.goal.x)
+            params[0][1][1] = ('y',self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
 
         #elif event == 'reset' # World constructed, safe    
             
@@ -416,29 +412,55 @@ class Week3Test2(WeekTestCase):
     def stop_test(self):
         self.testsuite.gui.unregister_event_handler()
         self.testsuite.gui.pause_simulation()   
-        self.testsuite.gui.stop_testing()   
-        self.testsuite.respond("{:0.3f},{:0.3f}".format(self.settletime,self.dtheta_min))
+        self.testsuite.gui.stop_testing()
+
+        i_iter = -1
+        i_dec = 0
+        i_dec_max = 50 # Simiam has 0.05 tc and 20 max
+        settletime = -1
+        
+        for i_iter, dtheta in enumerate(self.dthetas):
+            if dtheta < 0.1:
+                i_dec += 1
+                if i_dec > i_dec_max:
+                    settletime = (i_iter-i_dec)*0.02
+                    break
+            else:
+                i_dec = 0
+                settletime = -1*0.02
+
+        self.testsuite.respond("{:0.3f},{:0.3f}".format(settletime,abs(self.dtheta_min)))
         
     def start_test(self,challenge):
         vals = self.parseChallenge(challenge)
         
         if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+       
+        self.p = helpers.Struct()
+        self.p.goal = helpers.Struct()
+        self.p.goal.x = vals['x_g']
+        self.p.goal.y = vals['y_g']
+        self.p.velocity = helpers.Struct()
+        self.p.velocity.v = vals['v']
+        self.p.gains = helpers.Struct()
+        self.p.gains.kp = 3
+        self.p.gains.ki = 6
+        self.p.gains.kd = 0.01
         
-        self.v = vals['v']
-        self.goal = (vals['x_g'],vals['y_g'])
-
-        self.i_iter = -1
-        self.i_dec = -1
-        self.i_dec_max = 50 # Simiam has 0.05 tc and 20 max
-        self.settletime = -1
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            self.p.gains = dock.widget().contents.get_struct().gains
         
         self.dtheta_min = math.pi
+        self.dthetas = []
 
         self.testsuite.gui.start_testing()
         self.testsuite.gui.register_event_handler(self)
         self.testsuite.gui.load_world('week3.xml')
         self.testsuite.gui.run_simulator_command('add_plotable',self.dtheta)
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)
         
         #self.testsuite.gui.dockmanager.docks[self.dockname].widget().apply_click()
         
@@ -471,6 +493,9 @@ class Week3Test3(WeekTestCase):
         
         vld, vrd = s.uni2diff((vd,wd))
         vl, vr = s.ensure_w((vld,vrd))
+        # Clamp to robot maxima
+        vl = max(-info.wheels.max_velocity, min(info.wheels.max_velocity, vl))
+        vr = max(-info.wheels.max_velocity, min(info.wheels.max_velocity, vr))
         v, w = bot.diff2uni((vl,vr))
 
         self.testsuite.respond("{:0.3f}".format(abs(w-wd)/wd))
