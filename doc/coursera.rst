@@ -92,7 +92,7 @@ To use the sensor readings, you will have to convert them to actual distances. F
 
 
 Converting from the the analog output voltage to a distance is a little bit more complicated, because a) the relationships between analog output voltage and distance is not linear, and b) the look-up table provides a coarse sample of points.
-You can use any way you like to convert between sensor readings and distances. For example, you can use the `SciPy <http://www.scipy.org/Download>`_ mathematical library and interpolate the curve using `scipy.interpolate.inter1d <http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy-interpolate-interp1d>`_. Or you can fit the provided points with a high-degree polynomial and use this fit.
+You can use any way you like to convert between sensor readings and distances. For example, you can use the `SciPy <http://www.scipy.org/install.html>`_ mathematical library and interpolate the curve using `scipy.interpolate.inter1d <http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy-interpolate-interp1d>`_. Or you can fit the provided points with a high-degree polynomial and use this fit.
 
         
 It is important to note that the IR proximity sensor on the actual QuickBot will be influenced by ambient lighting and other sources of interference. For example, under different ambient lighting conditions, the same analog output voltage may correspond to different distances of an object from the IR proximity sensor. The effect of ambient lighting (and other sources of noise) are *not* modelled in the simulator, but will be apparent on the actual hardware.
@@ -356,6 +356,15 @@ To add another plot, for example, the time dependence of robot's `x` and the goa
              ("Goal X", "supervisor.parameters.goal.x",'blue')],
             ])
 
+If you do not see any plot windows, this means that none of the plotting engines could be loaded. You need one of the following libraries installed on your computer:
+    
+    * `SciPy <http://www.scipy.org/install.html>`_ (this will enable the `PyQtGraph <http://www.pyqtgraph.org/>`_ library packaged with pySimiam)
+    * `matplotlib <http://matplotlib.org/index.html>`_
+    * `PyQwt <http://pyqwt.sourceforge.net/>`_
+    
+We recommend installing SciPy or matplotlib. matplotlib can draw somewhat nicer plots, but is also much slower.
+    
+Note that plots are not necessary for the assignments, as you can use the robot real and estimated trajectories to judge the quality of your PID controller.
             
 Implementing the PID
 --------------------
