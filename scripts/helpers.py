@@ -1,4 +1,5 @@
 import sys
+import json
 
 class Struct:
     """This class describes structures with arbitrary fields.
@@ -16,8 +17,32 @@ class Struct:
             p.gains.kp = 10.0
             p.gains.ki = 2.0
             p.gains.kd = 0.0
+            
+       Alternatives::
+       
+            p = Struct({'goal':{'x':0.0, 'y':0.5}, 'velocity':{'v':0.2}, 'gains':{'kp':10.0, 'ki':2.0, 'kd':0.0}})
+            p = Struct("{'goal':{'x':0.0, 'y':0.5}, 'velocity':{'v':0.2}, 'gains':{'kp':10.0, 'ki':2.0, 'kd':0.0}}")
+           
+       In the second case, the string has to be a valid JSON object. It is also impossible to use dictionaries as
+       values in the Struct in these cases.
                    
     """
+    def __init__(self,desc = None):
+        if desc is not None:
+            try:
+                dct = dict(desc)
+            except Exception:
+                try:
+                    dct = dict(json.loads(desc))
+                except Exception:
+                    raise ValueError("Invalid Struct description {}".format(repr(desc)))
+            
+            for k,v in dct.items():
+                if isinstance(v,dict):
+                    self.__dict__[k] = Struct(v)
+                else:
+                    self.__dict__[k] = v
+    
     def __str__(self):
         def str_field(key,value):
             indent = " "*(len(str(key)) + 3)
@@ -29,6 +54,15 @@ class Struct:
         
         
         return "Struct\n {}".format("\n ".join((str_field(k,v) for k,v in self.__dict__.items())))
+    
+    def __repr__(self):
+        return json.dumps(self.__dict__) # This might be the same as repr(dict), but it's safer.
+    
+    def __eq__(self,other):
+        if not isinstance(other,Struct):
+            return NotImplemented
+        
+        return len(self.__dict__) == len(other.__dict__) and all(k in other.__dict__ and other.__dict__[k] == v  for k,v in self.__dict__.items() )  
 
 __loaded_modules = set()
 
