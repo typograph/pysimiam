@@ -44,7 +44,7 @@ class AvoidObstacles(PIDController):
         # Week 4 Assignment:
         
         # Calculate vectors:
-        self.vectors = []
+        self.vectors = [[0,0,1]]*5
         
         # Calculate weighted sum:
         heading = [1, 0, 1]

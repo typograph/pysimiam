@@ -24,8 +24,7 @@ class QBAvoidSupervisor(QuickBotSupervisor):
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Create the controller
-        #self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.parameters)
-        self.avoidobstacles = self.create_controller('week4_solved.AvoidObstacles', self.parameters)
+        self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.parameters)
 
         # Set the controller
         self.current = self.avoidobstacles
