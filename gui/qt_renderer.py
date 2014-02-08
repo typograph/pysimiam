@@ -150,3 +150,11 @@ class QtRenderer(Renderer):
     def draw_line(self, x1, y1, x2, y2):
         """Draws a line using the current pen from (x1,y1) to (x2,y2)"""
         self._painter.drawLine(QLineF(x1,y1,x2,y2))
+        
+    def draw_point(self,x,y):
+        """Draw a single point using the current pen at (x,y)"""
+        self._painter.drawPoint(QPointF(x,y))
+        
+    def draw_points(self,points):
+        """Draw a set of points, given as [(x,y)], using the current pen"""
+        self._painter.drawPoints(QPolygonF([QPointF(x,y) for x,y in points]))

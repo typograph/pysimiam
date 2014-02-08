@@ -273,6 +273,15 @@ class Renderer:
         if self._show_grid:
             self._draw_grid()
 
+    def draw_point(self,x,y):
+        """Draw a single point using the current pen at (x,y)"""
+        raise NotImplementedError("Renderer.draw_point")
+        
+    def draw_points(self,points):
+        """Draw a set of points, given as [(x,y)], using the current pen"""
+        for x,y in points:
+            self.draw_point(x,y)        
+
     def draw_line(self, x1, y1, x2, y2):
         """Draw a line using the current pen from (x1,y1) to (x2, y2)
         """
