@@ -14,13 +14,15 @@ import base64
 import re
 import math
 import helpers
+from pose import Pose
+import numpy as np
 
 class CourseraException(Exception):
     pass
 
 class WeekTestCase:
     
-    RX = re.compile(r"(?P<name>[a-zA-Z_]+)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
+    RX = re.compile(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
     
     def __init__(self, week):
         self.testsuite = week
@@ -361,7 +363,7 @@ class Week3Test2(WeekTestCase):
         self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
           
     def __call__(self,event,args):
-        if self.testsuite.gui.simulator_thread.get_time() > 15: # Not more than 15 minutes
+        if self.testsuite.gui.simulator_thread.get_time() > 15: # Not more than 15 seconds
             self.stop_test()
         
         if event == "plot_update": # get dtheta
@@ -381,9 +383,7 @@ class Week3Test2(WeekTestCase):
                 self.stop_test()
         elif event == "make_param_window": # in the beginning rewrite parameters
             robot_id, name, params = args
-            # FIXME What follows is a hack, that will only work
-            # in the current GUI implementation. 
-            # For a better solution we need to change the API again
+
             params[0][1][0] = ('x',self.p.goal.x)
             params[0][1][1] = ('y',self.p.goal.y)
             params[1][1][0] = ('v',self.p.velocity.v)
@@ -436,6 +436,9 @@ class Week3Test2(WeekTestCase):
         self.p.gains.ki = 6
         self.p.gains.kd = 0.01
         
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
         docks = self.testsuite.gui.dockmanager.docks
         if len(docks):
             dock = docks[list(docks.keys())[0]]
@@ -487,3 +490,137 @@ class Week3Test3(WeekTestCase):
         v, w = bot.diff2uni((vl,vr))
 
         self.testsuite.respond("{:0.3f}".format(abs(w-wd)/wd))
+
+
+class Week4(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 4"
+    
+    self.week = 3
+    self.tests.append(Week4Test1(self))
+    self.tests.append(Week4Test2(self))
+
+class Week4Test1(WeekTestCase):
+    """Test 1: check if sensor points are calculated correctly"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "From IR distances to points in the World"
+        self.test_id = "n6Td5e5B"
+
+    def start_test(self,challenge):
+        print(challenge)
+        vals = self.parseChallenge(challenge)
+        
+        print(vals)
+        
+        if 'dist_1' not in vals or 'x' not in vals or 'y' not in vals or 'theta' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        rpose = Pose(vals['x'],vals['y'],vals['theta'])
+
+        ir_sensor_poses = [
+                          Pose(-0.0474, 0.0534, np.radians(90)),
+                          Pose( 0.0613, 0.0244, np.radians(45)),
+                          Pose( 0.0636, 0.0, np.radians(0)),
+                          Pose( 0.0461,-0.0396, np.radians(-45)),
+                          Pose(-0.0690,-0.0534, np.radians(-90))
+                          ]                          
+
+        params = helpers.Struct()
+        params.sensor_poses = [p >> rpose for p in ir_sensor_poses]
+        params.gains = helpers.Struct({'kp':0, 'ki':0, 'kd':0})
+
+        state = helpers.Struct()
+        state.sensor_distances = [vals['dist_1'], 0.3, 0.3, vals['dist_1'], 0.3]
+
+        AvoidObstacles = helpers.load_by_name('week4_solved.AvoidObstacles','controllers')
+        testAO = AvoidObstacles(params)
+       
+        testAO.get_heading(state)
+        
+        vs = testAO.vectors
+
+        error_1 = math.sqrt((vs[0][0] - 0.3637)**2 + (vs[0][1] + 0.0545)**2)        
+        error_2 = math.sqrt((vs[3][0] + 0.0895)**2 + (vs[3][1] + 0.2932)**2)        
+
+        self.testsuite.respond("{:0.3f},{:0.3f}".format(error_1,error_2))       
+ 
+class Week4Test2(WeekTestCase):
+    """Test 2: check if robot can take care of itself for 60 seconds"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Avoiding collisions for 60 seconds"
+        self.test_id = "sw7on7mK"
+
+        self.dr = 'abs(robot.get_pose().x) + abs(robot.get_pose().y)'
+        self.max_dr = 0.0
+        
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 60: # Stop after 60 seconds
+            self.stop_test(self.max_dr > 0.5)
+        
+        if event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False)
+        elif event == "plot_update": # get dr
+            
+            dr = args[0][self.dr]
+            if dr > self.max_dr:
+                self.max_dr = dr
+               
+            del args[0][self.dr]
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+
+            params[0][1][0] = ('v',self.p.velocity.v)
+            params[1][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[1][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[1][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
+            
+        return False
+        
+    def stop_test(self, passed):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+
+        if passed:
+            self.testsuite.respond("0")
+        else:
+            self.testsuite.respond("1")
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+       
+        self.p = helpers.Struct()
+        self.p.velocity = helpers.Struct()
+        self.p.velocity.v = vals['v']
+        self.p.gains = helpers.Struct()
+        self.p.gains.kp = 4
+        self.p.gains.ki = 0.1
+        self.p.gains.kd = 0
+
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            self.p.gains = dock.widget().contents.get_struct().gains
+        
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world('week4.xml')
+        # We have to check the robot actually moved
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dr)
+        
+        self.testsuite.gui.run_simulation()
+     

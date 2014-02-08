@@ -9,7 +9,7 @@
 from supervisor import Supervisor
 from helpers import Struct
 from pose import Pose
-from math import pi, sin, cos, log1p
+from math import pi, sin, cos, log1p, copysign
 from simobject import Path
 import numpy
 
@@ -27,11 +27,11 @@ class QuickBotSupervisor(Supervisor):
        The UI may use the get_parameters function interface to create docker windows
        for real-time update of the PID parameters. This is an advanced implementation
        and is not required for students to properly implement their own supervisors."""
-       
-    ir_coeff = numpy.array([  1.16931064e+07,  -1.49425626e+07,
-                              7.96904053e+06,  -2.28884314e+06,
-                              3.80068213e+05,  -3.64435691e+04,
-                              1.89558821e+03])
+
+    ir_coeff = numpy.array([ 8.56495710e-18,  -3.02930608e-14,
+                          4.43025017e-11,  -3.49052288e-08,
+                          1.61452174e-05,  -4.44025236e-03,
+                          6.74137385e-1])
        
     def __init__(self, robot_pose, robot_info):
         """Initialize internal variables"""
@@ -53,8 +53,8 @@ class QuickBotSupervisor(Supervisor):
         p.velocity = Struct()
         p.velocity.v = 0.2
         p.gains = Struct()
-        p.gains.kp = 10.0
-        p.gains.ki = 2.0
+        p.gains.kp = 4.0
+        p.gains.ki = 0.1
         p.gains.kd = 0.0
         
         self.parameters = p
@@ -91,7 +91,6 @@ class QuickBotSupervisor(Supervisor):
             
     def get_ir_distances(self):
         """Converts the IR distance readings into a distance in meters"""
-        
         return numpy.polyval(self.ir_coeff, self.robot.ir_sensors.readings)
     
     def estimate_pose(self):
@@ -130,11 +129,71 @@ class QuickBotSupervisor(Supervisor):
 
     def get_controller_state(self):
         return self.parameters
+
+    def ensure_w(self,v_lr):
+        # This code is taken directly from Sim.I.Am week 4
+        # I'm sure one can do better. 
+
+        v_max = self.robot.wheels.max_velocity
+        v_min = self.robot.wheels.min_velocity
+       
+        R = self.robot.wheels.radius
+        L = self.robot.wheels.base_length
+        
+        def diff2uni(vl,vr):
+            return (vl+vr) * R/2, (vr-vl) * R/L
+        
+        v, w = diff2uni(*v_lr)
+        
+        if v == 0:
             
+            # Robot is stationary, so we can either not rotate, or
+            # rotate with some minimum/maximum angular velocity
+
+            w_min = R/L*(2*v_min);
+            w_max = R/L*(2*v_max);
+            
+            if abs(w) > w_min:
+                w = copysign(max(min(abs(w), w_max), w_min), w)
+            else:
+                w = 0
+            
+            return self.uni2diff((0,w))
+            
+        else:
+            # 1. Limit v,w to be possible in the range [vel_min, vel_max]
+            # (avoid stalling or exceeding motor limits)
+            v_lim = max(min(abs(v), (R/2)*(2*v_max)), (R/2)*(2*v_min))
+            w_lim = max(min(abs(w), (R/L)*(v_max - v_min)), 0)
+            
+            # 2. Compute the desired curvature of the robot's motion
+            
+            vl,vr = self.uni2diff((v_lim, w_lim))
+            
+            # 3. Find the max and min vel_r/vel_l
+            v_lr_max = max(vl, vr);
+            v_lr_min = min(vl, vr);
+            
+            # 4. Shift vr and vl if they exceed max/min vel
+            if (v_lr_max > v_max):
+                vr -= v_lr_max - v_max
+                vl -= v_lr_max - v_max
+            elif (v_lr_min < v_min):
+                vr += v_min - v_lr_min
+                vl += v_min - v_lr_min
+            
+            # 5. Fix signs (Always either both positive or negative)
+            v_shift, w_shift = diff2uni(vl,vr)
+            
+            v = copysign(v_shift,v)
+            w = copysign(w_shift,w)
+            
+            return self.uni2diff((v,w))
+                
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
-        return self.uni2diff(output)
+        return self.ensure_w(self.uni2diff(output))
 
     def draw_background(self, renderer):
         """Draw a circular goal"""
@@ -143,3 +202,5 @@ class QuickBotSupervisor(Supervisor):
         renderer.set_brush(self.robot_color)
         for r in numpy.arange(self.robot_size/2,0,-0.01):
             renderer.draw_ellipse(0,0,r,r)
+            
+            

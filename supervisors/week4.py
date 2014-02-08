@@ -6,21 +6,26 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.khepera3 import K3Supervisor
+from supervisors.quickbot import QuickBotSupervisor
+from simobject import Path
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
+from pose import Pose
+from helpers import Struct
 
-class K3AvoidSupervisor(K3Supervisor):
-    """K3Avoid supervisor uses one avoid-obstacles controller to drive the robot through a cluttered environment without collisions."""
+class QBAvoidSupervisor(QuickBotSupervisor):
+    """QuickBotAvoid supervisor uses one avoid-obstacles controller
+       to drive the robot through a cluttered environment without collisions."""
     def __init__(self, robot_pose, robot_info):
         """Create the controller"""
-        K3Supervisor.__init__(self, robot_pose, robot_info)
+        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in poses for the controller
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Create the controller
-        self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.parameters)
+        #self.avoidobstacles = self.create_controller('week4.AvoidObstacles', self.parameters)
+        self.avoidobstacles = self.create_controller('week4_solved.AvoidObstacles', self.parameters)
 
         # Set the controller
         self.current = self.avoidobstacles
@@ -30,6 +35,11 @@ class K3AvoidSupervisor(K3Supervisor):
         self.parameters.velocity = params.velocity
         self.parameters.gains = params.gains
         self.avoidobstacles.set_parameters(self.parameters)
+
+    def init_default_parameters(self):
+        """Sets the default PID parameters, goal, and velocity"""
+        self.parameters = Struct({"velocity":{"v":0.2}, \
+                                  "gains":{"kp":4.0, "ki": 0.1, "kd": 0.0}})
 
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
@@ -45,13 +55,16 @@ class K3AvoidSupervisor(K3Supervisor):
     def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
 
-        K3Supervisor.process_state_info(self,state)
+        QuickBotSupervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
 
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
+
+    def draw_background(self, renderer):
+        pass
     
     def draw_foreground(self, renderer):
         """Draw controller info"""

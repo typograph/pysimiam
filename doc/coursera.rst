@@ -564,3 +564,123 @@ The grader will test the following conditions this week:
     * **Tuning the PID gains for performance**: Are the PID gains tuned such that the settle time is less than three second and the overshoot is no greater than 10% of the reference signal (angle to the goal location)?
     * **Reshaping the output for the hardware**: If the output of the controller (\ *v*\ ,\ *ω*\ ) is greater than what the motors support, is the linear velocity `v` scaled back to ensure *ω* is achieved?
 
+Week 4. Avoiding obstacles
+==========================
+
+The simulator for this week can be run with::
+    
+    >>> python qtsimiam_week4.py
+
+In the case you want to reuse your code from week 3, please note that the PID code is now located in ``controllers/pid_controller.py``. The ``execute`` method is using the heading from ``get_heading_angle`` to steer the robot. This heading is now in robot's coordinates, meaning that the robot is steered to have a heading angle of 0. You can replace the ``reset`` and ``execute`` methods with your code, but do not forget to change the steering to robot's coordinates.
+
+The ``ensure_w`` method from last week is now located in ``supervisors/quickbot.py``. The logic has been slightly changed, as detailed below in the section :ref:`week4_ensure_w`.
+
+
+AvoidObstacles controller
+-------------------------
+
+This week you will be implementing the different parts of a controller that steers the robot successfully away from obstacles to avoid a collision. This is known as the avoid-obstacles behavior. The IR sensors allow us to measure the distance to obstacles in the environment, but we need to compute the points in the world to which these distances correspond.
+
+.. image:: week-4-ir-points.png
+    :width: 300px
+
+The figure illustrates these points with black crosses. The strategy for obstacle avoidance that we will use is as follows:
+
+#. Transform the IR distances to points in the world.
+
+#. Compute a vector to each point from the robot, :math:`u_0,u_1,\ldots,u_4`.
+
+#. Weigh each vector according to their importance, :math:`\alpha_0u_0,\alpha_1u_1,\ldots,\alpha_4u_4`. For example, the front and side sensors are typically more important for obstacle avoidance while moving forward.
+
+#. Sum the weighted vectors to form a single vector, :math:`u_o=\alpha_0u_0+\ldots+\alpha_4u_4`.
+
+#. Use this vector to compute a heading and steer the robot to this angle.
+
+This strategy will steer the robot in a direction with the most free space (i.e., it is a direction `away` from obstacles). For this strategy to work, you will need to implement two crucial parts of the strategy for the obstacle avoidance behavior in the function ``get_heading`` in ``pysimiam/controllers/week4.py`` using the following information:
+
+- ``self.sensor_poses`` (list of :class:`~pose.Pose`) - The positions and orientations of IR sensors in the reference frame of the robot
+- ``self.kp``, ``self.ki`` and ``self.kd`` - The PID gains of this controller
+- ``state.sensor_distances`` (list of float) - The IR distances measured by each sensor
+- ``state.pose`` (:class:`~pose.Pose`) - The position and orientation of the robot
+- ``state.velocity.v`` (float) - The given target velocity of the simulation, which is usually the maximum available.
+
+The following code is in place::
+
+    def get_heading(self, state):
+
+        # Week 4 Assignment:
+        
+        # Calculate vectors:
+        self.vectors = []
+        
+        # Calculate weighted sum:
+        heading = [1, 0, 1]
+     
+        # End Week 4 Assignment
+     
+        return heading
+
+First, transform the IR distance (which you converted from the raw IR values in Week 2) measured by each sensor to a point in the reference frame of the robot.
+  
+A point :math:`p_i` that is measured to be :math:`d_i` meters away by sensor :math:`i` can be written as the vector (coordinate) :math:`v_i=\begin{bmatrix}d_i \\ 0\end{bmatrix}` in the reference frame of sensor :math:`i`. We first need to transform this point to be in the reference frame of the robot. To do this transformation, we need to use the pose (location and orientation) of the sensor in the reference frame of the robot: :math:`(x_{s_i},y_{s_i},\theta_{s_i})`. The transformation is defined as:
+
+.. math::
+    v'_i = R(x_{s_i},y_{s_i},\theta_{s_i})\begin{bmatrix}v_i \\ 1\end{bmatrix}
+
+where :math:`R` is known as the transformation matrix that applies a translation by :math:`(x,y)` and a rotation by :math:`\theta`:
+
+.. math::
+    R(x,y,\theta) = \begin{bmatrix}
+        \cos(\theta) & -\sin(\theta) & x \\ 
+        \sin(\theta) &  \cos(\theta) & y \\
+                   0 &             0 & 1
+        \end{bmatrix}.
+
+This matrix for a particular sensor can be obtained by calling the method ``get_transformation`` on the sensor's pose. To construct the coordinates of the point in the sensor reference frame, use the ``numpy.array`` constructor. ``numpy.dot(a,b)`` implements the dot product of two matrices. Store the result of the transformation as a list of :math:`v'_i` vectors (or as a 2D array) in the variable ``self.vectors``. The calculated vectors are now illustrated in the simulator by the black crosses. Note how these points `approximately` correspond to the distances measured by each sensor.
+
+.. note:: The points do not exactly correspond to the distances because of how we converted from raw IR values to meters in Week 2).
+  
+Second, use the set of transformed points to compute a vector that points away from the obstacle. The robot will steer in the direction of this vector and successfully avoid the obstacle.
+  
+    #. Pick a weight :math:`\alpha_i` for each vector according to how important you think a particular sensor is for obstacle avoidance. For example, if you were to multiply the vector from the robot to point `i` (corresponding to sensor `i`) by a small value (e.g., 0.1), then sensor `i` will not impact obstacle avoidance significantly. Set the weights in the constructor or in ``set_parameters``.
+
+        .. note:: Make sure to that the weights are symmetric with respect to the left and right sides of the robot. Without any obstacles around, the robot should only steer slightly right (due to a small asymmetry in the how the IR sensors are mounted on the robot).
+
+    #. Sum up the weighted vectors, :math:`\alpha_iv'_i`, into a single vector :math:`u_o` (for example using matrix multiplication).
+
+    #. Return this vector as a heading away from obstacles (i.e., in a direction with free space, because the vectors that correspond to directions with large IR distances will contribute the most to :math:`u_o`).
+
+.. note:: Note that the heading vector should be define in robot's coordinate system, not in the global one.
+   
+Testing
+^^^^^^^
+
+To test your code, the simulator is set up to use load the ``week4.py`` controller to drive the robot around the environment without colliding with any of the walls.
+Here are some tips on how to test the three parts:
+
+#. Once you have implemented the calculation of obstacle vectors, a black cross should match up with each sensor as shown in figure above. The robot should drive forward and collide with the wall.
+
+#. Once you have implemented the steering, the robot should be able to successfully navigate the world without colliding with the walls (obstacles). If no obstacles are in range of the sensors, the red arrow (representing :math:`u_o`) should just point forward (i.e., in the direction the robot is driving). In the presence of obstacles, the red line should point away from the obstacles in the direction of free space.
+
+You can also tune the parameters of the PID regulator for `ω`.
+
+.. note:: The red arrow (as well as the black crosses) will likely deviate from its position on the robot. The reason is that it are drawn with information derived from the odometry of the robot. The odometry of the robot accumulates error over time as the robot drives around the world. This odometric drift can be seen when information based on odometry is visualized via the lines and crosses. 
+
+.. _week4_ensure_w:
+
+QuickBot motor limitations
+--------------------------
+
+Last week we implemented a function, ``ensure_w``, which was responsible for respecting `ω` from the controller as best as possible by scaling `v` if necessary. This implementation assumed that it was possible to control the angular velocity in the range ``[-vel_max, vel_max]``. This range reflected the fact that the motors on the QuickBot have a maximum rotational speed. However, it is also true that the motors have a minimum speed before the robot starts moving. If not enough power is applied to the motors, the angular velocity of a wheel remains at 0. Once enough power is applied, the wheels spin at a speed ``vel_min``.
+
+The ``ensure_w`` function has been updated this week to take this limitation into account. For example, small ``(v,ω)`` may not be achievable on the QuickBot, so ``ensure_w`` scales up `v` to make `ω` possible. Similarily, if ``(v,ω)`` are both large, ``ensure_w`` scales down `v` to ensure `ω` (as was the case last week). You can use the ``print`` statement to see ``(v,ω)`` before and after.
+
+There is nothing that needs to be added or implemented for this week in ``ensure_w``, but you may find it interesting how one deals with physical limitations on a mobile robot, like the QuickBot. This particular approach has an interesting consequence, which is that if `v` > 0, then `v_r` and `v_l` are both positive (and vice versa, if `v` < 0). Therefore, we often have to increase or decrease `v` significantly to ensure `ω` even if it were better to make small adjustments to both `ω` and `v`. As with most of the components in these programming assignments, there are alternative designs with their own advantages and disadvantages. Feel free to share your designs with everyone on the discussion forums!
+
+Grading
+-------
+ 
+The grader will test the following conditions this week:
+
+    * **From IR distances to points in the World**: Are the IR distances interpreted as points in the sensor's coordinate frame correctly transformed to the world coordinate frame?
+    * **Avoiding obstacles for 60 seconds**: Can the robot roam around the world without collisions for 60 seconds? The robot should travel at least 0.5 m away from the start point.
