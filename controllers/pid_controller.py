@@ -45,14 +45,14 @@ class PIDController(Controller):
 
     def get_heading(self, state):
         """Get the direction in which the controller wants to move the robot
-        as a vector.
+        as a vector in the robot's frame of reference.
         
         :return: a numpy array [x, y, z] with z = 1.
         """
         raise NotImplementedError("PIDController.get_heading")
     
     def get_heading_angle(self, state):
-        """Return the heading as an angle"""
+        """Return the heading as an angle in the robot's frame of reference."""
 
         # The vector to follow
         heading = self.get_heading(state)
