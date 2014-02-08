@@ -73,13 +73,20 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.world_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
 
         # create supervisor file dialog
-        self.supervisor_dialog = QtGui.QFileDialog(self,
-                                     "Select Supervisor File",
-                                     "supervisors", 
-                                     "Supervisor (*.py)")
-        self.supervisor_dialog.setAcceptMode(QtGui.QFileDialog.AcceptOpen)
-        self.supervisor_dialog.setFileMode(QtGui.QFileDialog.ExistingFile)     
         
+        if sys.version_info.major == 3:
+            formats = [bytes(fmt).decode('utf-8') for fmt in QtGui.QImageWriter.supportedImageFormats()]
+        else:
+            formats = [str(fmt) for fmt in QtGui.QImageWriter.supportedImageFormats()]
+        
+        fmtstring = "All supported image formats ({});;{}".format( \
+                    " ".join('*.' + fmt for fmt in formats), \
+                    ";;".join( "{} files (*.{})".format(fmt.upper(), fmt) for fmt in formats ))
+        
+        self.screenshot_dialog = QtGui.QFileDialog(self, "Export view", ".", fmtstring)
+        self.screenshot_dialog.setAcceptMode(QtGui.QFileDialog.AcceptSave)
+        self.screenshot_dialog.setFileMode(QtGui.QFileDialog.AnyFile)     
+       
         scrollArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollArea)
         self.viewer = SimulatorViewer()
@@ -87,6 +94,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         scrollArea.setWidget(self.viewer)
         scrollArea.setWidgetResizable(True)
         
+        self.__screenshot_filename = ""
         self.__clear_graph_on_start = False
         self.plots = []
 
@@ -119,6 +127,14 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.open_world_action.setShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Open))
 
         self.open_world_action.setStatusTip("Open a new simulation")
+
+        self.screenshot_action = \
+            QtGui.QAction(QtGui.QIcon.fromTheme("camera-photo",
+                            QtGui.QIcon("./res/image/screenshot.png")),
+                          "Export &screenshot",
+                          self)
+        self.screenshot_action.triggered.connect(self.on_screenshot)
+        self.screenshot_action.setStatusTip("Export current simulation view")
                             
         self.exit_action = \
             QtGui.QAction(QtGui.QIcon.fromTheme("application-exit"),
@@ -224,6 +240,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.simulator_toolbar.setAllowedAreas(QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         
         self.simulator_toolbar.addAction(self.open_world_action)
+        self.simulator_toolbar.addAction(self.screenshot_action)
         self.simulator_toolbar.addSeparator()
         
         self.simulator_toolbar.addAction(self.rev_action)
@@ -285,6 +302,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         file_menu = menu.addMenu("&File")
         
         file_menu.addAction(self.open_world_action)
+        file_menu.addAction(self.screenshot_action)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_action)
         
@@ -407,6 +425,15 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
             self.load_world(self.world_dialog.selectedFiles()[0])
 
     @QtCore.pyqtSlot()
+    def on_screenshot(self):
+        if self.screenshot_dialog.exec_():
+            # Remember, direct access to the renderer is not thread-safe
+            if self.simulator_thread.is_running():
+                self.__screenshot_filename = self.screenshot_dialog.selectedFiles()[0]
+            else:
+                self.viewer.export_bitmap(self.screenshot_dialog.selectedFiles()[0])
+
+    @QtCore.pyqtSlot()
     def refresh_view(self):
         self.run_simulator_command('refresh')
             
@@ -463,7 +490,8 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
             #self.time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
             self.status_label.setText(
                 "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
-        self.process_events(True)
+        if not self.screenshot_dialog.isVisible(): # During screenshot the simulator is paused
+            self.process_events(True)
         
     def apply_parameters(self, robot_id, params):
         self.run_simulator_command('apply_parameters', robot_id, params)
@@ -522,6 +550,9 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         
     def simulator_update_view(self):
         self.viewer.update_bitmap()
+        if len(self.__screenshot_filename):
+            self.viewer.export_bitmap(self.__screenshot_filename)
+            self.__screenshot_filename = ""
         
     def simulator_exception(self,e_type, e_value, e_traceback):
         QtGui.QMessageBox.critical(self,"{}: {}".format(e_type.__name__,e_value),"\n".join(format_exception(e_type,e_value,e_traceback)))
@@ -546,8 +577,6 @@ class SimulatorViewer(QtGui.QFrame):
         self.blt_bitmap = QtGui.QImage(self.size(), QtGui.QImage.Format_ARGB32)
         self.renderer = QtRenderer(self.blt_bitmap)
         self.resize_on_paint = False
-        # code for async calling of update
-        self.update_ = self.metaObject().method(self.metaObject().indexOfMethod('update()'))
 
     def paintEvent(self, event):
         super(SimulatorViewer, self).paintEvent(event)
@@ -558,6 +587,10 @@ class SimulatorViewer(QtGui.QFrame):
         dx = (self.width() - s.width())/2
         dy = (self.height() - s.height())/2
         painter.drawPixmap(QtCore.QRect(QtCore.QPoint(dx,dy),s),self.bitmap,self.bitmap.rect())
+
+    def export_bitmap(self,filename):
+        """Saves the view into a file."""
+        self.bitmap.save(filename)
         
     def update_bitmap(self):
         self.bitmap = QtGui.QPixmap.fromImage(self.blt_bitmap)
