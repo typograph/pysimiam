@@ -13,6 +13,7 @@ from qt_logdock import LogDock
 from ui import SimUI
 from traceback import format_exception
 from qt_plotwindow import create_predefined_plot_window # ,create_plot_window
+from simulator import Simulator
 
 class PlayPauseAction(QtGui.QAction):
     def __init__(self, parent, run_slot, pause_slot):
@@ -112,7 +113,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         self.sim_timer.setInterval(10)
         self.sim_timer.timeout.connect(self.update_time)
         
-        SimUI.__init__(self,self.viewer.renderer)
+        SimUI.__init__(self,self.viewer.renderer,Simulator)
 
         self.sim_timer.start()
 
