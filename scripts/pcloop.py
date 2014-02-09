@@ -298,7 +298,7 @@ class PCLoop(threading.Thread):
                 self.__renderer.set_screen_center_pose(pose.Pose(self.__robot.get_pose().x, self.__robot.get_pose().y, 0.0))
 
         self.__renderer.clear_screen()
-
+        self.__supervisor.draw_background(self.__renderer)
         for bg_object in self.__background:
             bg_object.draw(self.__renderer)
 
@@ -311,7 +311,7 @@ class PCLoop(threading.Thread):
                 self.__robot.draw_sensors(self.__renderer)
 
         if self.__draw_supervisors and self.__supervisor is not None:
-            self.__supervisor.draw(self.__renderer)
+            self.__supervisor.draw_foreground(self.__renderer)
 
         # update view
         self.__update_view()

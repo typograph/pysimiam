@@ -27,7 +27,6 @@ class QuickBotSupervisor(Supervisor):
        The UI may use the get_parameters function interface to create docker windows
        for real-time update of the PID parameters. This is an advanced implementation
        and is not required for students to properly implement their own supervisors."""
-
     ir_coeff = numpy.array([ 8.56495710e-18,  -3.02930608e-14,
                           4.43025017e-11,  -3.49052288e-08,
                           1.61452174e-05,  -4.44025236e-03,
