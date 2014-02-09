@@ -1,10 +1,89 @@
-import socket
 import re
+import sys
+import time
 
-baseIP = '192.168.0.119'
-robotIP = '192.168.0.110' # need to change this value for it to work
-port = 5005
+import socket
 
+class robosocket(socket.socket):
+    def __init__(self, baseIP, robotIP, port):
+
+        self.baseIP = baseIP
+        self.robotIP = robotIP
+        self.basePort = port
+        self.robotPort = port
+        if self.baseIP == self.robotIP: # Sorry, not enough computers
+            self.basePort += 1
+
+        self.replybuffer = ''
+
+        socket.socket.__init__(self, socket.AF_INET, socket.SOCK_DGRAM)
+        self.settimeout(10.0) # ten seconds to make a connection
+        try:
+            self.bind((self.baseIP, self.basePort))
+            self.settimeout(2.0)
+            
+        except socket.error as msg:
+            print(msg)
+            self.close()
+            raise
+              
+    def sendtorobot(self,command):
+        """Sends a command to the robot. The command will be delimited in accordance to the robot spec"""
+        command = "${}*\n".format(command)
+        if sys.version_info[0] == 3:
+            command = command.encode("utf-8")
+        i = 0
+        while i < len(command):
+            i += self.sendto(command[i:],(self.robotIP,self.robotPort))
+        
+    def recvreply(self):
+        """Read reply from the robot, that is anything up to `\n`"""
+        
+        # I'm not sure what will actually happen if we timeout in the middle
+        # of a reply (e.g. we read the first X characters, and then timeout)
+        # The next read might be completely messed up
+        
+        while self.replybuffer.find('\n') < 0:
+            try:
+                line = self.recv(1024) #receives up to 1024 bytes
+                if sys.version_info[0] == 3:
+                    line = line.decode("utf-8")
+            except socket.timeout as msg:
+                print('Message not received, timeout')
+                return None
+            
+            self.replybuffer += line
+
+        i_n = self.replybuffer.find('\n')
+        if i_n >= 0:
+            reply = self.replybuffer[:i_n]
+            self.replybuffer = self.replybuffer[(i_n+1):]
+            return reply
+
+        # Technically, unreachable code
+        return None
+        
+
+class connection:
+    def __init__(self, baseIP, robotIP, port):
+        self.baseIP = baseIP
+        self.robotIP = robotIP
+        self.port = port
+        
+    def __enter__(self):
+        self.comsocket = robosocket(self.baseIP, self.robotIP, self.port)       
+        return self.comsocket
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            self.comsocket.shutdown(socket.SHUT_RDWR)
+            self.comsocket.close()
+        except Exception:
+            pass
+        #if exc_value is not None:
+            #raise exc_type(exc_value).with_traceback(traceback)
+
+ 
 class quickserver:
     """Communication class for quickbot communication.
 
@@ -31,111 +110,71 @@ class quickserver:
     =========== ===========
 
     """
-    def __init__(self):
-        """Sets up the listening socket (binds to port on robotIP) and generates regex comparison formatting."""
+    def __init__(self, baseIP, robotIP, port):
+        """Sets up the listening socket and generates regex comparison formatting."""
         #Setup IP address for UDP (datagram communication)
         self.baseIP = baseIP
         self.robotIP = robotIP
         self.port = port
-        self.comsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.comsocket.settimeout(10.0) # ten seconds to make a connection
-
-        #Set up for listening on host port
-        try:
-            self.comsocket.bind((baseIP, port))
-
-            #if it works, shorten the delay time
-            self.comsocket.settimeout(2.0)
-
-        except socket.error as msg:
-            print msg
-            self.comsocket.close()
 
         #efficient regex processing
-        pattern = '-?[0-9]*\.[0-9]*' # repeats twice for most things
-        self.regex = re.compile(pattern)
+        numpattern = '-?[0-9]*(?:\.[0-9]*)?' # matches some floating-point number
+        self.rx_TWO = re.compile('\[(?P<LEFT>{0}), (?P<RIGHT>{0})\]'.format(numpattern))
+        self.rx_IR = re.compile('\[({0}), ({0}), ({0}), ({0}), ({0})\]'.format(numpattern))
 
-    def write(self, command):
-        """Write data in the `command` variable to the socket at a low level."""
-        self.comsocket.sendto(command, (self.robotIP, self.port))
-
-    def read(self):
-        """Read data from the socket at low level"""
-        #Need a try/catch to generate fail return (None object ref)
-        try:
-            line = self.comsocket.recv(1024) #receives up to 1024 bytes
-        except socket.error as msg:
-            print 'Message not received, timeout'
-            #Send a halt-message to avoid bumping into things
-            self.send_halt()
-            return None 
-
-        return line #success
+    def connect(self):       
+        return connection(self.baseIP, self.robotIP, self.port)
 
     def send_halt(self):
         """Sends the command to stop the quickbot"""
-        self.write('$PWM=0.0,0.0*\n')
+        with self.connect() as connection:
+            connection.sendtorobot('PWM=0.0,0.0')
 
-    def set_speeds(self, l, r): #same function name as JP
+    def set_speeds(self, l, r, connection): #same function name as JP
         """Send the command to set the right and left motor velocities/PWM"""
-        s = '$PWM={0},{1}*\n'.format(l, r)
-        self.write(s)
+        connection.sendtorobot( 'PWM={0:.0f},{1:.0f}'.format(l, r) )
 
-    def get_encoder_ticks(self):
-        """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
-        self.write('$ENVAL=?*\n')
-        data = self.read()
+    def get_encoder_ticks(self, connection):
+        """Sends the command to retrieve the right and left encode values. Returns a tuple of (cl, cr)"""
+        connection.sendtorobot('ENVAL?')
+        data = connection.recvreply()
         if data is not None:
-            res = self.regex.findall(data)
-            if res is not None: #we get a match
-                #important to check for more values than the two encoder data
-                if len(res) == 2:                     
-                    #map to a tuple of floats.
-                    #the output format is (tl, tr) tuple
-                    return tuple(map(float,res)) #a mouthful
+            m = self.rx_TWO.match(data)
+            if m is not None: #we get a match
+                return float(m.group('LEFT')), float(m.group('RIGHT'))
 
         return None #default fail
-
         
-    def get_encoder_velocity(self):
+    def get_encoder_velocity(self, connection):
         """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
-        self.write('$ENVEL=?*\n')
-        data = self.read()
+        connection.sendtorobot('ENVEL?')
+        data = connection.recvreply()
         if data is not None:
-            res = self.regex.findall(data)
-            if res is not None: #we get a match
-                #important to check for more values than just two encoder data 
-                if len(res) == 2:                     
-                    #map to a tuple of floats.
-                    #the output format is (vl, vr) tuple
-                    return tuple(map(float,res)) #a mouthful
+            m = self.rx_TWO.match(data)
+            if m is not None: #we get a match
+                return float(m.group('LEFT')), float(m.group('RIGHT'))
 
         return None #default fail
 
-    def get_ir_raw_values(self):
+    def get_ir_raw_values(self, connection):
         """Sends the command to retrieve the infrared sensors, returns 5-tuple sensor ADC values."""
-        self.write('$IRVAL=?*\n')
-        data = self.read()
+        connection.sendtorobot('IRVAL?')
+        data = connection.recvreply()
         if data is not None:
-            res = self.regex.findall(data) #check __init__ for statement 
-            if res is not None: #we get a match
-                #important to check to ensure we are receiving ir data 
-                # map to a tuple of floats.
-                # the output format is (vl, vr) tuple
-                if len(res) == 5: return tuple(map(lambda c: float(c),res))
+            m = self.rx_IR.match(data)
+            if m is not None: #we get a match
+                return map(int,m.groups())
 
         return None #default fail
 
-    def close(self):
-        """Close the socket--it's imperative to close the socket before closing program"""
-        #Close socket
-        try:
-            self.send_halt() #stop the bot
-            self.send_halt() #stop the bot, for good measure
+    def ping(self):
+        with self.connect() as connection:
+            connection.sendtorobot('CHECK')
+            reply = connection.recvreply()
+            print('Robot says "{}"'.format(reply))
+            if reply is None or not len(reply):
+                raise IOError("Robot check failed")
 
-            #Shutdown is not required, but network programmers frown when they don't see it.
-            #self.comsocket.shutdown()
-            self.comsocket.close()
-            self.comsocket = None 
-        except socket.error as msg:
-            print msg
+    def __del__(self):
+        """Stop the robot on delete"""
+        self.send_halt() #stop the bot

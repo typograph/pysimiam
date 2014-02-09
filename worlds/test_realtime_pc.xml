@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<simulation>
+    <robot type="quickbot_interface.QuickBot" options='{"baseIP":"localhost", "robotIP":"localhost", "port":7777}'>
+        <pose theta="1.5707963267948966" x="0.0" y="-0.0"/>
+        <supervisor type="quickbotdefaultsupervisor.QuickBotDefaultSupervisor"/>
+    </robot>
+</simulation>
