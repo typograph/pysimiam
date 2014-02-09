@@ -33,7 +33,7 @@ class QuickBotSupervisor(Supervisor):
                           1.61452174e-05,  -4.44025236e-03,
                           6.74137385e-1])
        
-    def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_info, options = None):
         """Initialize internal variables"""
         Supervisor.__init__(self, robot_pose, robot_info)
 

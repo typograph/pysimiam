@@ -14,7 +14,7 @@ class QuickBotDefaultSupervisor(QuickBotSupervisor):
     """K3Default supervisor creates two controllers: gotogoal and avoidobstacles.
        It switches between the two depending on the distance to the closest
        obstacle."""
-    def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_info, options = None):
         """Create controllers and the state transitions"""
         QuickBotSupervisor.__init__(self, robot_pose, robot_info)
 
