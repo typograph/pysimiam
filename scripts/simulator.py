@@ -124,6 +124,7 @@ class Simulator(threading.Thread):
                     # Create robot
                     robot_class = helpers.load_by_name(robot_type,'robots')
                     robot = robot_class(pose.Pose(robot_pose))
+                    robot.set_logqueue(self.__log_queue)
                     if robot_color is not None:
                         robot.set_color(robot_color)
                     elif len(self.__robots) < 8:

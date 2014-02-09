@@ -9,7 +9,7 @@
 import numpy as np
 from pose import Pose
 from sensor import ProximitySensor
-from robot import Robot
+from robot import SimBot as Robot
 from math import ceil, exp, sin, cos, tan, pi
 from helpers import Struct
 
