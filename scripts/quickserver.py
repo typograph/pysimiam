@@ -14,6 +14,9 @@ class robosocket(socket.socket):
         if self.baseIP == self.robotIP: # Sorry, not enough computers
             self.basePort += 1
 
+        #print("PC coordinates {}:{}".format(self.baseIP,self.basePort))
+        #print("Robot coordinates {}:{}".format(self.robotIP,self.robotPort))
+
         self.replybuffer = ''
 
         socket.socket.__init__(self, socket.AF_INET, socket.SOCK_DGRAM)
@@ -69,20 +72,23 @@ class connection:
         self.baseIP = baseIP
         self.robotIP = robotIP
         self.port = port
+        self.comsocket = None
         
     def __enter__(self):
-        self.comsocket = robosocket(self.baseIP, self.robotIP, self.port)       
+        if self.comsocket is None:
+            self.comsocket = robosocket(self.baseIP, self.robotIP, self.port)       
         return self.comsocket
         
     def __exit__(self, exc_type, exc_value, traceback):
+        # Shutdown always fails, because there is nothing connected at the other side
+        #self.comsocket.shutdown(socket.SHUT_RDWR)
         try:
-            self.comsocket.shutdown(socket.SHUT_RDWR)
             self.comsocket.close()
-        except Exception:
-            pass
-        #if exc_value is not None:
-            #raise exc_type(exc_value).with_traceback(traceback)
-
+            self.comsocket = None
+        except Exception as e:
+            print('Closing socket failed!')
+            #raise
+        return False
  
 class quickserver:
     """Communication class for quickbot communication.
@@ -130,6 +136,11 @@ class quickserver:
         with self.connect() as connection:
             connection.sendtorobot('PWM=0.0,0.0')
 
+    def send_reset(self):
+        """Sends the command to stop the quickbot"""
+        with self.connect() as connection:
+            connection.sendtorobot('RESET')
+
     def set_speeds(self, l, r, connection): #same function name as JP
         """Send the command to set the right and left motor velocities/PWM"""
         connection.sendtorobot( 'PWM={0:.0f},{1:.0f}'.format(l, r) )
@@ -163,7 +174,7 @@ class quickserver:
         if data is not None:
             m = self.rx_IR.match(data)
             if m is not None: #we get a match
-                return map(int,m.groups())
+                return list(map(int,m.groups()))
 
         return None #default fail
 
@@ -175,6 +186,3 @@ class quickserver:
             if reply is None or not len(reply):
                 raise IOError("Robot check failed")
 
-    def __del__(self):
-        """Stop the robot on delete"""
-        self.send_halt() #stop the bot

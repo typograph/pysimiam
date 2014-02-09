@@ -424,11 +424,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
     @QtCore.pyqtSlot()
     def update_time(self):
         if self.simulator_thread.is_running():
-            t = self.simulator_thread.get_time()
-            minutes = int(t//60)
-            #self.time_label.setText("%02d:%04.1f"%(minutes,t - minutes*60))
-            self.status_label.setText(
-                "Simulation running... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
+            self.status_label.setText("Controlling robot...")
         self.process_events(True)
         
     def apply_parameters(self, robot_id, params):
@@ -467,15 +463,12 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
                 plot.clear_data()
     
     def simulator_paused(self):
-        t = self.simulator_thread.get_time()
-        minutes = int(t//60)
-        self.status_label.setText(
-            "Simulation paused... {:02d}:{:04.1f}".format(minutes,t - minutes*60))
+        self.status_label.setText("Robot paused")
 
     def simulator_reset(self):
         self.run_action.reset()
         self.run_action.setEnabled(True)
-        self.status_label.setText("Simulation ready")
+        self.status_label.setText("Robot ready")
         self.__clear_graph_on_start = True
  
     def simulator_stopped(self):

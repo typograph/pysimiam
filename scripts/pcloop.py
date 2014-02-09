@@ -298,7 +298,8 @@ class PCLoop(threading.Thread):
                 self.__renderer.set_screen_center_pose(pose.Pose(self.__robot.get_pose().x, self.__robot.get_pose().y, 0.0))
 
         self.__renderer.clear_screen()
-        self.__supervisor.draw_background(self.__renderer)
+        if self.__draw_supervisors and self.__supervisor is not None:
+            self.__supervisor.draw_background(self.__renderer)
         for bg_object in self.__background:
             bg_object.draw(self.__renderer)
 
@@ -413,16 +414,21 @@ class PCLoop(threading.Thread):
     def start_simulation(self):
         """Start/continue the simulation"""
         if self.__robot is not None:
+            self.__robot.resume()
             self.__state = RUN
             self._out_queue.put(('running',()))
 
     def pause_simulation(self):
         """Pause the simulation"""
+        if self.__robot is not None:
+            self.__robot.pause()
         self.__state = PAUSE
         self._out_queue.put(('paused',()))
 
     def reset_simulation(self):
         """Reset the simulation to the start position"""
+        if self.__robot is not None:
+            self.__robot.reset()
         self.__state = DRAW_ONCE
         self.__reset_world()
 

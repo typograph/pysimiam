@@ -142,6 +142,12 @@ class QuickBot(RealBot, quickserver):
         self.info.wheels.left_ticks = 0
         self.info.wheels.right_ticks = 0
         
+        self.info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
+        self.info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
+
+        self.info.wheels.vel_left = 0
+        self.info.wheels.vel_right = 0
+
         self.info.ir_sensors = Struct()
         self.info.ir_sensors.poses = ir_sensor_poses
         self.info.ir_sensors.rmax = 0.3
@@ -175,8 +181,8 @@ class QuickBot(RealBot, quickserver):
         
         # We have to update walls here. WHY?
         for pose, dst in zip(self.info.ir_sensors.poses,np.polyval(self.ir_coeff, self.info.ir_sensors.readings)):
-            if dst < self.info.ir_sensors.rmax:
-                self.walls.add_point(pose >> self.get_pose())
+            if dst/self.info.ir_sensors.rmax <= 0.99:
+                self.walls.add_point(Pose(dst) >> pose >> self.get_pose())
 
     def draw(self,r):
         self.walls.draw(r)
@@ -224,7 +230,7 @@ class QuickBot(RealBot, quickserver):
         rmin = self.info.ir_sensors.rmin
         rmax = self.info.ir_sensors.rmax
 
-        if dst >= rmax:
+        if dst/rmax > 0.99:
             renderer.set_brush(0x33FF5566)
         else:
             renderer.set_brush(0xCCFF5566)
@@ -283,7 +289,8 @@ class QuickBot(RealBot, quickserver):
             if speeds is None:
                 raise RuntimeError("Communication with QuickBot failed")
         
-        self.info.wheels.vel_left, self.info.wheels.vel_right = self.pwm2v(*speeds)
+        if speeds is not None:
+            self.info.wheels.vel_left, self.info.wheels.vel_right = self.pwm2v(*speeds)
 
     def update_external_info(self):
         "Communicate with the robot"
@@ -303,6 +310,11 @@ class QuickBot(RealBot, quickserver):
                 raise RuntimeError("Communication with QuickBot failed")
             
             self.info.ir_sensors.readings = irs
+
+    def reset(self):        
+        self.__paused = True
+        self.info.wheels.vel_left, self.info.wheels.vel_right = 0,0
+        self.send_reset()
         
     def pause(self):        
         self.__paused = True

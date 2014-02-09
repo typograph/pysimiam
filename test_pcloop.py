@@ -15,4 +15,5 @@ if __name__ == "__main__":
     simWidget = SimulationWidget()
     simWidget.show()
     simWidget.load_world("test_realtime_pc.xml")
+    simWidget.run_simulation()
     app.exec_()
