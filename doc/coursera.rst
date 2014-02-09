@@ -61,20 +61,20 @@ You will have access to the array of five IR sensors that encompass the QuickBot
    :header: "Distance (m)", "Voltage (V)", "ADC out"
    :widths: 12, 12, 12
 
-    0.04 , 2.750 , 1375
-    0.05 , 2.350 , 1175
-    0.06 , 2.050 , 1025
-    0.07 , 1.750 , 875
-    0.08 , 1.550 , 775
-    0.09 , 1.400 , 700
-    0.10 , 1.275 , 637
-    0.12 , 1.075 , 537
-    0.14 , 0.925 , 462
-    0.16 , 0.805 , 402
-    0.18 , 0.725 , 362
-    0.20 , 0.650 , 325
-    0.25 , 0.500 , 250
-    0.30 , 0.400 , 200
+    0.04 , 2.750 , 917
+    0.05 , 2.350 , 783
+    0.06 , 2.050 , 683
+    0.07 , 1.750 , 583
+    0.08 , 1.550 , 517
+    0.09 , 1.400 , 467
+    0.10 , 1.275 , 425
+    0.12 , 1.075 , 358
+    0.14 , 0.925 , 308
+    0.16 , 0.805 , 268
+    0.18 , 0.725 , 242
+    0.20 , 0.650 , 217
+    0.25 , 0.500 , 167
+    0.30 , 0.400 , 133
     
 Your supervisor can access the IR array through the ``robot_info`` object that is passed into the ``execute`` function. For example::
 
@@ -87,9 +87,8 @@ To use the sensor readings, you will have to convert them to actual distances. F
     :nowrap:
 
     \begin{equation*}
-      V_{\text{ADC}} = \frac{1000\cdot V_{\text{analog}}}{2} = 500\cdot V_{\text{analog}}
+      V_{\text{ADC}} = \left\lfloor\frac{1000\cdot V_{\text{analog}}}{3}\right\rfloor
     \end{equation*}
-
 
 Converting from the the analog output voltage to a distance is a little bit more complicated, because a) the relationships between analog output voltage and distance is not linear, and b) the look-up table provides a coarse sample of points.
 You can use any way you like to convert between sensor readings and distances. For example, you can use the `SciPy <http://www.scipy.org/Download>`_ mathematical library and interpolate the curve using `scipy.interpolate.inter1d <http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy-interpolate-interp1d>`_. Or you can fit the provided points with a high-degree polynomial and use this fit.

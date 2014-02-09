@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper, QSettings
 from helpers import Struct
 from collections import OrderedDict
 from traceback import format_exception
@@ -45,6 +45,14 @@ class CourseraDock(QtGui.QDockWidget):
         self.password.setEchoMode(QtGui.QLineEdit.Password)
         self.password.textEdited.connect(self.check_logpass)
         
+        self.cache = QSettings('pySimiam','coursera')
+        if sys.version_info[0] < 3:
+            self.login.setText(self.cache.value('username','').toString())
+            self.password.setText(self.cache.value('password','').toString())
+        else:
+            self.login.setText(self.cache.value('username',''))
+            self.password.setText(self.cache.value('password',''))
+        
         self.tests = []
         
         fl = QtGui.QFormLayout(panel)
@@ -82,6 +90,8 @@ class CourseraDock(QtGui.QDockWidget):
 
         #vl.setStretch(2,1)
         vl.addStretch(1)
+        
+        self.check_logpass() # Enable if login/password match
     
     def enable_testing(self,enable):
         for btn in self.tests:
@@ -106,11 +116,18 @@ class CourseraDock(QtGui.QDockWidget):
         self.enable_testing(True)
         
     def check_logpass(self):
-        self.enable_testing(bool(str(self.login.text()).strip()) and bool(str(self.password.text()).strip()))
+        if sys.version_info[0] < 3:
+            valid_ = not self.login.text().isEmpty() and not self.password.text().isEmpty()
+        else:
+            valid_ = bool(self.login.text()) and bool(self.password.text())
+        if valid_:
+            self.cache.setValue('username',self.login.text())
+            self.cache.setValue('password',self.password.text())
+        self.enable_testing(valid_)
         
     def closeEvent(self,event):
         super(CourseraDock,self).closeEvent(event)
         if event.isAccepted():
             print('closed')
-            self.closed.emit(True)        
+            self.closed.emit(True)
             
