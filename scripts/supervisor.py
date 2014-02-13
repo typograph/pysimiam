@@ -132,10 +132,13 @@ class Supervisor:
           identifier if the parameter structure has several fields, identical in
           structure. If the key is a string, it is used both as a label, capitalized,
           and as a field name.
-        - The second part of a tuple (value) is either a float, in which case
-          it describes one parameter, or a (string, list of strings) tuple,
-          for multiple-choice paramaters, or lists, structured the same way
-          the root list is structured.
+        - The second part of a tuple (value) describes the contents of a UI element.
+          It can be either a primitive type, such as an int, a bool or a float,
+          in which case it describes one parameter, or a (string, list of strings) tuple,
+          for multiple-choice parameters, or an object of type :class:`~ui.Parameter`,
+          that allows one to describe the interface more precisely. This value can also
+          be a list, structured the same way the root list is structured, in which case
+          this element contains a subwindow.
         
         Must be implemented in subclasses.
         """

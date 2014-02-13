@@ -2,6 +2,84 @@ try:
     import Queue as queue
 except ImportError:
     import queue
+
+from helpers import Struct
+
+class Parameter(Struct):
+    """Parameter represents a single GUI element that is used to build a parameter window
+       in the UI (simulator event "make_param_window").
+       
+       The following parameters are supported:
+       
+       ----------------------------------------------------------------------------------------
+        Parameter(Parameter.GROUP, contents)
+        Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
+        Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
+        Parameter(Parameter.BOOL, value)
+        Parameter(Parameter.SELECT, value, available_values)
+       ----------------------------------------------------------------------------------------
+              
+    """
+    
+    GROUP, INT, FLOAT, BOOL, SELECT = 0,1,2,3,4
+    
+    def __init__(self, elem_type, *args, **kwargs):
+
+        self.type = elem_type
+
+        if elem_type == self.GROUP and len(args) == 1:           
+            self.contents = args[0]
+            
+        elif elem_type == self.INT and len(args) >= 1 and len(args) <= 3:            
+            self.value = args[0]
+
+            if len(args) > 1:
+                self.min_value = args[1]
+            elif 'min_value' in kwargs:
+                self.min_value = kwargs['min_value']
+            #else:
+                self.min_value = -100
+                
+            if len(args) > 2:
+                self.max_value = args[2]
+            elif 'max_value' in kwargs:
+                self.max_value = kwargs['max_value']
+            else:
+                self.max_value = 100
+                
+        elif elem_type == self.FLOAT and len(args) >= 1 and len(args) <= 4:
+            self.value = args[0]
+
+            if len(args) > 1:
+                self.step = args[1]
+            elif 'step' in kwargs:
+                self.step = kwargs['step']
+            else:
+                self.step = 1.0
+
+            if len(args) > 2:
+                self.min_value = args[2]
+            elif 'min_value' in kwargs:
+                self.min_value = kwargs['min_value']
+            else:
+                self.min_value = -1000.0
+                
+            if len(args) > 3:
+                self.max_value = args[3]
+            elif 'max_value' in kwargs:
+                self.max_value = kwargs['max_value']
+            else:
+                self.max_value = 1000.0
+
+        elif elem_type == self.BOOL and len(args) == 1:
+            self.value = args[0]
+            
+        elif elem_type == self.SELECT and len(args) == 2:
+            self.value = args[0]
+            self.value_list = args[1]
+            
+        else:
+            raise ValueError("Wrong parameters to ui.Parameter {} {}".format(args,kwargs))
     
 import simulator as sim
 
