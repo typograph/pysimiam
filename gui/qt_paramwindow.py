@@ -6,6 +6,7 @@ from xmlwriter import XMLWriter
 from collections import OrderedDict
 from traceback import format_exception
 import sys
+from ui import Parameter
 
 # Constructing UI from parameters:
 # 
@@ -21,16 +22,20 @@ import sys
 # A dictionary node which contains dictionary nodes is a groupbox,
 # if it has at least one of such nodes inside
 
-class Entry():
-    def __init__(self,label,value):
+class FloatEntry():
+    def __init__(self, label, value, step, min_value, max_value):
         self.label = label
         self.value = value
+        self.step = step
+        self.min_value = min_value
+        self.max_value = max_value
     
     def create_widgets(self,parent,layout):
         """Create a label and a spinbox in layout"""
         self.control = QtGui.QDoubleSpinBox(parent)
-        self.control.setMinimum(-1000.0)
-        self.control.setMaximum(1000.0)
+        self.control.setMinimum(self.min_value)
+        self.control.setMaximum(self.max_value)
+        self.control.setSingleStep(self.step)
         self.control.setValue(self.value)
         layout.addRow(self.label,self.control)
     
@@ -42,6 +47,50 @@ class Entry():
         
     def set_value(self, value):
         self.control.setValue(value)
+
+class IntEntry():
+    def __init__(self, label, value, min_value, max_value):
+        self.label = label
+        self.value = value
+        self.min_value = min_value
+        self.max_value = max_value
+    
+    def create_widgets(self, parent, layout):
+        """Create a label and a spinbox in layout"""
+        self.control = QtGui.QSpinBox(parent)
+        self.control.setMinimum(self.min_value)
+        self.control.setMaximum(self.max_value)
+        self.control.setValue(self.value)
+        layout.addRow(self.label,self.control)
+    
+    def get_value(self):
+        return self.control.value()
+
+    def get_struct(self):
+        return self.get_value()
+        
+    def set_value(self, value):
+        self.control.setValue(value)
+        
+class BoolEntry():
+    def __init__(self, label, value):
+        self.label = label
+        self.value = value
+    
+    def create_widgets(self,parent,layout):
+        """Create a label and a spinbox in layout"""
+        self.control = QtGui.QCheckBox(parent)
+        self.control.setChecked(self.value)
+        layout.addRow(self.label,self.control)
+    
+    def get_value(self):
+        return self.control.isChecked()
+
+    def get_struct(self):
+        return self.get_value()
+        
+    def set_value(self, value):
+        self.control.setChecked(value)
 
 class ChoiceEntry():
     def __init__(self,label,value,options):
@@ -103,11 +152,24 @@ class Group():
                 raise ValueError("Invalid tree key")
             
             if isinstance(value,float):
-                self.leafs[dict_key] = Entry(child_label,value)
+                self.leafs[dict_key] = FloatEntry(child_label,value,1.0,-1000.0,1000.0)
             elif isinstance(value,int):
-                self.leafs[dict_key] = Entry(child_label,float(value))
+                self.leafs[dict_key] = IntEntry(child_label, value, -100, 100)
             elif isinstance(value,tuple):
                 self.leafs[dict_key] = ChoiceEntry(child_label,value[0],value[1])
+            elif isinstance(value,Parameter):
+                if value.type == Parameter.INT:
+                    self.leafs[dict_key] = IntEntry(child_label, value.value, value.min_value, value.max_value)
+                elif value.type == Parameter.FLOAT:
+                    self.leafs[dict_key] = FloatEntry(child_label, value.value, value.step, value.min_value, value.max_value)
+                elif value.type == Parameter.BOOL:
+                    self.leafs[dict_key] = BoolEntry(child_label,value.value)
+                elif value.type == Parameter.SELECT:
+                    self.leafs[dict_key] = ChoiceEntry(child_label,value.value, value.value_list)
+                elif value.type == Parameter.GROUP:
+                    self.leafs[dict_key] = Group(child_label,value.contents)
+                else:
+                    raise ValueError("Unrecognized Parameter type {}".format(value.type))
             else:
                 self.leafs[dict_key] = Group(child_label,value)
         

@@ -7,7 +7,7 @@ sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
 from qt_renderer import QtRenderer
-from qt_dockwindow import ParamDock, DockManager
+from qt_paramwindow import ParamDock, DockManager
 from qt_courseradock import CourseraDock
 from qt_logdock import LogDock
 from ui import SimUI
