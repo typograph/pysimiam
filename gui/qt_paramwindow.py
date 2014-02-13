@@ -153,6 +153,8 @@ class Group():
             
             if isinstance(value,float):
                 self.leafs[dict_key] = FloatEntry(child_label,value,1.0,-1000.0,1000.0)
+            elif isinstance(value,bool): # A bool is an int, so it is important to check for bools first
+                self.leafs[dict_key] = BoolEntry(child_label, value)
             elif isinstance(value,int):
                 self.leafs[dict_key] = IntEntry(child_label, value, -100, 100)
             elif isinstance(value,tuple):
