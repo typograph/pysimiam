@@ -9,15 +9,13 @@ class Parameter(Struct):
     """Parameter represents a single GUI element that is used to build a parameter window
        in the UI (simulator event "make_param_window").
        
-       The following parameters are supported:
+       The following parameters are supported::
        
-       ----------------------------------------------------------------------------------------
-        Parameter(Parameter.GROUP, contents)
-        Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
-        Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
-        Parameter(Parameter.BOOL, value)
-        Parameter(Parameter.SELECT, value, available_values)
-       ----------------------------------------------------------------------------------------
+            Parameter(Parameter.GROUP, contents)
+            Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
+            Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
+            Parameter(Parameter.BOOL, value)
+            Parameter(Parameter.SELECT, value, available_values)
               
     """
     

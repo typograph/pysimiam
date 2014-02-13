@@ -34,7 +34,7 @@ PyQt4 implementation
 .. automodule:: qt_mainwindow
     :members:
         
-.. automodule:: qt_dockwindow
+.. automodule:: qt_paramwindow
     :members:
 
 wxPython implementation
