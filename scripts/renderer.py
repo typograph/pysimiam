@@ -245,8 +245,8 @@ class Renderer:
         self.translate(pose.x, pose.y)
         self.rotate(pose.theta)
 
-    def set_pen(self, color):
-        """Sets the line color.
+    def set_pen(self, color = 0, thickness = 1):
+        """Sets the line color anf thickness.
         
         Color is interpreted as `0xAARRGGBB`. In case `AA == 0` the color
         is considered fully opaque.
