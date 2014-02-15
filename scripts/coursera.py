@@ -1,8 +1,12 @@
-#
 # Testing solutions for Coursera
+# (c) PySimiam Team 2014
 #
+# Contact person: Tim Fuchs <typograph@elec.ru>
 #
+# This class was implemented for the weekly programming excercises
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
+
 try:
   from urllib import urlencode
   from urllib2 import urlopen
@@ -498,7 +502,7 @@ class Week4(WeekTest):
     
     self.testname = "Programming Assignment Week 4"
     
-    self.week = 3
+    self.week = 4
     self.tests.append(Week4Test1(self))
     self.tests.append(Week4Test2(self))
 

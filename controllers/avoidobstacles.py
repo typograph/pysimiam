@@ -9,6 +9,7 @@
 from controllers.pid_controller import PIDController
 import math
 import numpy
+from pose import Pose
 
 class AvoidObstacles(PIDController):
     """Avoid obstacles is an example controller that checks the sensors
@@ -26,11 +27,11 @@ class AvoidObstacles(PIDController):
         """
         PIDController.set_parameters(self,params)
 
-        self.poses = params.sensor_poses
+        self.sensor_poses = params.sensor_poses
 
         # Now we know the poses, it makes sense to also
         # calculate the weights
-        self.weights = [(math.cos(p.theta)+1.5) for p in self.poses]
+        self.weights = [(math.cos(p.theta)+1.5) for p in self.sensor_poses]
         
         # Normalizing weights
         ws = sum(self.weights)

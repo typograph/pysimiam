@@ -38,3 +38,11 @@ class Robot(SimObject):
            This function is used to update the sensor readings in proximity
            sensors."""
         raise NotImplementedError("Robot.get_external_sensors")
+
+    def set_logqueue(self,logqueue):
+        self.logqueue = logqueue
+    
+    def log(self, message):
+        print("{}: {}".format(self.__class__.__name__,message))
+        if self.logqueue is not None:
+            self.logqueue.append((self,message))    
