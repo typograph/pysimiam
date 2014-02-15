@@ -564,7 +564,7 @@ class Simulator(threading.Thread):
         if len(collisions) > 0:
             # Test code - print out collisions
             for (robot, obstacle) in collisions:
-                self.log("Collision with {}".format(obstacle), obj = robot)
+                self.log("Collision with {}".format(obstacle), obj = robot, color=robot.get_color())
             # end of test code
             return True
                 
@@ -591,11 +591,11 @@ class Simulator(threading.Thread):
                 self.log("Wrong simulator event format '{}'".format(tpl))
             self.__in_queue.task_done()
     
-    def log(self, message, obj=None):
+    def log(self, message, obj=None, color=None):
         if obj is None:
             obj = self
         print("{}: {}".format(obj.__class__.__name__,message))
-        self._out_queue.put(("log",(message,obj.__class__.__name__,None)))
+        self._out_queue.put(("log",(message,obj.__class__.__name__,color)))
         
     def fwd_logqueue(self):
         while self.__log_queue:
