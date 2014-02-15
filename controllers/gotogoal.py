@@ -33,3 +33,13 @@ class GoToGoal(PIDController):
 
         goal_angle = self.get_heading_angle(state)
         return numpy.array([math.cos(goal_angle),math.sin(goal_angle),1])
+    
+    def execute(self, state, dt):
+        
+        v, w = PIDController.execute(self, state, dt)
+        
+        # Week 5 code
+        #
+        # 
+        
+        return v, w

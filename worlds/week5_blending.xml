@@ -1,8 +1,8 @@
 <simulation>
     <app type="ControlApp" />
     
-    <robot type="Khepera3">
-        <supervisor type="week5_blending.K3BlendingSupervisor" />
+    <robot type="QuickBot">
+        <supervisor type="week5_blending.QBBlendingSupervisor" />
         <pose x="0" y="0" theta="0.2618" />
     </robot>
         
@@ -35,6 +35,26 @@
             <point x="0" y="0.3" />
         </geometry>
     </obstacle>
+
+    <obstacle>
+      <pose x="-0.1" y="-0.4" theta="0" />
+      <geometry>
+        <point x="0" y="0" />
+        <point x="0.6" y="0" />
+        <point x="0.6" y="0.2" />
+        <point x="0" y="0.2" />
+      </geometry>
+    </obstacle>
+
+    <obstacle>
+      <pose x="-0.4" y="0.0" theta="1.0472" />
+      <geometry>
+        <point x="0" y="0" />
+        <point x="0.6" y="0" />
+        <point x="0.6" y="0.2" />
+        <point x="0" y="0.2" />
+      </geometry>
+    </obstacle>    
     
     <!--<obstacle>
         <pose x="0.2" y="0.8" theta="0" />

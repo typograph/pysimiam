@@ -628,3 +628,181 @@ class Week4Test2(WeekTestCase):
         
         self.testsuite.gui.run_simulation()
      
+class Week5(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 5"
+    
+    self.week = 5
+    self.tests.append(Week5Test1(self))
+    self.tests.append(Week5Test2(self))
+    
+class Week5Test1(WeekTestCase):
+    """Test 1: check if robot reaches the goal in 60 seconds"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Collision-free navigation with blending"
+        self.test_id = "HChwie7B"
+
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
+        
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 60: # Stop after 60 seconds
+            self.stop_test(False)
+        
+        if event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False)
+        elif event == "plot_update": # get dr
+            
+            dst2goal = args[0][self.dst2goal]
+            if dst2goal < 0.05:
+                self.stop_test(True)
+               
+#            del args[0][self.dst2goal]
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+
+            params[0][1][0] = ('x', self.p.goal.x)
+            params[0][1][1] = ('y', self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
+            
+        return False
+        
+    def stop_test(self, passed):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+        
+        self.testsuite.respond("{:d}".format(passed))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        self.v = vals['v']
+        self.goal = (vals['x_g'],vals['y_g'])
+        
+        self.p = helpers.Struct()
+        self.p.velocity = helpers.Struct({'v':vals['v']})
+        self.p.goal = helpers.Struct({'x':vals['x_g'], 'y':vals['y_g']})
+        self.p.gains = helpers.Struct({'kp':4, 'ki':0.1, 'kd':0})
+        
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            self.p.gains = dock.widget().contents.get_struct().gains
+        
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world('week5_blending.xml')
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)        
+        self.testsuite.gui.run_simulation()
+
+
+class Week5Test2(WeekTestCase):
+    """Test 2: check if robot can take care of itself for 60 seconds"""
+    def __init__(self, week):
+        self.testsuite = week
+        self.name = "Collision-free navigation with switching"
+        self.test_id = "7TGoq1mz"
+
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
+        
+        self.cdist = 100
+        self.switches = 0
+        self.switch_RX = re.compile(r'^Switched to (?P<CNT>.*)$')
+        
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 60: # Stop after 60 seconds
+            self.stop_test(False, self.switches)
+        
+        if event == "plot_update": # get dr
+            
+            self.cdist = args[0][self.dst2goal]
+            if self.cdist < 0.05:
+                self.stop_test(True, self.switches)
+                
+        elif event == "log":
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False, self.switches)
+            else:
+                m = self.switch_RX.match(message)
+                if m is not None:
+                    self.switches += 1
+                    cnt = m.group('CNT')
+                    if cnt == "Hold":
+                        if self.cdist > 0.2:
+                            print("The robot stopped too far from the goal.")
+                            self.stop_test(False, self.switches)
+                        else:
+                            self.stop_test(True, self.switches)
+
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+
+            params[0][1][0] = ('x', self.p.goal.x)
+            params[0][1][1] = ('y', self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
+            
+        return False
+        
+    def stop_test(self, passed, nswitches):
+        runtime = self.testsuite.gui.simulator_thread.get_time()
+        
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+
+        print('The supervisor switched {} times in {} seconds'.format(nswitches,runtime))
+
+        self.testsuite.respond("{:d},{:d}".format(passed,(nswitches/runtime <= self.max_shz)))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals or 's_hz' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+        
+        self.max_shz = vals['s_hz']
+        
+        self.v = vals['v']
+        self.goal = (vals['x_g'],vals['y_g'])
+        
+        self.p = helpers.Struct()
+        self.p.velocity = helpers.Struct({'v':vals['v']})
+        self.p.goal = helpers.Struct({'x':vals['x_g'], 'y':vals['y_g']})
+        self.p.gains = helpers.Struct({'kp':4, 'ki':0.1, 'kd':0})
+        
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            self.p.gains = dock.widget().contents.get_struct().gains
+        
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world('week5_switching.xml')
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)        
+        self.testsuite.gui.run_simulation()
+        

@@ -49,4 +49,18 @@ class AvoidObstacles(PIDController):
                 
         # End Week 4 Assignment
      
-        return x, y, 1
+        return numpy.array([x, y, 1])
+    
+    def execute(self, state, dt):
+        
+        v, w = PIDController.execute(self, state, dt)
+        
+        # Week 5 code
+        #
+        
+        dmin = min(state.sensor_distances)
+        v *= ((dmin - 0.04)/0.26)**2
+        
+        # 
+        
+        return v, w    

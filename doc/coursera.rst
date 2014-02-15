@@ -693,35 +693,60 @@ The simulator for this week can be run with::
     
     >>> python qtsimiam_week5.py
 
-You are encouraged (but not required) to reuse your code from week 4, by replacing the `set_parameters` and `get_heading` method in ``pysimiam/controllers/avoidobstacles.py`` with your solutions.
+You are encouraged (but not required) to reuse your code from week 4, by replacing the `set_parameters` and `get_heading` method in ``controllers/avoidobstacles.py`` with your solutions. Note that the ``self.vectors`` variable is not needed anymore, so you can optimize your code further by getting rid of it, if you want.
 
-Start by downloading the new robot simulator for this week from GitHub. This week you will be making a small improvement to the go-to-goal and avoid-obstacle controllers and testing two arbitration mechanisms: blending and hard switches. Arbitration between the two controllers will allow the robot to drive to a goal, while not colliding with any obstacles on the way.
+This week you will be making a small improvement to the go-to-goal and avoid-obstacle controllers and testing two arbitration mechanisms: blending and hard switches. Arbitration between the two controllers will allow the robot to drive to a goal, while not colliding with any obstacles on the way.
 
 Linear velocity dependent on angular velocity
 ---------------------------------------------
 
-So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, `v`, to a constant value defined in the simulator. While this approach works, it certainly leave plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
+So far, we have implemented controllers that either steer the robot towards a goal location, or steer the robot away from an obstacle. In both cases, we have set the linear velocity, `v`, to a constant value defined by the user. While this approach works, it certainly leaves plenty of room for improvement. We will improve the performance of both the go-to-goal and avoid-obstacles behavior by dynamically adjusting the linear velocity based on the angular velocity of the robot.
 
-The actuator limits of the robot limit the left and right wheel velocities to a range of [-2.587, 2.587] rad/s. Thus, it is important to remember that with a differential drive, we cannot, for example, drive the robot at the maximum linear and angular velocities. There is a trade-off between linear and angular velocities: linear velocity has to decrease for angular velocity to increase, and vice versa.
+We previously learned that with a differential drive robot, we cannot, for example, drive the robot at the maximum linear and angular velocities. Each motor has a maximum and minimum angular velocity; therefore, there must be a trade-off between linear and angular velocities: linear velocity has to decrease in some cases for angular velocity to increase, and vice versa.
+  
+We added the ``ensure_w`` function over the last two weeks, which ensured that *ω* is achieved by scaling *v*. However, for example, one could improve the above strategy by letting the linear velocity be a function of the angular velocity *and* the distance to the goal (or distance to the nearest obstacle).
+  
+Improve your go-to-goal and avoid-obstacles controllers by adding a simple function that adjusts *v* as function of *ω* and other information. For example, the linear velocity in the go-to-goal controller could be scaled by *ω* and the distance to the goal, such that the robot slows down as it reaches the goal. 
 
-Therefore, design and implement a function or equation for the linear velocity that depends on the angular velocity, such that the linear velocity is large when the `absolute value` of the angular velocity is small (near zero), and the linear velocity is small when the absolute value of the angular velocity is large. Remember that we want to maintain a minimum linear velocity to keep the robot moving. Add it to to the general PID controller in ``pysimiam/controllers/pid_controller.py``.
+The right place to implement such adjustments is the :meth:``~controller.Controller.execute`` function of both the GoToGoal controller in ``controllers/gotogoal.py`` and the AvoidObstacles controller in ``controllers/avoidobstacles.py``::
 
-.. note:: This is just one way to improve the controllers. For example, one could improve the above strategy by letting the linear velocity be a function of the angular velocity `and` the distance to the goal (or distance to the nearest obstacle). If you want to go in this direction, consider using the length of the heading vector returned from ``get_heading`` to scale the linear velocity.
+    def execute(self, state, dt):
+        
+        v, w = PIDController.execute(self, state, dt)
+        
+        # Week 5 code
+        #
+        # 
+        
+        return v, w  
 
-Blending
---------
+.. note:: This part of the programming assignment is open ended and not checked by the automatic grader, but it will help with the other parts of this assignment.
 
-It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller ``pysimiam/controller/week5.py``. However, one important piece (namely the implementation of ``get_heading``) is missing::
+Blending behaviours
+---------------------
+
+It's time to implement the first type of arbitration mechanism between multiple controllers: `blending`. The solutions to the go-to-goal and avoid-obstacles controllers have been combined into a single controller ``controller/week5.py``. However, one important piece (namely the implementation of ``get_heading``) is missing::
 
     def get_heading(self, state):
-        u_ao = self.get_ao_heading(state)
-        u_gtg = self.get_gtg_heading(state)
+        """Blend the two heading vectors"""
+
+        # Get the outputs of the two subcontrollers
+        u_ao = AvoidObstacles.get_heading(self,state)
+        self.away_angle = math.atan2(u_ao[1],u_ao[0])
+        u_ao = numpy.array([math.cos(self.away_angle),math.sin(self.away_angle),1])        
+        
+        self.goal_angle = GoToGoal.get_heading_angle(self,state)
+        u_gtg = numpy.array([math.cos(self.goal_angle),math.sin(self.goal_angle),1])        
+        
+        # Week 5 Assigment Code goes here:
         
         u = u_gtg
+        
+        # End Week 5 Assigment
                 
         return u
 
-Here, ``u_gtg`` is a vector pointing to the goal from the robot, and ``u_ao`` is a vector pointing from the robot to a point in space away from obstacles. These two vectors need to be combined (blended) in some way into the vector ``u``, which should be a vector that points the robot both away from obstacles and towards the goal.
+Here, ``u_gtg`` is a vector pointing to the goal from the robot, and ``u_ao`` is a vector pointing from the robot to a point in space away from obstacles. These two vectors need to be combined (blended) in some way into the vector ``u``, which should be a vector that points the robot both away from obstacles and towards the goal. Both vectors are NumPy arrays and support arbitrary array operations. The vectors are normalized to have a length of 1.
 
 The combination of the two vectors into ``u`` should result in the robot driving to a goal without colliding with any obstacles in the way. Do not use ``if/else`` to pick between ``u_gtg`` or ``u_ao``, but rather think about weighing each vector according to their importance, and then linearly combining the two vectors into a single vector, ``u_ao_gtg``. For example,
 
@@ -729,21 +754,38 @@ The combination of the two vectors into ``u`` should result in the robot driving
     \alpha &=& 0.75 \\
     u &=& \alpha u_{\mathrm{gtg}}+(1-\alpha)u_{\mathrm{ao}}
 
-In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. `α` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles.
+In this example, the go-to-goal behavior is stronger than the avoid-obstacle behavior, but that `may` not be the best strategy. `α` needs to be carefully tuned (or a different weighted linear combination needs to be designed) to get the best balance between go-to-goal and avoid-obstacles. You may also want to adjust *v* for this controller, as you did for the other two in the previous part of the assignment.  
 
-Switching
----------
+Testing
+^^^^^^^^^^
+
+To run the simulator with the blending supervisor use::
+
+    >>> python qtsimiam_week5.py blending
+
+You will see three arrows showing the information about different headings:
+
+.. image week-5-blending.png::
+    :width: 300px
+
+The green arrow is the heading returned by the GoToGoal controller, the red arrow - the heading returned by the AvoidObstacles controller. The blue arrow is the blended vector.
+
+The robot should successfully navigate to the goal location (1,1) without colliding with the obstacle that is in the way. When the robot is near the goal, it will start circling around it. Don't worry, this behaviour will be taken care of in the next part.
+
+Switching between behaviours
+------------------------------
 
 The second type of arbitration mechanism is `switching`. Instead of executing both go-to-goal and avoid-obstacles simultaneously, we will only execute one controller at a time, but switch between the two controllers whenever a certain condition is satisfied.
     
-You will need to implement the switching logic between go-to-goal and avoid-obstacles in ``pysimiam/supervisors/week5_switching.py``. The supervisor has a built-in state machine to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor has to define the switching conditions. These conditions are checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular condition is fullfilled, and if so, switch to a new controller.
+You will need to implement the switching logic between go-to-goal and avoid-obstacles in ``supervisors/week5_switching.py``. The supervisor has a built-in state machine to support switching between different controllers (or states, where a state simply corresponds to one of the controllers being executed). In order to switch between different controllers (or states), the supervisor has to define the switching conditions. These conditions are checked to see if they are true or false. The idea is to start of in some state (which runs a certain controller), check if a particular condition is fullfilled, and if so, switch to a new controller.
 
 The controllers and the switching conditions are initialized in the ``__init__`` method of the supervisor. The following code is in place::
 
     def __init__(self, robot_pose, robot_info):
         """Create necessary controllers"""
-        K3Supervisor.__init__(self, robot_pose, robot_info)
+        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
 
+        # Fill in poses for the controller
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
 
         # Create the controllers
@@ -751,31 +793,37 @@ The controllers and the switching conditions are initialized in the ``__init__``
         self.gtg = self.create_controller('GoToGoal', self.parameters)
         self.hold = self.create_controller('Hold', None)
 
+        # Create some state transitions
         self.add_controller(self.hold)
-        self.add_controller(self.gtg,
-                            (self.at_goal, self.hold),
+        self.add_controller(self.gtg, \
+                            (self.at_goal, self.hold), \
                             (self.at_obstacle, self.avoidobstacles))
-
+        
+        # Week 5 Assigment code should go here
+        
+        # End Week 5 Assignment
+        
+        # Start in 'go-to-goal' state
         self.current = self.gtg
 
 This code creates three controllers - `GoToGoal`, `AvoidObstacles` and `Hold`. You are already familiar with the first two. The third controller just makes the robot stop (it returns (0,0) as linear and angular velocities). This code also defines a switching condition between `GoToGoal` and `Hold` and between `GoToGoal` and `AvoidObstacles`, and makes `GoToGoal` the starting state. The ``add_controller`` method of the supervisor should be called in the following way::
     
-    self.add_controller(c0, (condition1, c1), (condition2, c2), ...)
+    self.add_controller(controller0, (condition1, controller1), (condition2, controller2), ...)
 
-to add a state with a controller ``c0``. The conditions are functions that take no parameters and evaluate to true or false. If a condition evaluates to true, the controller is switched e.g. to ``c1`` for ``condition1``.
+to add a state with a controller ``controller0``. The conditions are functions that take no parameters and evaluate to true or false. If a condition evaluates to true, the controller is switched e.g. to ``controller1`` for ``condition1``.
 
 The code in the supervisor now corresponds to the following diagram:
 
 .. image:: switching_states_incomplete.png
 
-This not a good behaviour! Your goal is to update the logic to complete the diagram:
+But this way the robot might never reach the goal! Your task is to update the logic to complete the diagram:
 
 .. image:: switching_states.png
 
 You should also implement the condition functions. We suggest defining at least the following conditions:
 
 * ``at_obstacle`` checks to see if any of front sensors (all but the three IR sensors in the back of the robot) detect an obstacle at a distance less than a certain limiting distance. Return ``true`` if this is the case, ``false`` otherwise.
-* ``at_goal`` checks to see if the robot is within ``self.d_stop`` meters of the goal location.
+* ``at_goal`` checks to see if the robot is within some small distance of the goal location (e.g. ``self.robot.wheels.base_length/2``).
 * ``obstacle_cleared`` checks to see if all of the front sensors report distances greater than some fixed distance. Remember, that this distance has to be larger than the distance used by ``at_obstacle``, to avoid Zeno behaviour.
 
 When implementing various conditions, take note that the functions are called without any arguments. So, all of the parameters you want to access should be stored in the supervisor. You can precalculate anything you need in the ``process_state_info`` function that is guaranteed to be called before any conditions are checked. You may also find the following variables useful:
@@ -788,15 +836,34 @@ When implementing various conditions, take note that the functions are called wi
 - ``self.robot.ir_sensors.rmax`` (float) - The maximum distance that can be detected by an IR sensor
 - ``self.robot.ir_sensors.poses`` (list of :class:`~pose.Pose`) - The positions and orientations of IR sensors in the reference frame of the robot
 
+Testing
+^^^^^^^^^
+
+You can test the the switching supervisor by running::
+
+    >>> python qtsimiam_week5.py switching
+
+.. note:: You don't have to restart the simulator to try another supervisor - instead you can load another world (e.g. ``week5_switching.xml``) directly with `File > Open`.
+
+You will see two arrows showing the GoToGoal and AvoidObstacles headings, with the current heading showing as a thicker arrow:
+
+.. image week-5-switching.png::
+    :width: 300px
+
+The robot should successfully navigate to the same goal location (1,1) without colliding with the obstacle that is in the way. This time once the robot is near the goal, it should stop. In the log window you should see a lot of messages indicating that the controllers have been switched. You should see that the robot switches frequently between the two during its journey.
+
 Mix blending and switching
---------------------------
+----------------------------
 
 The blending controller's advantage is that it (hopefully) smoothly blends go-to-goal and avoid-obstacles together. However, when there are no obstacle around, it is better to purely use go-to-goal, and when the robot gets dangerously close, it is better to only use avoid-obstacles. The switching logic performs better in those kinds of situations, but jitters between go-to-goal and avoid-obstacle when close to a goal. A solution is to squeeze the blending controller in between the go-to-goal and avoid-obstacle controller.
 
-To create the blending controller uncomment the lines mentioning the blending controller in ``pysimiam/supervisors/week5_switching.py``::
+To create the blending controller add the following code to the constructor in ``supervisors/week5_switching.py``::
 
-    # self.blending = self.create_controller('week5.Blending', self.parameters)
-    # self.blending.set_parameters(self.parameters)
+    self.blending = self.create_controller('week5.Blending', self.parameters)
+
+and the following code to the ``set_parameters`` method::
+
+    self.blending.set_parameters(self.parameters)
 
 Implement additional conditions:
 
@@ -808,177 +875,35 @@ Those conditions can now be used to implement switching like shown on the diagra
 .. image:: blending_states.png
 
 Testing
-------------------
+^^^^^^^^^
 
-You can test the blending and the switching supervisors separately or make them race against one another. To run the simulator use one of::
+You can test the switching supervisor as before. This time, the controller should switch much less often than before. Now you can also see the switches to the blended controller (blue arrow). Depending on how you set the critical distances, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
 
-    >>> python qtsimiam_week5.py blending
-    >>> python qtsimiam_week5.py switching
+Comparing the supervisor performance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can make the blending and the switching supervisors race against one another::
+
     >>> python qtsimiam_week5.py race
 
 .. note:: You don't have to restart the simulator to try another supervisor - instead you can load another world (e.g. ``week5_race.xml``) directly with `File > Open`.
 
-Here are some tips to the test the supervisor behaviour:
 
-#. Test the second part by running ``python qtsimiam_week5.py blending``. The robot should successfully navigate to the goal location (1,1) without colliding with the obstacle that is in the way. Once the robot is near the goal, it will start rotating in place. Don't worry, this behaviour will be fixed in the switching supervisor. 
+Joystick and switching (optional)
+----------------------------------
 
-#. Test the third part by setting ``python qtsimiam_week5.py switching``. The robot should successfully navigate to the same goal location (1,1) without colliding with the obstacle that is in the way. This time once the robot is near the goal, it should stop. In the console where you ran the simulator, you should see a lot of messages indicating that the controllers have been switched.
-  
-#. Test the fourth part in the same way as the third part. This time, the controller should switch much less often than before. Also, it now switches to the blended controller. Depending on how you set the critical distances, the number of switches and between which controllers the supervisor switches may change. Experiment with different settings to observe their effect.
+Following Sim.I.Am, pySimiam now also has the capability to control the robot (a real or a simulated one) with a joystick. If you have a joystick, you can try it out by loading the ``joystick.xml`` world. Note, that you will need the `pygame library <http://pygame.org/download.shtml>`_ for this functionality. Also, you might want to configure your joystick in the supervisor parameter window.
 
-..
+Although controlling a robot with a joystick is fun, we can do better, since our robot is intelligent. One possible improvement will be to make the supervisor switch between the `Joystick` and the `AvoidObstacles` behaviour if the robot comes too close to an obstacle. The switching can be implemented in the same way as before, only replacing the `GoToGoal` controller with the `Joystick` controller. The supervisor code is located at ``supervisors/joystick.py``.
 
-    Week 6. Following walls
-    =======================
+.. note:: Since pySimiam supports an arbitrary number of robots, you can use more than one joystick and control more than one robot. You will have to edit ``worlds/joystick.xml`` to add more robots to the world.
 
-    The simulator for this week can be run with::
-        
-        >>> python qtsimiam_week6.py
+.. note:: The implementation of shooting robots is left to the reader as an advanced excercise.
 
-    You are encouraged (but not required) to reuse your code from week 5, by replacing the `get_heading` method in ``pysimiam/controllers/blending.py`` with your solution.
+Grading
+-------
+ 
+The grader will test the following conditions this week:
 
-    This week you will be implementing a wall following behavior that will aid the robot in navigating around obstacles. Implement these parts in the ``get_heading`` method of ``pysimiam/controllers/week6.py``::
-
-        def get_heading(self, state):
-            """Get the direction away from the obstacles as a vector."""
-            
-            # Week 6 Assignment:
-            
-            # Calculate vectors for the sensors
-            self.vectors = []
-
-            # Calculate the vector along the wall
-            self.along_wall_vector = [0.3,0,1]
-
-            # Calculate the vector to the closest wall point:
-            self.to_wall_vector = [0,0.3,1]
-                                
-            # Calculate and return the heading vector:                            
-            return self.along_wall_vector
-        
-            # End Week 6 Assignment
-
-    Estimate wall geometry
-    ----------------------
-    
-    We will use the IR sensors to detect an obstacle and construct a vector that approximates a section of the obstacle (`wall`). In the figure, this vector, :math:`u_{fw,t}`, is illustrated in magenta.
-
-    .. image:: week-6-part-1.png
-
-    The direction of the wall following behavior (whether it is follow obstacle on the left or right) is determined by ``self.direction``, which can either be equal to ``"right"`` or ``"left"``. Suppose we want to follow an obstacle to the `right` of the robot, then we would could use the left set of IR sensors (0 < θ < π). If we are following the wall, then at all times there should be at least one sensor that can detect the obstacle. So, we need to pick a second sensor and use the points corresponding to the measurements from these two sensors (see avoid-obstacles in Week 4) to form a line that estimates a section of the obstacle. In the figure above, sensors 6 and 7 are used to roughly approximate the edge of the obstacle. But what about corners?
-
-    .. image:: week-6-part-1b.png
-
-    Corners are trickier (see figure below), because typically only a single sensor will be able to detect the wall. The estimate is off as one can see in the figure, but as long as the robot isn't following the wall too closely, it will be ok.
-
-    You should first fill in the ``self.vectors`` variable, as you did in week 4, to obtain the set of vectors pointing to the wall. An example strategy for estimating a section of the wall is to pick the two sensors (from IR sensors 1-4) with the smallest reported measurement in ``state.sensor_distances``. Suppose sensor 6 and 7 returned the smallest values, then let :math:`p_1` ``= self.vectors[7]`` and :math:`p_2` ``= self.vectors[6]``. A vector that estimates a section of the obstacle is :math:`u_{fw,t}=p_2-p_1`. 
-
-    .. note:: It is important that the sensor with larger abs(θ) (in the example, sensor 7) is assigned to :math:`p_1` (``p_1``) and the sensor with the smaller abs(θ) (in the example, sensor 6) is assigned to :math:`p_2` (``p_2``), because we want that the vector points in the direction that robot should travel.
-
-    .. note:: In the code, :math:`u_{fw,t}` is represented by ``self.along_wall_vector``.
-
-    The figures correspond to the above example strategy, but you may want to experiment with different strategies for computing :math:`u_{fw,t}`. A better estimate would make wall following safer and smoother when the robot navigates around the corners of obstacles. 
-
-    Find the closest wall point
-    ---------------------------
-        
-    Now that we have the vector :math:`u_{fw,t}` (represented by the magenta arrow in the figures), we need to compute a vector :math:`u_{fw,p}` that points from the robot to the closest point on :math:`u_{fw,t}`. This vector is visualized as blue arrow in the figures and can be computed using a little bit of linear algebra:
-
-    .. math::
-        \begin{split}
-            u'_{fw,t} &= \frac{u_{fw,t}}{\|u_{fw,t}\|}, \quad u_p = \begin{bmatrix} x \\ y \end{bmatrix}, \quad u_a = p_1 \\
-            u_{fw,p} &= (u_a-u_p)-((u_a-u_p)\cdot u'_{fw,t})u'_{fw,t}
-        \end{split}
-
-    .. note:: A small technicality is that we are computing :math:`u_{fw,p}` as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` were infinitely long.
-
-    .. note:: In the code, :math:`u_{fw,p}` is represented by ``self.to_wall_vector``.
-
-    Compute the heading vector
-    --------------------------
-        
-    The last step is to combine :math:`u_{fw,t}` and :math:`u_{fw,p}` such that the robot follows the obstacle all the way around at some distance :math:`d_{fw}` (``self.distance`` in the code). :math:`u_{fw,t}` will ensure that the robot drives in a direction that is parallel to an edge on the obstacle, while :math:`u_{fw,p}` needs to be used to maintain a distance :math:`d_{fw}` from the obstacle.
-
-    One way to achieve this is,
-
-    .. math::
-        u'_{fw,p} = u_{fw,p}-d_{fw}\frac{u_{fw,p}}{\|u_{fw,p}|},
-
-    where :math:`u'_{fw,p}` is now a vector points towards the obstacle when the distance to the obstacle, :math:`d>d_{fw}`, is near zero when the robot is :math:`d_{fw}` away from the obstacle, and points away from the obstacle when :math:`d<d_{fw}`.
-
-    All that is left is to linearly combine :math:`u'_{fw,t}` and :math:`u'_{fw,p}` into a single vector :math:`u_{fw}` that can be used with the PID controller to steer the robot along the obstacle at the distance :math:`d_{fw}`. (`Hint`: Think about how this worked with :math:`u_{ao}` and :math:`u_{gtg}` last week). 
-
-    Testing
-    -------
-
-    Running ``qtsimiam_week6.py`` shows you a world with six robots and an obstacle. The robots are set up near the obstacle, so that they can start following it immediately. This is a valid situation, because we are assuming another behavior (like go-to-goal) has brought us near the obstacle.
-
-    First, test the construction of ``to_wall_vector`` and ``along_wall_vector``. Do not start the simulation yet. For each robot you should see the two vectors positioned correctly -  the magenta arrow approximately matches up with the edge of the obstacle, and the blue arrow should point from the robot to the closest point on the wall.
-
-    Second, test the follow wall behaviour by running the simulation. The robot should be able to follow the obstacle all the way around. Set `distance` to some distance in [0.02, 0.2] m. The robot should follow the wall at approximately the specified distance. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).  
-
-    .. note:: Depending on how the edges of the obstacle are approximated, it is possible for the robot to peel off at one of the corners. This is not the case in the example strategy provided for the first part.
-
-    .. note:: If the amount of robots seems overwhelming, you can comment out some of them in the ``worlds/week6.xml``. We note, however, that it can be interesting to have more than one robot - for example, two robots going parallel to one another will detect each other as a wall and keep going parallel indefinitely (or until they meet a wall)
-
-    Week 7. Bringing it all together
-    ================================
-
-    The simulator for this week can be run with::
-        
-        >>> python qtsimiam_week7.py
-
-    You are encouraged (but not required) to reuse your code from week 6, by replacing  ``pysimiam/controllers/followwall.py`` with ``pysimiam/controllers/week6.py``. You can also reuse parts of your state machine from week 5.
-
-    This week you will be combining the go-to-goal, avoid-obstacles, and follow-wall controllers into a full navigation system for the robot. The robot will be able to navigate around a cluttered, complex environment without colliding with any obstacles and reaching the goal location successfully. Implement your solution in ``pysimiam/supervisors/week7.py``.
-
-    Finding out if any progress is being made
-    -----------------------------------------
-
-    Implement the ``progress_made`` condition that will determine whether the robot is making any progress towards the goal.
-    
-    By default, the robot is set up to switch between ``AvoidObstacles`` and ``GoToGoal`` to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at (1,1). The robot needs a better strategy for navigation. This strategy needs to realize that the robot is not making any forward progress and switch to ``FollowWall`` to navigate out of the obstacle.
-
-    Implement the function ``progress_made`` such that it returns ``true`` if
-
-    .. math::
-        \left\|\begin{bmatrix} x-x_g \\ y-y_g \end{bmatrix}\right\| < d_{\text{progress}}-\epsilon,
-
-    where ε = 0.1 gives a little bit of slack, and :math:`d_{\text{progress}}` is the closest (in terms of distance) the robot has progressed towards the goal. This distance can be set in the ``sliding_left``/``sliding_right`` conditions before switching to the ``FollowWall`` behavior in the third part.
-
-    Following the wall in the right direction
-    -----------------------------------------
-
-    Implement the ``sliding_left`` and ``sliding_right`` conditions that will serve as a criterion for whether the robot should continue to follow the wall (left or right) or switch back to the go-to-goal behavior.
-
-    While the lack of ``progress_made`` will trigger the navigation system into a ``FollowWall`` behavior, we need to check whether the robot should stay in the wall following behavior, or switch back to ``GoToGoal``. We can check whether we need to be in the sliding mode (wall following) by testing if :math:`\sigma_1>0` and :math:`\sigma_2>0`, where
-
-    .. math::
-        \begin{bmatrix}u_{gtg} & u_{ao}\end{bmatrix}\begin{bmatrix}\sigma_1 \\ \sigma_2\end{bmatrix} = u_{fw}.
-    
-    
-    Implement this test in the function ``sliding_left`` and ``sliding_right``. The test will be the same for both functions. The difference is in how :math:`u_{fw}` is computed.
-
-    Switching
-    ---------
-    
-    Now, we are ready to implement a finite state machine (FSM) that solves the full navigation problem. As already seen in Week 5, a finite state machine is nothing but a set of states and switching conditions, that first check which state (or behavior) the robot is in, then based on whether a condition is satisfied, the FSM switches to another state or stays in the same state. Some of the logic that should be part of the FSM is:
-    
-        #. If ``at_goal``, then switch to ``stop``.
-        #. If ``unsafe``, then switch to state ``AvoidObstacles``.
-        #. If in state ``GoToGoal`` and ``at_obstacle``, then check whether the robot needs to ``slide_left`` or ``slide_right``. If so ``set_progress_point``, and switch to state ``FollowWall`` (with ``inputs.direction`` equal to right or left depending on the results of the sliding test).
-        #. If in state ``FollowWall``, check whether ``progress_made`` and the robot does not need to slide ``slide_left`` (or ``slide_right`` depending on ``inputs.direction``). If so, switch to state ``GoToGoal``, otherwise keep following wall.
-
-    Testing
-    -------
-
-    To test your code, the simulator is set up to run a simple FSM that is unable to exit the large obstacle and advance towards the goal.
-
-    #. Test the first part with the third part.
-    #. Test the second part with the third part.
-    #. Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at (1,1) or not? However, let us consider a few key situations that will likely be problematic.
-    
-    #. First, the default code has the problem that the robot is stuck inside the large obstacle. The reason for this situation is that avoid obstacle is not enough to push the robot far enough way from the obstacle, such that when go-to-goal kicks back in, the robot is clear of the obstacle and has a free path towards the goal. So, you need to make sure that the robot realizes that no progress towards the goal is being made and that wall following needs to be activated for the robot to navigate out of the interior of the large obstacle.
-    #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and sliding is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``sliding_left`` (``sliding_right``) conditions to transition from ``FollowWall`` to ``GoToGoal``.
-    
-    .. note:: Remember that adding ``print`` calls to different parts of your code can help you debug your problems. By default, the supervisor prints out the state that it switches to.
+    * **Collision-free navigation with blending**: Does the robot reach the goal in less than 60 seconds without crashing?
+    * **Collision-free navigation with switching**: Does the robot reach the goal in less than 60 seconds without crashing and without switching between controllers more often than two times per second on average?

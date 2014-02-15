@@ -43,20 +43,30 @@ class Blending(PIDController):
         
         self.goal_angle = GoToGoal.get_heading_angle(self,state)
         u_gtg = numpy.array([math.cos(self.goal_angle),math.sin(self.goal_angle),1])        
-        
+
         # Week 5 Assigment Code goes here:
         
-        u = u_gtg
+        a = 0.3
+        
+        u = a*u_gtg + (1-a)*u_ao
         
         # End Week 5 Assigment
                 
         return u
     
-    def execute(self, state, dt):
+    #def execute(self, state, dt):
         
-        v, w = PIDController.execute(self, state, dt)
+        #v, w = PIDController.execute(self, state, dt)
         
-        # Week 5 Assigment Code goes here:
-        # End Week 5 Assigment
+        ## Week 5 code
+        ##
         
-        return v, w    
+        #dmin = min(state.sensor_distances)
+        #v *= ((dmin - 0.04)/0.26)**2
+        #if v < 0.1 and w < 2.057:
+            #w = 2.057
+        #print(v)
+        ## 
+        
+        #return v, w
+    

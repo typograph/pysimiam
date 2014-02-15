@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <simulation>
-    <robot type="Khepera3">
+    <robot type="QuickBot">
         <pose theta="0.0" x="-1.0" y="-0.8"/>
-        <supervisor type="week5_blending.K3BlendingSupervisor"/>
+        <supervisor type="week5_blending.QBBlendingSupervisor"/>
     </robot>
-    <robot type="Khepera3">
+    <robot type="QuickBot">
         <pose theta="3.14159265359" x="3.0" y="2.8"/>
-        <supervisor type="week5_switching.K3SwitchingSupervisor"/>
+        <supervisor type="week5_switching.QBSwitchingSupervisor"/>
     </robot>
     <obstacle>
         <pose theta="0" x="1.11213200694" y="0.287867943109"/>

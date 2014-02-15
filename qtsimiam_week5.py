@@ -8,11 +8,13 @@ sys.path.insert(0, './scripts')
 sys.path.insert(0, './gui')
 from PyQt4 import QtGui
 
+from coursera import Week5
 from qt_mainwindow import SimulationWidget
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     simWidget = SimulationWidget()
+    simWidget.setTestSuite(Week5)
     simWidget.superv_action.trigger()
     simWidget.show()
     if len(sys.argv) > 1:
