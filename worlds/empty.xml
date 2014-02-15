@@ -1,9 +1,0 @@
-<simulation>
-    <app type="ControlApp" />
-    
-    <robot type="Khepera3">
-        <supervisor type="K3DefaultSupervisor" />
-        <pose x="0" y="0" theta="0" />
-    </robot>
-    
-</simulation>

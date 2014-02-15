@@ -514,10 +514,7 @@ class Week4Test1(WeekTestCase):
         self.test_id = "n6Td5e5B"
 
     def start_test(self,challenge):
-        print(challenge)
         vals = self.parseChallenge(challenge)
-        
-        print(vals)
         
         if 'dist_1' not in vals or 'x' not in vals or 'y' not in vals or 'theta' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
@@ -539,7 +536,7 @@ class Week4Test1(WeekTestCase):
         state = helpers.Struct()
         state.sensor_distances = [vals['dist_1'], 0.3, 0.3, vals['dist_1'], 0.3]
 
-        AvoidObstacles = helpers.load_by_name('week4_solved.AvoidObstacles','controllers')
+        AvoidObstacles = helpers.load_by_name('week4.AvoidObstacles','controllers')
         testAO = AvoidObstacles(params)
        
         testAO.get_heading(state)
