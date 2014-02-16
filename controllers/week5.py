@@ -13,7 +13,7 @@ from controllers.gotogoal import GoToGoal
 import math
 import numpy
 
-class Blending(PIDController):
+class Blending(GoToGoal, AvoidObstacles):
     """A controller blending go-to-goal and avoid-obstacles behaviour"""
     def __init__(self, params):
         """Initialize internal variables"""
@@ -32,6 +32,9 @@ class Blending(PIDController):
         reference frame as ``params.sensor_poses``.
         """
         AvoidObstacles.set_parameters(self,params)
+
+    def get_heading_angle(self, state):
+        return PIDController.get_heading_angle(self,state)
 
     def get_heading(self, state):
         """Blend the two heading vectors"""
