@@ -37,7 +37,7 @@ class Parameter(Struct):
                 self.min_value = args[1]
             elif 'min_value' in kwargs:
                 self.min_value = kwargs['min_value']
-            #else:
+            else:
                 self.min_value = -100
                 
             if len(args) > 2:

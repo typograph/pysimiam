@@ -279,6 +279,8 @@ class QuickBot(Robot):
 
     def v2pwm(self,vl,vr):
         """Convert from angular velocity to PWM"""
+        if vl == 0 and vr == 0:
+            return 0,0
         
         # Shamelessly copied from SimIAm.
         # The formulae seem strange       
@@ -290,7 +292,9 @@ class QuickBot(Robot):
     
     def pwm2v(self,pwm_l,pwm_r):
         """Convert from PWM to angular velocity"""
-        
+
+        if pwm_l == 0 and pwm_r == 0:
+            return 0,0
         # This will fail horribly for funny PWM
         
         

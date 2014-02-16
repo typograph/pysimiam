@@ -134,16 +134,27 @@ class quickserver:
     def send_halt(self):
         """Sends the command to stop the quickbot"""
         with self.connect() as connection:
-            connection.sendtorobot('PWM=0.0,0.0')
+            connection.sendtorobot('PWM=0,0')
 
     def send_reset(self):
         """Sends the command to stop the quickbot"""
         with self.connect() as connection:
             connection.sendtorobot('RESET')
 
-    def set_speeds(self, l, r, connection): #same function name as JP
+    def set_pwm(self, l, r, connection):
         """Send the command to set the right and left motor velocities/PWM"""
-        connection.sendtorobot( 'PWM={0:.0f},{1:.0f}'.format(l, r) )
+        connection.sendtorobot( 'PWM={0},{1}'.format(l, r) )
+
+    def get_pwm(self, connection):
+        """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
+        connection.sendtorobot('PWM?')
+        data = connection.recvreply()
+        if data is not None:
+            m = self.rx_TWO.match(data)
+            if m is not None: #we get a match
+                return float(m.group('LEFT')), float(m.group('RIGHT'))
+
+        return None #default fail
 
     def get_encoder_ticks(self, connection):
         """Sends the command to retrieve the right and left encode values. Returns a tuple of (cl, cr)"""
