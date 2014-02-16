@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <simulation>
-    <robot type="quickbot_interface.QuickBot" options='{"baseIP":"localhost", "robotIP":"localhost", "port":5005}'>
+    <robot type="quickbot_interface.QuickBot" options='{"baseIP":"localhost", "robotIP":"localhost", "port":7777}'>
         <pose theta="0.0" x="0.0" y="0.0"/>
-        <supervisor type="week4.QBAvoidSupervisor"/>
+        <supervisor type="PWMTest"/>
     </robot>
 </simulation>

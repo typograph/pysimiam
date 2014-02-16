@@ -259,33 +259,19 @@ class QuickBot(RealBot, quickserver):
     def v2pwm(self,vl,vr):
         """Convert from angular velocity to PWM"""
         
-        # Shamelessly copied from SimIAm.
-        # The formulae seem strange
-        rps_l = vl/(2*pi);
-        rps_r = vr/(2*pi);
-        
-        pwm_l = sign(rps_l)*(abs(rps_l) - self.beta[1])/self.beta[0];
-        pwm_r = sign(rps_r)*(abs(rps_r) - self.beta[1])/self.beta[0];
+        return vl, vr
 
-        return max(min(round(pwm_l), 100), -100), \
-               max(min(round(pwm_r), 100), -100)
-    
     def pwm2v(self,pwm_l,pwm_r):
         """Convert from PWM to angular velocity"""
         
-        # This will fail horribly for funny PWM
-        
-        vl = 2*pi*sign(pwm_l)*(self.beta[0]*abs(pwm_l) + self.beta[1])
-        vr = 2*pi*sign(pwm_r)*(self.beta[0]*abs(pwm_r) + self.beta[1])
-        
-        return vl, vr
-        
+        return pwm_l,pwm_r
+
     def set_inputs(self,inputs):
         pwm_l, pwm_r = self.v2pwm(*inputs)
        
         with self.connect() as connection:
-            self.set_speeds(pwm_l, pwm_r, connection)
-            speeds = self.get_encoder_velocity(connection)
+            self.set_pwm(pwm_l, pwm_r, connection)
+            speeds = self.get_pwm(connection)
             if speeds is None:
                 raise RuntimeError("Communication with QuickBot failed")
         
