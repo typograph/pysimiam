@@ -31,7 +31,8 @@ class AvoidObstacles(PIDController):
 
         # Now we know the poses, it makes sense to also
         # calculate the weights
-        self.weights = [(math.cos(p.theta)+1.5) for p in self.sensor_poses]
+        #self.weights = [(math.cos(p.theta)+1.5) for p in self.sensor_poses]
+        self.weights = [1.0, 1.0, 0.5, 1.0, 1.0]
         
         # Normalizing weights
         ws = sum(self.weights)
