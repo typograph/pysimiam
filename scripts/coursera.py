@@ -28,7 +28,7 @@ class WeekTestCase:
     
     RX = re.compile(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
     
-    def __init__(self, week):
+    def __init__(self, week): # Never initialize test-run parameters in the constructor
         self.testsuite = week
         self.name = "Name not set"
         self.test_id = "XXXYYYZZZ"
@@ -556,7 +556,6 @@ class Week4Test2(WeekTestCase):
         self.test_id = "sw7on7mK"
 
         self.dr = 'abs(robot.get_pose().x) + abs(robot.get_pose().y)'
-        self.max_dr = 0.0
         
     def __call__(self,event,args):
         if self.testsuite.gui.simulator_thread.get_time() > 60: # Stop after 60 seconds
@@ -608,6 +607,8 @@ class Week4Test2(WeekTestCase):
         self.p.gains.kp = 4
         self.p.gains.ki = 0.1
         self.p.gains.kd = 0
+
+        self.max_dr = 0.0
 
         # FIXME What follows is a hack, that will only work
         # in the current GUI implementation. 
@@ -718,8 +719,6 @@ class Week5Test2(WeekTestCase):
 
         self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
         
-        self.cdist = 100
-        self.switches = 0
         self.switch_RX = re.compile(r'^Switched to (?P<CNT>.*)$')
         
     def __call__(self,event,args):
@@ -779,6 +778,9 @@ class Week5Test2(WeekTestCase):
         if 'v' not in vals or 'x_g' not in vals or 'y_g' not in vals or 's_hz' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
         
+        self.cdist = 100
+        self.switches = 0
+
         self.max_shz = vals['s_hz']
         
         self.v = vals['v']
