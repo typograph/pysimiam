@@ -1,81 +1,99 @@
 <?xml version="1.0" ?>
 <simulation>
-    <robot type="Khepera3">
-        <pose theta="0.0" x="0.10000002" y="0.50000001"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="1.57079632679" x="-0.24723783" y="-0.24832565"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "left"}'/>
     </robot>
-    <robot type="Khepera3">
-        <pose theta="3.14159265359" x="-0.4" y="0.20000001"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="-0.541675281775" x="-0.48372204" y="-0.97283734"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "left"}'/>
     </robot>
-    <robot type="Khepera3">
-        <pose theta="0.941736863017" x="0.8698845" y="-0.42943299"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="-0.15806323245" x="-1.35" y="-0.36"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "left"}'/>
     </robot>
-    <robot type="Khepera3">
-        <pose theta="-1.57079632679" x="2.0825559e-08" y="-0.19999999"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="0.947026603443" x="-0.28761487" y="0.56824764"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "right"}'/>
     </robot>
-    <robot type="Khepera3">
-        <pose theta="-2.20200183494" x="0.5984375" y="0.0609375"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="1.53529320226" x="0.5893513" y="-0.10981095"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "right"}'/>
     </robot>
-    <robot type="Khepera3">
-        <pose theta="0.687138936859" x="-0.9" y="0.7"/>
-        <supervisor type="week6.K3WallSupervisor"/>
+    <robot type="QuickBot">
+        <pose theta="-1.795611313" x="1.1" y="0.44"/>
+        <supervisor type="week6.QBWallSupervisor" options='{"direction": "right"}'/>
     </robot>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="-1.3" y="-1.2"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-0.900000015364" y="-0.710000098309"/>
         <geometry>
             <point x="0.0" y="0.0"/>
-            <point x="2.6990969" y="0.0"/>
-            <point x="2.6990969" y="0.1"/>
+            <point x="0.19999983528" y="0.19999983528"/>
+            <point x="0.399999833195" y="-1.62634559375e-07"/>
+            <point x="0.199999997915" y="-0.199999997915"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-1.19999999456" y="-0.0100000101488"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="1.20000001577" y="-1.20000001577"/>
+            <point x="1.40000001369" y="-1.00000001786"/>
+            <point x="0.199999997915" y="0.199999997915"/>
+        </geometry>
+    </obstacle>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-1.75" y="-1.76"/>
+        <geometry>
+            <point x="0.0" y="0.0"/>
+            <point x="3.4" y="0.0"/>
+            <point x="3.4" y="0.1"/>
             <point x="0.0" y="0.1"/>
         </geometry>
     </obstacle>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="-1.3" y="1.4"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-1.65" y="1.64"/>
         <geometry>
             <point x="0.0" y="0.0"/>
-            <point x="2.8039215" y="0.0"/>
-            <point x="2.8039215" y="0.1"/>
+            <point x="3.4" y="0.0"/>
+            <point x="3.4" y="0.1"/>
             <point x="0.0" y="0.1"/>
         </geometry>
     </obstacle>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="-1.3" y="-1.0869566"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-1.75" y="-1.66"/>
         <geometry>
             <point x="0.0" y="0.0"/>
             <point x="0.1" y="0.0"/>
-            <point x="0.1" y="2.4869566"/>
-            <point x="0.0" y="2.4869566"/>
+            <point x="0.1" y="3.4"/>
+            <point x="0.0" y="3.4"/>
         </geometry>
     </obstacle>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="1.4" y="-1.2"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="1.65" y="-1.76"/>
         <geometry>
             <point x="0.0" y="0.0"/>
             <point x="0.1" y="0.0"/>
-            <point x="0.1" y="2.5999999"/>
-            <point x="0.0" y="2.5999999"/>
+            <point x="0.1" y="3.4"/>
+            <point x="0.0" y="3.4"/>
         </geometry>
     </obstacle>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="-0.212132041071" y="0.212132041071"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="-0.200000026199" y="0.989999958211"/>
         <geometry>
             <point x="0.0" y="0.0"/>
-            <point x="-0.212132041071" y="-0.212132041071"/>
-            <point x="0.0" y="-0.424264082142"/>
-            <point x="0.212132041071" y="-0.212132041071"/>
+            <point x="1.20000001577" y="-1.20000001577"/>
+            <point x="1.40000001369" y="-1.00000001786"/>
+            <point x="0.199999997915" y="0.199999997915"/>
         </geometry>
     </obstacle>
-    <obstacle color="#cbcbcb">
-        <pose theta="0" x="0.812132091383" y="-0.387867924388"/>
+    <obstacle color="#acacac">
+        <pose theta="0" x="0.500000160957" y="0.690000035585"/>
         <geometry>
             <point x="0.0" y="0.0"/>
-            <point x="-1.272792204" y="1.272792204"/>
-            <point x="-1.48492424507" y="1.06066016293"/>
-            <point x="-0.212132041071" y="-0.212132041071"/>
+            <point x="0.19999983528" y="0.19999983528"/>
+            <point x="0.399999833195" y="-1.62634559375e-07"/>
+            <point x="0.199999997915" y="-0.199999997915"/>
         </geometry>
     </obstacle>
 </simulation>

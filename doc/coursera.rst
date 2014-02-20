@@ -907,3 +907,106 @@ The grader will test the following conditions this week:
 
     * **Collision-free navigation with blending**: Does the robot reach the goal in less than 60 seconds without crashing?
     * **Collision-free navigation with switching**: Does the robot reach the goal in less than 60 seconds without crashing and without switching between controllers more often than two times per second on average?
+
+
+Week 6. Following walls
+=======================
+
+The simulator for this week can be run with::
+   
+   >>> python qtsimiam_week6.py
+
+If you wish, you can reuse your PID code in ``controllers/pid_controller.py`` and pose estimation code in ``supervisors/quickbot.py``.
+
+This week you will be implementing a wall following behavior that will aid the robot in navigating around obstacles. Implement these parts in the ``get_heading`` method of ``controllers/week6.py``::
+
+   def get_heading(self, state):
+      """Get the direction away from the obstacles as a vector."""
+      
+      # Week 6 Assignment:
+      
+      # Calculate vectors for the sensors
+      self.vectors = []
+
+      # Calculate the vector along the wall
+      self.along_wall_vector = [0.3,0,1]
+
+      # Calculate the vector to the closest wall point:
+      self.to_wall_vector = [0,0.3,1]
+                           
+      # Calculate and return the heading vector:                            
+      return self.along_wall_vector
+   
+      # End Week 6 Assignment
+
+Estimate wall geometry
+----------------------
+
+We will use the IR sensors to detect an obstacle and construct a vector that approximates a section of the obstacle (`wall`). In the figure, this vector, :math:`u_{fw,t}`, is illustrated in magenta.
+
+.. image:: week-6-part-1.png
+    :align: left
+
+The direction of the wall following behavior (whether the obstacle on the left or right is followed) is determined by ``self.direction``, which can either be equal to ``"right"`` or to ``"left"``. Suppose we want to follow an obstacle to the `left` of the robot, then we would use the left set of IR sensors (0, 1 and 2). If we are following the wall, then at all times there should be at least one sensor that can detect the obstacle. So, we need to pick a second sensor and use the points corresponding to the measurements from these two sensors (see avoid-obstacles in Week 4) to form a line that estimates a section of the obstacle. In the figure on the left, sensors 3 and 4 are used to roughly approximate the edge of the obstacle.
+
+.. image:: week-6-part-1b.png
+    :align: right
+
+The situation is trickier when the robot reaches a corned (see the figure on the right), because typically only a single sensor will be able to detect the wall. The estimate is off as one can see in the figure, but as long as the robot isn't following the wall too closely, it will be ok.
+
+You should first fill in the ``self.vectors`` variable, as you did in week 4, to obtain the set of vectors pointing to the wall. An example strategy for estimating a section of the wall is to pick the two sensors (from IR sensors 0-2) with the smallest reported measurement in ``state.sensor_distances``. Suppose sensor 0 and 1 returned the smallest values, then let :math:`p_1` ``= self.vectors[0]`` and :math:`p_2` ``= self.vectors[1]``. A vector that estimates a section of the obstacle is :math:`u_{fw,t}=p_2-p_1`. 
+
+.. note:: It is important that the sensor with larger abs(θ) (in the example, sensor 0) is assigned to :math:`p_1` and the sensor with the smaller abs(θ) (in the example, sensor 1) is assigned to :math:`p_2`, because we want that the vector points in the direction that robot should travel.
+
+.. note:: In the code, :math:`u_{fw,t}` is represented by ``self.along_wall_vector``.
+
+The figures correspond to the above example strategy, but you may want to experiment with different strategies for computing :math:`u_{fw,t}`. A better estimate would make wall following safer and smoother when the robot navigates around the corners of obstacles. 
+
+Find the closest wall point
+---------------------------
+   
+Now that we have the vector :math:`u_{fw,t}` (represented by the magenta arrow in the figures), we need to compute a vector :math:`u_{fw,p}` that points from the robot to the closest point on :math:`u_{fw,t}`. This vector is visualized as blue arrow in the figures and can be computed using a little bit of linear algebra:
+
+.. math::
+   \begin{split}
+      u'_{fw,t} &= \frac{u_{fw,t}}{\|u_{fw,t}\|}, \quad u_p = \begin{bmatrix} x \\ y \end{bmatrix}, \quad u_a = p_1 \\
+      u_{fw,p} &= (u_a-u_p)-((u_a-u_p)\cdot u'_{fw,t})u'_{fw,t}
+   \end{split}
+
+.. note:: A small technicality is that we are computing :math:`u_{fw,p}` as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` were infinitely long.
+
+.. note:: In the code, :math:`u_{fw,p}` is represented by ``self.to_wall_vector``.
+
+Compute the heading vector
+--------------------------
+   
+The last step is to combine :math:`u_{fw,t}` and :math:`u_{fw,p}` such that the robot follows the obstacle all the way around at some distance :math:`d_{fw}` (``self.distance`` in the code). :math:`u_{fw,t}` will ensure that the robot drives in a direction that is parallel to an edge on the obstacle, while :math:`u_{fw,p}` needs to be used to maintain a distance :math:`d_{fw}` from the obstacle.
+
+One way to achieve this is,
+
+.. math::
+   u'_{fw,p} = u_{fw,p}-d_{fw}\frac{u_{fw,p}}{\|u_{fw,p}|},
+
+where :math:`u'_{fw,p}` is now a vector points towards the obstacle when the distance to the obstacle, :math:`d>d_{fw}`, is near zero when the robot is :math:`d_{fw}` away from the obstacle, and points away from the obstacle when :math:`d<d_{fw}`.
+
+All that is left is to linearly combine :math:`u'_{fw,t}` and :math:`u'_{fw,p}` into a single vector :math:`u_{fw}` that can be used with the PID controller to steer the robot along the obstacle at the distance :math:`d_{fw}`. (`Hint`: Think about how this worked with :math:`u_{ao}` and :math:`u_{gtg}` last week). 
+
+Testing
+-------
+
+Running ``qtsimiam_week6.py`` shows you a world with six robots and two obstacles. The robots are set up near the obstacle, so that they can start following it immediately. This is a valid situation, because we are assuming another behavior (like go-to-goal) has brought us near the obstacle.
+
+First, test the construction of ``to_wall_vector`` and ``along_wall_vector``. Do not start the simulation yet. For each robot you should see the two vectors positioned correctly -  the magenta arrow approximately matches up with the edge of the obstacle, and the blue arrow should point from the robot to the closest point on the wall.
+
+Second, test the follow wall behaviour by running the simulation. The robots should be able to follow the obstacle all the way around. Set `distance` to some distance in [0.04, 0.3] m. The robot should follow the wall at approximately the specified distance. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).  
+
+.. note:: Depending on how the edges of the obstacle are approximated, it is possible for the robot to peel off at one of the corners. This is not the case in the example strategy provided for the first part.
+
+.. note:: If the amount of robots seems overwhelming, you can comment out some of them in the ``worlds/week6.xml``. If the simulation is too slow, turn off drawing of robot trajectories.
+
+Grading
+-------
+
+The grader will test your controller in different worlds (``worlds/week6_test_left.xml`` and ``worlds/week6_test_right.xml``). You can load these worlds into the simulator and try them out. They contain a single robot, that should be able to go around the obstacle two times without crashing in less than 90 seconds.
+
+.. note:: The grader will test the robot using the default gains provided by the supervisor. If you want to use different gains, change the values in ``init_default_parameters`` in ``supervisors/week6.py``
