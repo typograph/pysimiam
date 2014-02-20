@@ -117,40 +117,29 @@ class Simulator(threading.Thread):
         self.__qtree = None
         
         for thing in self.__world:
-            thing_type = thing[0]
-            if thing_type == 'robot':
-                robot_type, supervisor_type, robot_pose, robot_color  = thing[1:5]
+            if thing.type == 'robot':
                 try:
-                    # Get options
-                    if len(thing) > 5:
-                        robot_options = thing[5]
-                        if robot_options is not None:
-                            robot_options = helpers.Struct(robot_options)
-                        super_options = thing[6]
-                        if super_options is not None:
-                            super_options = helpers.Struct(super_options)
-
                     # Create robot
-                    robot_class = helpers.load_by_name(robot_type,'robots')
-                    if robot_options is not None:
-                        robot = robot_class(pose.Pose(robot_pose), options = robot_options)
+                    robot_class = helpers.load_by_name(thing.robot.type,'robots')
+                    if thing.robot.options is not None:
+                        robot = robot_class(thing.robot.pose, options = thing.robot.options)
                     else:
-                        robot = robot_class(pose.Pose(robot_pose))
+                        robot = robot_class(thing.robot.pose)
                     robot.set_logqueue(self.__log_queue)
-                    if robot_color is not None:
-                        robot.set_color(robot_color)
+                    if thing.robot.color is not None:
+                        robot.set_color(thing.robot.color)
                     elif len(self.__robots) < 8:
                         robot.set_color(self.__nice_colors[len(self.__robots)])
                         
                     # Create supervisor
-                    sup_class = helpers.load_by_name(supervisor_type,'supervisors')
+                    sup_class = helpers.load_by_name(thing.supervisor.type,'supervisors')
                     
                     info = robot.get_info()
                     info.color = robot.get_color()
-                    if super_options is not None:
-                        supervisor = sup_class(robot.get_pose(), info, options = super_options)
+                    if thing.supervisor.options is not None:
+                        supervisor = sup_class(thing.robot.pose, info, options = thing.supervisor.options)
                     else:
-                        supervisor = sup_class(robot.get_pose(), info)                        
+                        supervisor = sup_class(thing.robot.pose, info)                        
                     supervisor.set_logqueue(self.__log_queue)
                     name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None and \
@@ -165,30 +154,28 @@ class Simulator(threading.Thread):
                     self.__robots.append(robot)
                     
                     # Create trackers
-                    self.__trackers.append(simobject.Path(robot.get_pose(),robot.get_color()))
+                    self.__trackers.append(simobject.Path(thing.robot.pose,robot.get_color()))
                 except:
                     self.log("[Simulator.construct_world] Robot creation failed!")
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
-            elif thing_type == 'obstacle':
-                obstacle_pose, obstacle_coords, obstacle_color = thing[1:4]
-                if obstacle_color is None:
-                    obstacle_color = 0xFF0000
+            elif thing.type == 'obstacle':
+                if thing.polygon.color is None:
+                    thing.polygon.color = 0xFF0000
                 self.__obstacles.append(
-                    simobject.Polygon(pose.Pose(obstacle_pose),
-                                      obstacle_coords,
-                                      obstacle_color))
-            elif thing_type == 'marker':
-                obj_pose, obj_coords, obj_color = thing[1:4]
-                if obj_color is None:
-                    obj_color = 0x00FF00
+                    simobject.Polygon(thing.polygon.pose,
+                                      thing.polygon.points,
+                                      thing.polygon.color))
+            elif thing.type == 'marker':
+                if thing.polygon.color is None:
+                    thing.polygon.color = 0x00FF00
                 self.__background.append(
-                    simobject.Polygon(pose.Pose(obj_pose),
-                                      obj_coords,
-                                      obj_color))
+                    simobject.Polygon(thing.polygon.pose,
+                                      thing.polygon.points,
+                                      thing.polygon.color))
             else:
                 raise Exception('[Simulator.construct_world] Unknown object: '
-                                + str(thing_type))
+                                + str(thing.type))
                                 
         self.__time = 0.0
         if not self.__robots:

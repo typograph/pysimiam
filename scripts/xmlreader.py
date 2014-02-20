@@ -1,5 +1,7 @@
 import xml.etree.ElementTree as ET
 from xmlobject import XMLObject
+from helpers import Struct
+from pose import Pose
 
 class XMLReader(XMLObject):
     """
@@ -133,15 +135,13 @@ class XMLReader(XMLObject):
 
                 robot_color = self._parse_color(robot.get('color'))
 
-                simulator_objects.append(('robot',
-                                          robot_type,
-                                          supervisor.attrib['type'],
-                                          (float(x),
-                                           float(y),
-                                           float(theta)),
-                                          robot_color,
-                                          robot.get('options',None),
-                                          supervisor.get('options',None)))
+                simulator_objects.append(Struct({'type':'robot',
+                                                 'robot':{'type':robot_type,
+                                                          'pose':Pose(float(x), float(y), float(theta)),
+                                                          'color':robot_color,
+                                                          'options':robot.get('options',None)},
+                                                 'supervisor':{'type':supervisor.attrib['type'],
+                                                               'options':supervisor.get('options',None)}}))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid robot (bad value)!') 
@@ -176,12 +176,10 @@ class XMLReader(XMLObject):
                         '[XMLReader._parse_simulation] Invalid pose!')
 
                 color = self._parse_color(obstacle.get('color'))
-                simulator_objects.append(('obstacle',
-                                          (float(x),
-                                           float(y),
-                                           float(theta)),
-                                          points,
-                                          color))
+                simulator_objects.append(Struct({'type':'obstacle',
+                                                 'polygon':{'pose':Pose(float(x),float(y),float(theta)),
+                                                            'color':color,
+                                                            'points':points}}))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid obstacle (bad value)!')
@@ -216,12 +214,10 @@ class XMLReader(XMLObject):
                         '[XMLReader._parse_simulation] Invalid pose!')
                 
                 color = self._parse_color(marker.get('color'))
-                simulator_objects.append(('marker',
-                                          (float(x),
-                                           float(y),
-                                           float(theta)),
-                                          points,
-                                          color))
+                simulator_objects.append(Struct({'type':'marker',
+                                                 'polygon':{'pose':Pose(float(x),float(y),float(theta)),
+                                                            'color':color,
+                                                            'points':points}}))
             except ValueError:
                 raise Exception(
                     '[XMLReader._parse_simulation] Invalid marker (bad value)!')
