@@ -83,16 +83,22 @@ class Simulator(threading.Thread):
     def read_config(self, filename):
         '''Load in the objects from the world XML file '''
 
-        self.log('reading initial configuration')
+        self.log('Loading new world')
         try:
-            self.__world = XMLReader(filename, 'simulation').read()
+            world = XMLReader(filename, 'simulation').read()
         except Exception as e:
             raise Exception('[Simulator.read_config] Failed to parse ' + filename \
                 + ': ' + str(e))
         else:
-            self.__supervisor_param_cache = None
-            self.__center_on_robot = False
-            self.__construct_world()
+            self.load_world(world)
+
+    def load_world(self, world):
+        '''Load the objects from an already parsed world'''
+
+        self.__world = world
+        self.__supervisor_param_cache = None
+        self.__center_on_robot = False
+        self.__construct_world()
 
     def __construct_world(self):
         """Creates objects previously loaded from the world xml file.
