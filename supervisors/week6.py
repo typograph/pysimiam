@@ -31,7 +31,7 @@ class QBWallSupervisor(QuickBotSupervisor):
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
         
         # Create and set the controller
-        self.current = self.create_controller('week6_solved.FollowWall', self.parameters)
+        self.current = self.create_controller('week6.FollowWall', self.parameters)
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
