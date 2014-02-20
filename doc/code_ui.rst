@@ -9,8 +9,6 @@ Drawing
 
 .. autoclass:: qt_renderer.QtRenderer
 
-.. autoclass:: wx_renderer.wxGCRenderer
-
 
 UI
 ---------
@@ -35,10 +33,4 @@ PyQt4 implementation
     :members:
         
 .. automodule:: qt_paramwindow
-    :members:
-
-wxPython implementation
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: wx_mainwindow
     :members:
