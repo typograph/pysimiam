@@ -10,6 +10,8 @@ class Supervisor:
 
         :param robot_pose: The initial pose of the robot,
         :type robot_pose: :class:`~pose.Pose`
+        :param robot_color: The color of the robot,
+        :type robot_color: 0xAARRGGBB or 0xRRGGBB
         :param robot_info: Info structure, the format defined by the robot's
                            :meth:`~robot.Robot.get_info`
         :type robot_info: :class:`~helpers.Struct`
@@ -17,7 +19,7 @@ class Supervisor:
         Any extension of pysimiam will require inheriting from this superclass.
         The important methods that have to be implemented to control a robot are
         :meth:`~Supervisor.estimate_pose`, :meth:`~Supervisor.process`,
-        :meth:`~Supervisor.init_default_parameters` and :meth:`~Supervisor.get_ui_description`.
+        :meth:`~Supervisor.get_default_parameters` and :meth:`~Supervisor.get_ui_description`.
         
         The base class implements a state machine for switching between different
         controllers. See :meth:`add_controller` for more information.
@@ -72,7 +74,7 @@ class Supervisor:
         
             The color of the robot in the view (useful for drawing).
     """
-    def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_color, robot_info, options = None):
         """
         :param robot_pose: The initial pose of the robot,
         :type robot_pose: :class:`~pose.Pose`
@@ -83,11 +85,13 @@ class Supervisor:
         self.pose_est = robot_pose
         self.current = None
         self.robot = robot_info
-        self.robot_color = robot_info.color
+        self.robot_color = robot_color
         self.logqueue = None
-        self.init_default_parameters()
+        if options is None:
+            options = self.get_default_parameters()
+        self.set_parameters(options)
         
-        # Dict controller -> (function, controller)
+        # Dict {controller:(function, controller)}
         self.states = {}
 
     def get_parameters(self):
@@ -100,19 +104,29 @@ class Supervisor:
         """
         return self.parameters
 
-    def init_default_parameters(self):
-        """Populate :attr:`parameters` with default values
+    def get_default_parameters(self):
+        """Return the same structure as :meth:`get_parameters`, initialized with default values
         
         Must be implemented in subclasses.
         """
-        raise NotImplementedError("Supervisor.init_default_parameters")
+        raise NotImplementedError("Supervisor.get_default_parameters")
+
+    def set_parameters(self,params):
+        """Update this supervisor parameters. The `params` will have the same
+        structure as specified by :meth:`get_ui_description`
+
+        :param params: An instance of the paramaters structure as can be returned
+                       from :meth:`~Supervisor.get_parameters`.
+        :type params: :class:`~helpers.Struct`
+        """
+        self.parameters = params
 
     def get_ui_description(self, params = None):
         """Return a list describing the parameters available to the user.
 
         :param params: An instance of the paramaters structure as returned
                        from get_parameters. If not specified, this method
-                       should use :attr:`~Supervisor.parameters`
+                       should use :meth:`~Supervisor.get_parameters`
         :type params:  :class:`~helpers.Struct`
         
         :return: A list describing the interface
@@ -144,16 +158,6 @@ class Supervisor:
         """
         raise NotImplementedError("Supervisor.get_ui_description")
         
-    def set_parameters(self,params):
-        """Update this supervisor parameters. The `params` will have the same
-        structure as specified by :meth:`get_ui_description`
-
-        :param params: An instance of the paramaters structure as can be returned
-                       from :meth:`~Supervisor.get_parameters`.
-        :type params: :class:`~helpers.Struct`
-        """
-        self.parameters = params
-
     def create_controller(self, module_string, parameters):
         """Create and return a controller instance for a given controller class.
 
@@ -233,15 +237,17 @@ class Supervisor:
         """
         pass
 
-    def process_state_info(self, state):
+    def process_robot_info(self, robot_info):
         """Evaluate the information about the robot and set state variables."""
-        self.robot = state
+        self.robot = robot_info
         self.pose_est = self.estimate_pose()
     
-    def get_controller_state(self):
-        """Get the parameters that the current controller needs for operation
+    def get_controller_state(self, controller):
+        """Get the parameters that the provided controller needs for operation
 
-        :return: A parameter structure in the format appropriate for the current controller.
+        :param controller: A controller that will use the parameters
+        :type controller: :class:`~controller.Controller`
+        :return: A parameter structure in the format appropriate for `controller`.
         :rtype: :class:`~helpers.Struct`
         
         The result of this function will be used to run the controller.

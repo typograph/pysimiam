@@ -44,25 +44,17 @@ class QuickBotSupervisor(Supervisor):
         # Let's say the robot is that big:
         self.robot_size = robot_info.wheels.base_length
         
-    def init_default_parameters(self):
+    def get_default_parameters(self):
         """Sets the default PID parameters, goal, and velocity"""
-        p = Struct()
-        p.goal = Struct()
-        p.goal.x = 1.0
-        p.goal.y = 1.0
-        p.velocity = Struct()
-        p.velocity.v = 0.2
-        p.gains = Struct()
-        p.gains.kp = 4.0
-        p.gains.ki = 0.1
-        p.gains.kd = 0.0
         
-        self.parameters = p
+        return Struct({'velocity':{'v':0.2},
+                       'goal':{'x':1.0, 'y':1.0},
+                       'gains':{'kp':4.0, 'ki':0.1, 'kd':0.0}})
         
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.parameters
+            p = self.get_parameters()
         
         return [('goal', [('x',p.goal.x), ('y',p.goal.y)]),
                 ('velocity', [('v',p.velocity.v)]),
