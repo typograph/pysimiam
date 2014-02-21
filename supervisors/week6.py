@@ -69,7 +69,7 @@ class QBWallSupervisor(QuickBotSupervisor):
     def init_default_parameters(self):
         """Init parameters with default values"""
         self.parameters = Struct({"direction":'left', \
-                                  "distance":0.2, \
+                                  "distance":0.1, \
                                   "velocity":{"v":0.2}, \
                                   "gains":{"kp":3.0, "ki": 0.1, "kd": 0.0}})
 

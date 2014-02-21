@@ -1007,6 +1007,6 @@ Second, test the follow wall behaviour by running the simulation. The robots sho
 Grading
 -------
 
-The grader will test your controller in different worlds (``worlds/week6_test_left.xml`` and ``worlds/week6_test_right.xml``). You can load these worlds into the simulator and try them out. They contain a single robot, that should be able to go around the obstacle two times without crashing in less than 90 seconds.
+The grader will test your controller in different worlds (``worlds/week6_test_left.xml`` and ``worlds/week6_test_right.xml``). You can load these worlds into the simulator and try them out. They contain a single robot that should be able to go around the obstacle two times without crashing in less than 90 seconds.
 
-.. note:: The grader will test the robot using the default gains provided by the supervisor. If you want to use different gains, change the values in ``init_default_parameters`` in ``supervisors/week6.py``
+.. note:: The grader will test the robot using the default parameters provided by the supervisor. If you want to use different gains or robot-to-wall distance, change the values in ``init_default_parameters`` in ``supervisors/week6.py``
