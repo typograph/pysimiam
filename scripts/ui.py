@@ -10,12 +10,12 @@ class Parameter(Struct):
        in the UI (simulator event "make_param_window").
        
        The following parameters are supported::
-       
-            Parameter(Parameter.GROUP, contents)
-            Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
-            Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
-            Parameter(Parameter.BOOL, value)
-            Parameter(Parameter.SELECT, value, available_values)
+
+        Parameter(Parameter.GROUP, contents)
+        Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
+        Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
+        Parameter(Parameter.BOOL, value)
+        Parameter(Parameter.SELECT, value, available_values)
               
     """
     
@@ -79,8 +79,6 @@ class Parameter(Struct):
         else:
             raise ValueError("Wrong parameters to ui.Parameter {} {}".format(args,kwargs))
     
-import simulator as sim
-
 class SimUI:
     """The SimUI class defines a front-end for the :class:`~simulator.Simulator`.
        It contains the necessary functions for the frontend-simulator communication
@@ -95,14 +93,14 @@ class SimUI:
        The constructor of SimUI takes a :class:`~renderer.Renderer` object as parameter.
        This renderer will be passed to the simulator to draw on.
     """
-    def __init__(self, renderer):
+    def __init__(self, renderer, simulator_class):
         
         self.event_handler = None
         
         self.sim_queue = queue.Queue()
         
         # create the simulator thread
-        self.simulator_thread = sim.Simulator(renderer, self.sim_queue)
+        self.simulator_thread = simulator_class(renderer, self.sim_queue)
 
         self.in_queue = self.simulator_thread._out_queue
         
@@ -236,54 +234,3 @@ class SimUI:
     def stop_testing(self):
         """Return UI back to normal operation."""
         pass
-    
-    #def get_view_parameters(self):
-        #pass
-    
-    #def set_view_parameters(self,params):
-        #pass
-    
-    #def new_renderer(self):
-        #pass
-    
-    #def pop_renderer(self):
-        #pass
-
-    #def start_test(self):
-        #"""This function will pause and 'cache' the currently running
-           #simulation. A new `simulator.Simulator` will be started with
-           #the control belonging to the tester object.
-        #"""
-        #self.antiteststruct = Struct()
-        #self.antiteststruct.wasrunning = False
-        ## 1) Pause simulator
-        #if self.simulator_thread.is_running():
-            #self.antiteststruct.wasrunning = True # Remember the setting
-            #self.run_simulator_command('pause_simulation') # Pause simulation
-            #self.process_events(True) # Process all events
-            
-        ## 2) Create new simulator
-        #self.antiteststruct.simulator = simulator_thread
-        #self.simulator_thread = sim.Simulator(self.instantiate_new_renderer(), self.sim_queue)
-        #self.simulator_thread.start()
-    
-    #def stop_test(self):
-        #"""This function will restore the cached simulation and 
-           #simulation. A new `simulator.Simulator` will be started with
-           #the control belonging to the tester object.
-        #"""
-        #view_params = self.get_view_parameters()
-        
-        ## 1) Stop simulator
-        #self.run_simulator_command('stop')
-        #while self.simulator_thread.isAlive():
-            #self.process_events(True)
-            #self.simulator_thread.join(0.1)
-                
-        ## 2) Switch to old simulator
-        #self.pop_renderer()
-        #self.simulator_thread = self.antiteststruct.simulator
-        
-        ## 3) continue running
-        #if self.antiteststruct.wasrunning:
-            #self.run_simulator_command('pause_simulation')
