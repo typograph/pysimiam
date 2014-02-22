@@ -133,8 +133,8 @@ class PCLoop(threading.Thread):
                     self.__robot.set_logqueue(self.__log_queue)
                     if thing.robot.color is not None:
                         self.__robot.set_color(thing.robot.color)
-                    elif len(self.__robots) < 8:
-                        self.__robot.set_color(self.__nice_colors[len(self.__robots)])
+                    else:
+                        self.__robot.set_color(self.__nice_colors[0])
                         
                     # Create supervisor
                     sup_class = helpers.load_by_name(thing.supervisor.type,'supervisors')
@@ -266,7 +266,7 @@ class PCLoop(threading.Thread):
 
                 self.fwd_logqueue()
   
-            except RealtimeError as e:
+            except RuntimeError as e:
                 self.log(str(e))
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
