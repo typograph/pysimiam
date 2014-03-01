@@ -8,8 +8,8 @@
 #
 from supervisors.quickbot import QuickBotSupervisor
 from supervisor import Supervisor
-from ui import uiFloat
 from math import sqrt, sin, cos, atan2
+from ui import uiFloat
 import numpy
 
 class QBFullSupervisor(QuickBotSupervisor):
@@ -27,7 +27,7 @@ class QBFullSupervisor(QuickBotSupervisor):
                 self.extgoal = True
             except Exception:
                 pass
-
+            
         # Fill in some parameters
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
         self.parameters.ir_max = robot_info.ir_sensors.rmax
@@ -49,11 +49,15 @@ class QBFullSupervisor(QuickBotSupervisor):
                             (lambda: not self.at_goal(), self.gtg))
         self.add_controller(self.gtg,
                             (self.at_goal, self.hold),
-                            (self.at_obstacle, self.avoidobstacles))
+                            (self.unsafe, self.avoidobstacles),
+                            (lambda: self.at_obstacle() and not self.detach(), self.wall))
         self.add_controller(self.avoidobstacles,
                             (self.at_goal, self.hold),
-                            (self.free, self.gtg),
-                            )
+                            (self.safe, self.gtg))
+        self.add_controller(self.wall,
+                            (self.at_goal, self.hold),
+                            (lambda: self.progress_made() and self.detach(), self.gtg))
+#                            (self.unsafe, self.avoidobstacles))
         
         # Change and add additional transitions
         
@@ -75,11 +79,39 @@ class QBFullSupervisor(QuickBotSupervisor):
 
     def at_obstacle(self):
         """Check if the distance to obstacle is small"""
-        return self.distmin < self.robot.ir_sensors.rmax/2.0
+        atobst =  self.distmin < self.robot.ir_sensors.rmax/1.1
+        if atobst:
+            ind_dmin = list(self.parameters.sensor_distances).index(self.distmin)
+            if ind_dmin > 2:
+                self.parameters.direction = 'right'
+            elif ind_dmin < 2:
+                self.parameters.direction = 'left'
+            else:
+                return False
+            self.progress = self.distance_from_goal
+        return atobst
+
+    def unsafe(self):
+        """Check if we are too close to the wall for safe cruising"""
+        return self.distmin < self.robot.ir_sensors.rmin*2.0 or \
+               self.parameters.sensor_distances[2] < self.robot.ir_sensors.rmax/2.0
         
-    def free(self):
-        """Check if the distance to obstacle is large"""
-        return self.distmin > self.robot.ir_sensors.rmax/1.1
+    def safe(self):
+        return self.distmin > self.robot.ir_sensors.rmin*4.0
+    
+    def progress_made(self):
+        """Check if we a re closer to the goal than before"""
+        return self.distance_from_goal < self.progress
+
+    def detach(self):
+        """Check if detatching from the wall makes sense (the goal is on the right side"""
+        goal_angle = self.gtg.get_heading_angle(self.parameters)
+        wall_angle = self.wall.get_heading_angle(self.parameters)
+        if goal_angle > wall_angle and self.parameters.direction == "right":
+            return True
+        if goal_angle < wall_angle and self.parameters.direction == "left":
+            return True
+        return False
 
     def process_state_info(self, state):
         """Update state parameters for the controllers and self"""

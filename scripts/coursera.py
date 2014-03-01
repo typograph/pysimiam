@@ -918,16 +918,26 @@ class Week7Test(WeekTestCase):
             else:
                 m = self.switch_RX.match(message)
                 if m is not None:
-                    self.switches += 1
                     cnt = m.group('CNT')
                     if cnt == "Hold":
-                        if self.cdist > 0.05:
+                        if self.cdist > 0.06:
                             print("The robot stopped too far from the goal.")
                             self.stop_test(False)
                         else:
                             self.stop_test(True)
         elif event == "plot_update": # get dr            
             self.cdist = args[0][self.dst2goal]
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+
+            params[0][1][0] = ('x', self.p.goal.x)
+            params[0][1][1] = ('y', self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
            
         return False
         
@@ -943,6 +953,21 @@ class Week7Test(WeekTestCase):
         
         if 'x_g' not in vals or 'y_g' not in vals:
             raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        self.p = helpers.Struct()
+        self.p.velocity = helpers.Struct({'v':0.2})
+        self.p.goal = helpers.Struct({'x':vals['x_g'], 'y':vals['y_g']})
+        self.p.gains = helpers.Struct({'kp':4, 'ki':0.1, 'kd':0})
+        
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            struct = dock.widget().contents.get_struct()
+            self.p.gains = struct.gains
+            self.p.velocity = struct.velocity
 
         self.testsuite.gui.start_testing()
         self.testsuite.gui.register_event_handler(self)
