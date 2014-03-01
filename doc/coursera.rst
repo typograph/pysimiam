@@ -1021,33 +1021,23 @@ The simulator for this week can be run with::
 You are encouraged (but not required) to reuse your code from week 6, by using your version of the follow-wall controller in ``controllers/followwall.py``. You can also reuse parts of your state machine from week 5.
 
 This week you will be combining the go-to-goal, avoid-obstacles, and follow-wall controllers into a full navigation system for the robot. The robot will be able to navigate around a cluttered, complex environment without colliding with any obstacles and reaching the goal location successfully. Implement your solution in ``supervisors/week7.py``.
+  
+By default, the robot is set up to switch between *AvoidObstacles* and *GoToGoal* to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at (1.1,1.1). The robot needs a better strategy for navigation. Instead of just turning away from obstacles, it can follow the obstacle using the *FollowWall* controller from the last week. At some point, however, the robot should detach itself from the wall and go straight for the goal again. There are two conditions that determine this detachment point.
 
 Finding out if any progress is being made
 -----------------------------------------
 
-Implement the ``progress_made`` condition that will determine whether the robot is making any progress towards the goal.
-  
-By default, the robot is set up to switch between *AvoidObstacles* and *GoToGoal* to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at (1,1). The robot needs a better strategy for navigation. This strategy needs to realize that the robot is not making any forward progress and switch to *FollowWall* to navigate out of the obstacle.
-
-Implement the function ``progress_made`` such that it returns ``True`` if
+The ``progress_made`` condition determines whether the robot is making any progress towards the goal. Implement the function ``progress_made`` such that it returns ``True`` if
 
 .. math::
     \left\|\begin{bmatrix} x-x_g \\ y-y_g \end{bmatrix}\right\| < d_{\text{progress}}-\epsilon,
 
-where ε = 0.1 gives a little bit of slack, and :math:`d_{\text{progress}}` is the closest (in terms of distance) the robot has progressed towards the goal. This distance can be set in the ``sliding_left``/``sliding_right`` conditions before switching to the *FollowWall* behavior in the third part.
+where ε = 0.1 gives a little bit of slack, and :math:`d_{\text{progress}}` is the closest (in terms of distance) the robot has progressed towards the goal. This distance can be set before switching to the *FollowWall* behaviour in the ``at_obstacle`` condition.
 
-Following the wall in the right direction
------------------------------------------
+Finding out if going straight for the goal makes sense
+------------------------------------------------------
 
-Implement the ``sliding_left`` and ``sliding_right`` conditions that will serve as a criterion for whether the robot should continue to follow the wall (left or right) or switch back to the go-to-goal behavior.
-
-While the lack of ``progress_made`` will trigger the navigation system into a *FollowWall* behavior, we need to check whether the robot should stay in the wall following behavior, or switch back to *GoToGoal*. We can check whether we need to be in the sliding mode (wall following) by testing if :math:`\sigma_1>0` and :math:`\sigma_2>0`, where
-
- .. math::
-      \begin{bmatrix}u_{gtg} & u_{ao}\end{bmatrix}\begin{bmatrix}\sigma_1 \\ \sigma_2\end{bmatrix} = u_{fw}.
-   
-   
-Implement this test in the function ``sliding_left`` and ``sliding_right``. The test will be the same for both functions. The difference is in how :math:`u_{fw}` is computed.
+The ``can_detach`` condition determines whether going straight for the goal would bring the robot further away from the obstacles. Implement the function ``can_detach`` such that it returns ``True`` if the vector towards the goal is pointing away from the wall. In other words, the robot should detach from the wall on the left if :math:`u_gtg \times u_fw > 0`, and from the wall on the right if :math:`u_gtg \times u_fw < 0`.
 
 Switching
 ---------
@@ -1056,19 +1046,27 @@ Now, we are ready to implement a finite state machine (FSM) that solves the full
    
     #. If ``at_goal``, then switch to *Hold*.
     #. If ``unsafe``, then switch to *AvoidObstacles*.
-    #. If in state *GoToGoal* and ``at_obstacle``, then check whether the robot needs to ``slide_left`` or ``slide_right``. If so, set :math:`d_{\text{progress}}`, and switch to state *FollowWall* (with ``inputs.direction`` equal to right or left depending on the results of the sliding test).
-    #. If in state *FollowWall*, check whether ``progress_made`` is true and the robot does not need to  ``slide_left`` (or ``slide_right`` depending on ``inputs.direction``). If so, switch to state *GoToGoal*, otherwise keep following the wall.
+    #. If in state *GoToGoal* and ``at_obstacle`` and not ``can_detach``, then check whether the robot needs to follow the wall on the left or on the right and set ``self.parameters.direction`` and :math:`d_{\text{progress}}`  (the best place to do so is inside the ``at_obstacle`` condition if it evaluates to ``True``). Then switch to state *FollowWall*. 
+    #. If in state *FollowWall*, check whether ``progress_made`` and ``can_detach`` are both true. If so, switch to state *GoToGoal*, otherwise keep following the wall.
 
 Testing
 -------
 
 To test your code, the simulator is set up to run a simple FSM that is unable to exit the large obstacle and advance towards the goal.
 
-#. Test the first part with the third part.
-#. Test the second part with the third part.
-#. Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at (1,1) or not? However, let us consider a few key situations that will likely be problematic.
+Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at (1.1,1.1) or not? However, let us consider a few key situations that will likely be problematic.
   
- #. First, the default code has the problem that the robot is stuck inside the large obstacle. The reason for this situation is that avoid obstacle is not enough to push the robot far enough way from the obstacle, such that when go-to-goal kicks back in, the robot is clear of the obstacle and has a free path towards the goal. So, you need to make sure that the robot realizes that no progress towards the goal is being made and that wall following needs to be activated for the robot to navigate out of the interior of the large obstacle.
- #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and sliding is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``sliding_left`` (``sliding_right``) conditions to transition from ``FollowWall`` to ``GoToGoal``.
+ #. First, the default code has the problem that the robot is stuck inside the large obstacle. The reason for this situation is that avoid obstacle is not enough to push the robot far enough way from the obstacle, such that when go-to-goal kicks back in, the robot is clear of the obstacle and has a free path towards the goal. This is solved by using *FollowWall* instead of *AvoidObstacles* when close to an obstacle.
+ #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and folloing the wall is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``can_detach`` conditions to transition from ``FollowWall`` to ``GoToGoal``.
   
 .. note:: Remember that adding ``print`` calls to different parts of your code can help you debug your problems. By default, the supervisor prints out the state that it switches to.
+
+Grading
+-------
+
+The grader this week will check if your robot reaches the goal successfully in a cluttered environment within 30 seconds and stops there.
+
+Having fun
+----------
+
+Now that you have a robot that can navigate complicated environments, you can do the ultimate test and make your robot go through a labyrinth. There are several labyrinth worlds available this week, but we suggest you try ``worlds/labyrinth.small.xml`` first. The robot should go through this labyrinth in less than 3 minutes of simulation time.

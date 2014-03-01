@@ -1,14 +1,15 @@
 #
 # (c) PySimiam Team 2013
-#
+# 
 # Contact person: Tim Fuchs <typograph@elec.ru>
 #
-# This class was implemented as a weekly programming excercise
+# This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
 from controllers.pid_controller import PIDController
 import math
 import numpy
+from pose import Pose
 
 class FollowWall(PIDController):
     """Follow walls is a controller that keeps a certain distance
@@ -18,128 +19,56 @@ class FollowWall(PIDController):
         '''Initialize internal variables'''
         PIDController.__init__(self,params)
 
-        # This variable should contain a list of vectors
-        # calculated from the relevant sensor readings.
-        # It is used by the supervisor to draw & debug
-        # the controller's behaviour
-        self.vectors = []
-        
-    def restart(self):
-        """Reset internal state"""
-        PIDController.restart(self)
-        
-        # This vector points to the closest point of the wall
-        self.to_wall_vector = None
-        
-        # This vector points along the wall
-        self.along_wall_vector = None
-        
-        # Both vectors are None to enable smoother corner navigation
-
     def set_parameters(self, params):
         """Set PID values, sensor poses, direction and distance.
         
         The params structure is expected to have sensor poses in the robot's
         reference frame as ``params.sensor_poses``, the direction of wall
         following (either 'right' for clockwise or 'left' for anticlockwise)
-        as ``params.direction``, the desired distance to the wall 
-        to maintain as ``params.distance``, and the maximum sensor reading
-        as ``params.ir_max``.
+        as ``params.direction`` and the desired distance to the wall 
+        to maintain as ``params.distance``.
         """
         PIDController.set_parameters(self,params)
 
-        self.poses = params.sensor_poses
+        self.sensor_poses = params.sensor_poses
         self.direction = params.direction
         self.distance = params.distance
-        self.sensor_max = params.ir_max
-
+        
     def get_heading(self, state):
         """Get the direction along the wall as a vector."""
         
-        # Factor for sensor selection
-        if self.direction == 'left':
-            dirfactor = 1
-        else:
-            dirfactor = -1
-        
-        # Get the sensors at the good side that also show an obstacle
-        sensors = [(p, d) for d, p in zip(state.sensor_distances, self.poses)
-                          if 0 < p.theta*dirfactor < math.pi and d < self.sensor_max]
-
-        # Now make sure they are sorted from front to back
-        sensors = sorted(sensors, key = lambda p_d: abs(p_d[0].theta))
-        
-        # No wall - drive a bit to the wall
-        if len(sensors) == 0:
-            return numpy.array([0.8,dirfactor*0.6,1])
-        
-        # Calculate vectors for the sensors 
-        self.vectors = numpy.array(
-                            [numpy.dot(p.get_transformation(),
-                                    numpy.array([d,0,1]))
-                             for p, d in sensors] )
-
-        # Now the wall section: (really easy version)
-        if len(self.vectors) == 1: # Corner
-            sensor = sensors[0]
-            pose = sensor[0]
-            reading = sensor[1]
-            self.to_wall_vector = self.vectors[0]
-            if self.along_wall_vector is None:
-                # We've only started, it's a corner,
-                # go perpendicular to its vector
-                self.along_wall_vector = numpy.array([
-                            dirfactor*self.to_wall_vector[1],
-                            -dirfactor*self.to_wall_vector[0],
-                            1])
-
-                # Which direction to go?
-                # either away from this corner or directly to it.
-                # let's blend ahead with corner:
-                theta_h = pose.theta*reading/self.sensor_max
-                return numpy.array([
-                            reading*math.cos(theta_h),
-                            reading*math.sin(theta_h),
-                            1])
+        # Calculate vectors for the sensors
+        if state.direction == 'left': # 0-2
+            d, i = min( zip(state.sensor_distances[:3],[0,1,2]) )
+            if i == 0 or (i == 1 and state.sensor_distances[0] <= state.sensor_distances[2]):
+                i, j, k = 1, 0, 2
+                
             else:
-                # To minimize jittering, blend with the previous
-                # reading, and don't rotate more than 0.2 rad.
-                prev_theta = math.atan2(self.along_wall_vector[1],
-                                        self.along_wall_vector[0])
-                self.along_wall_vector = numpy.array([
-                            dirfactor*self.to_wall_vector[1],
-                            -dirfactor*self.to_wall_vector[0],
-                            1])
-                this_theta = math.atan2(self.along_wall_vector[1],
-                                        self.along_wall_vector[0])
-                dtheta = prev_theta - this_theta
-                if abs(dtheta) > 0.2:
-                    dtheta *= 0.2*abs(dtheta)
+                i, j, k = 2, 1, 0
+            
+        else : # 2-4
+            d, i = min( zip(state.sensor_distances[2:],[2,3,4]) )
+            if i == 4 or (i == 3 and state.sensor_distances[4] <= state.sensor_distances[2]):
+                i, j, k = 3, 4, 2
+            else:
+                i, j, k = 2, 3, 4
                 
-                self.along_wall_vector = numpy.array([
-                            reading*math.cos(prev_theta - dtheta),
-                            reading*math.sin(prev_theta - dtheta),
-                            1])
-                                    
-                
-        else: # More than one vector, approximate with first and last
-            self.along_wall_vector = self.vectors[0] - self.vectors[-1]
-            a = self.vectors[-1]
-            b = self.along_wall_vector
-            dot = numpy.dot
-            self.to_wall_vector = a - b*dot(a,b)/dot(b,b)
+        p_front = Pose(state.sensor_distances[i]) >> self.sensor_poses[i]
+        p_back = Pose(state.sensor_distances[j]) >> self.sensor_poses[j]
 
-        # Blend along_wall with to_wall depending on the distance
-        # if too small, go further away (-to_wall), if too big, go closer
-        # (+ to_wall), or go along.
+        self.vectors = [(p_front.x,p_front.y,1), (p_back.x, p_back.y, 1)]
+
+        # Calculate the two vectors:
+        ds = ((p_front.x-p_back.x)**2 + (p_front.y-p_back.y)**2)
+        ms = (p_front.x*p_back.y - p_front.y*p_back.x)
+        self.to_wall_vector = numpy.array([(p_back.y-p_front.y)*ms/ds,(p_front.x-p_back.x)*ms/ds,1])
+        self.along_wall_vector = numpy.array([p_front.x-p_back.x, p_front.y-p_back.y, 1])
+
+        # Calculate and return the heading vector:
+        offset = abs(ms/math.sqrt(ds)) - state.distance
+        if offset > 0:
+            return 0.3*self.along_wall_vector + 2 * offset * self.to_wall_vector
+        else:
+            return 0.3*self.along_wall_vector + 3 * offset * self.to_wall_vector
     
-        weight_steer = math.sqrt(self.to_wall_vector[0]**2
-                            + self.to_wall_vector[1]**2) - self.distance
-        weight_steer /= self.sensor_max/2
-        
-        # Extra weight for driving closer to corners
-        if len(self.vectors) == 1:
-            weight_steer += 0.3
-                           
-        return self.along_wall_vector + self.to_wall_vector*weight_steer
                

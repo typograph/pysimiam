@@ -8,14 +8,25 @@
 #
 from supervisors.quickbot import QuickBotSupervisor
 from supervisor import Supervisor
+from ui import uiFloat
 from math import sqrt, sin, cos, atan2
 import numpy
 
 class QBFullSupervisor(QuickBotSupervisor):
     """QBFull supervisor implements the full switching behaviour for navigating labyrinths."""
-    def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_info, options = None):
         """Create controllers and the state transitions"""
         QuickBotSupervisor.__init__(self, robot_pose, robot_info)
+
+        self.extgoal = False
+
+        if options is not None:
+            try:
+                self.parameters.goal.x = options.x
+                self.parameters.goal.y = options.y
+                self.extgoal = True
+            except Exception:
+                pass
 
         # Fill in some parameters
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
@@ -134,3 +145,20 @@ class QBFullSupervisor(QuickBotSupervisor):
             renderer.draw_arrow(0,0,
                 arrow_length*cos(self.wall.heading_angle),
                 arrow_length*sin(self.wall.heading_angle))
+
+    def get_ui_description(self,p = None):
+        """Returns the UI description for the docker"""
+        if p is None:
+            p = self.parameters
+        
+        ui =   [('goal', [('x',uiFloat(p.goal.x,0.1)), ('y',uiFloat(p.goal.y,0.1))]),
+                ('velocity', [('v',uiFloat(p.velocity.v,0.1))]),
+                (('gains',"PID gains"), [
+                    (('kp','Proportional gain'), uiFloat(p.gains.kp,0.1)),
+                    (('ki','Integral gain'), uiFloat(p.gains.ki,0.1)),
+                    (('kd','Differential gain'), uiFloat(p.gains.kd,0.1))])]
+                
+        if self.extgoal:
+            return ui[1:]
+        else:
+            return ui
