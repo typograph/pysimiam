@@ -12,7 +12,7 @@
     </marker>
     <robot type="QuickBot">
         <pose theta="0.0" x="-2.5" y="2.5"/>
-        <supervisor type="week7_solved.QBFullSupervisor"/>
+        <supervisor type="week7.QBFullSupervisor"/>
     </robot>
 <!--    <robot type="Khepera3">
         <pose theta="3.14159265359" x="2.5" y="-2.5"/>
