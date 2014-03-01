@@ -9,7 +9,7 @@
 from supervisors.quickbot import QuickBotSupervisor
 from helpers import Struct
 from numpy import array, dot
-from ui import Parameter as uiP
+from ui import uiFloat
 
 from math import pi, sin, cos, log1p, sqrt, atan2
 
@@ -59,12 +59,12 @@ class QBWallSupervisor(QuickBotSupervisor):
         return [
             (('wall', "Follow wall"), [
                 ('direction', (p.direction,['left','right'])),
-                (('distance','Distance to wall'), uiP(uiP.FLOAT,p.distance,0.1))]),
-            ('velocity', [('v',uiP(uiP.FLOAT,p.velocity.v,0.1))]),
+                (('distance','Distance to wall'), uiFloat(p.distance,0.1))]),
+            ('velocity', [('v',uiFloat(p.velocity.v,0.1))]),
             (('gains',"PID gains"), [
-                (('kp','Proportional gain'), uiP(uiP.FLOAT,p.gains.kp,0.1)),
-                (('ki','Integral gain'), uiP(uiP.FLOAT,p.gains.ki,0.1)),
-                (('kd','Differential gain'), uiP(uiP.FLOAT,p.gains.kd,0.1))])]
+                (('kp','Proportional gain'), uiFloat(p.gains.kp,0.1)),
+                (('ki','Integral gain'), uiFloat(p.gains.ki,0.1)),
+                (('kd','Differential gain'), uiFloat(p.gains.kd,0.1))])]
                     
     def init_default_parameters(self):
         """Init parameters with default values"""

@@ -5,79 +5,49 @@ except ImportError:
 
 from helpers import Struct
 
-class Parameter(Struct):
-    """Parameter represents a single GUI element that is used to build a parameter window
+class uiParameter(Struct):
+    """uiParameter represents a single GUI element that is used to build a parameter window
        in the UI (simulator event "make_param_window").
        
-       The following parameters are supported::
-       
-            Parameter(Parameter.GROUP, contents)
-            Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
-            Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
-            Parameter(Parameter.BOOL, value)
-            Parameter(Parameter.SELECT, value, available_values)
-              
+       It has one parameter, ``type``, that defines the type of the parameter. Possible parameter
+       types are GROUP, INT, FLOAT, BOOL and SELECT.
     """
     
     GROUP, INT, FLOAT, BOOL, SELECT = 0,1,2,3,4
     
-    def __init__(self, elem_type, *args, **kwargs):
-
+    def __init__(self, elem_type):
         self.type = elem_type
 
-        if elem_type == self.GROUP and len(args) == 1:           
-            self.contents = args[0]
-            
-        elif elem_type == self.INT and len(args) >= 1 and len(args) <= 3:            
-            self.value = args[0]
+class uiGroup(Parameter):
+    def __init__(self, contents):
+        Parameter.__init__(Parameter.GROUP)
+        self.contents = contents
 
-            if len(args) > 1:
-                self.min_value = args[1]
-            elif 'min_value' in kwargs:
-                self.min_value = kwargs['min_value']
-            else:
-                self.min_value = -100
-                
-            if len(args) > 2:
-                self.max_value = args[2]
-            elif 'max_value' in kwargs:
-                self.max_value = kwargs['max_value']
-            else:
-                self.max_value = 100
-                
-        elif elem_type == self.FLOAT and len(args) >= 1 and len(args) <= 4:
-            self.value = args[0]
+class uiInt(Parameter):
+    def __init__(self, value, min_value = -100, max_value = 100):
+        Parameter.__init__(self, Parameter.INT)
+        self.value = value
+        self.min_value = min_value
+        self.max_value = max_value
 
-            if len(args) > 1:
-                self.step = args[1]
-            elif 'step' in kwargs:
-                self.step = kwargs['step']
-            else:
-                self.step = 1.0
+class uiFloat(Parameter):
+    def __init__(self, value, step = 1.0, min_value = -1000.0, max_value = 1000.0):
+        Parameter.__init__(self, Parameter.FLOAT)
+        self.value = value
+        self.step = step
+        self.min_value = min_value
+        self.max_value = max_value
 
-            if len(args) > 2:
-                self.min_value = args[2]
-            elif 'min_value' in kwargs:
-                self.min_value = kwargs['min_value']
-            else:
-                self.min_value = -1000.0
-                
-            if len(args) > 3:
-                self.max_value = args[3]
-            elif 'max_value' in kwargs:
-                self.max_value = kwargs['max_value']
-            else:
-                self.max_value = 1000.0
+class uiBool(Parameter):
+    def __init__(self, value):
+        Parameter.__init__(self, Parameter.BOOL)
+        self.value = value
 
-        elif elem_type == self.BOOL and len(args) == 1:
-            self.value = args[0]
-            
-        elif elem_type == self.SELECT and len(args) == 2:
-            self.value = args[0]
-            self.value_list = args[1]
-            
-        else:
-            raise ValueError("Wrong parameters to ui.Parameter {} {}".format(args,kwargs))
+class uiSelect(Parameter):
+    def __init__(self, value, value_list):
+        Parameter.__init__(self, Parameter.SELECT, value, value_list)
+        self.value = value
+        self.value_list = value_list
     
 import simulator as sim
 
