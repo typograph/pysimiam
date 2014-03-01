@@ -129,7 +129,24 @@ class Polygon(SimObject):
         r.set_brush(self.get_color())
         r.draw_polygon(self.get_envelope())
 
-class Path(SimObject):
+class Cloud(SimObject):
+    """The cloud is a collection of points."""
+    
+    def __init__(self,color):
+        SimObject.__init__(self, Pose(), color)
+        self.points = []
+    
+    def add_point(self,pose):
+        """Append a point at *pose* to the collection. The orientation of the pose is ignored"""
+        self.points.append((pose.x,pose.y))
+
+    def draw(self,r):
+        """Draw a polyline with modes at all added points, using the internal color"""
+        r.set_pose(self.get_pose()) # Reset everything
+        r.set_pen(self.get_color())
+        r.draw_points(self.points)
+    
+class Path(Cloud):
     """The path is a simobject that draws itself as a polyline.
        The line starts at `start`, and can be continued by adding
        points using :meth:`~simobject.Path.add_point`.
@@ -142,17 +159,13 @@ class Path(SimObject):
        The path is used by the simulator to track the history of robot motion"""
        
     def __init__(self, start, color):
-        SimObject.__init__(self, Pose(), color)
+        Cloud.__init__(self, color)
         self.reset(start)
 
     def reset(self,start):
         """Set the start point to start.x and start.y
            and remove all other points"""
         self.points = [(start.x,start.y)]
-        
-    def add_point(self,pose):
-        """Append a point at *pose* to the path. The orientation of the pose is ignored"""
-        self.points.append((pose.x,pose.y))
         
     def draw(self,r):
         """Draw a polyline with modes at all added points, using the internal color"""
@@ -162,4 +175,3 @@ class Path(SimObject):
             x1,y1 = self.points[i-1]
             x2,y2 = self.points[i]
             r.draw_line(x1,y1,x2,y2)
-        

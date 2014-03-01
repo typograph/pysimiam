@@ -1011,6 +1011,74 @@ The grader will test your controller in different worlds (``worlds/week6_test_le
 
 .. note:: The grader will test the robot using the default gains provided by the supervisor. If you want to use different gains, change the values in ``init_default_parameters`` in ``supervisors/week6.py``
 
+Controlling the real QuickBot
+=============================
+
+If you have built a QuickBot, you can use pySimiam and the controllers/supervisors you implemented to make it autonomous.
+
+Establishing the connection
+---------------------------
+
+First, you have to make sure that pySimiam and the robot can communicate with each other. Start by following the `instructions <https://class.coursera.org/conrob-002/wiki/Hardware>`_ provided by Rowland O'Flaherty to find out the IP addresses of you host computer and the robot, and to start the program on the robot. After this is done, edit the ``worlds/qb_realtime_pc.xml`` world file::
+
+    <?xml version="1.0" ?>
+    <simulation>
+        <robot type="qb_realtime.QuickBot" options='{"baseIP":"192.168.0.1", "robotIP":"192.168.0.6", "port":5005}'>
+            <pose theta="0.0" x="0.0" y="0.0"/>
+            <supervisor type="qb_realtime_pwmtest.PWMTest"/>
+        </robot>
+    </simulation>
+
+You have to set *baseIP* to your host IP address, *robotIP* to your robot IP address, and *port* to the port you chose earlier. Now, you can run the control code::
+    
+    >>> python qtsimiam_realtime.py
+
+If there is no error message after a couple of seconds, the connection with the QuickBot has been established successfully.
+
+Calibrating the motors
+----------------------
+    
+The second step is the calibration of the motors. The angular velocity of the wheels is defined by the `pulse-width-modulated signal <http://en.wikipedia.org/wiki/Pulse-width_modulation>`_ (PWM) that the BeagleBone board is sending to the motors. This dependence is not known apriori, as it depends on the motors, the wheels and the surface. To be able to control your robot reliably, you have to measure this dependence and put into code.
+
+.. image:: pwm2v.png
+    :align: left
+    :width: 400px
+
+To simplify the task, we are going to assume a dependence in the form shown on the graph: there is a minimal PWM number required to make the wheels turn, and after this point the angular velocity increases linearly with the power provided.
+
+When you start the program, the supervisor that you get allows you to control the PWM for left and right wheel separately. Begin by determining the lowest PWM setting for the robot to start moving. Try several values (e.g. 25, 50 and 75) for a rough estimate and then fine-tune the value until you have reached the minimum velocity. Measure the linear speed of the robot, with both wheels at this setting. You can now calculate the angular velocity using the formula from Week 1. Next, set both wheels to a high PWM value (70-90) and measure the speed again. Calculate the angular velocity again.
+
+You have now four numbers - PWM and angular velocity in the minimum (``pwm_min`` and ``vel_min``) and PWM and angular velocity in the maximum (``pwm_max`` and ``vel_max``). Around line 32 in ``robots/qb_realtime.py`` you will find the variable ``beta``::
+    
+    beta = (1.0, 0.0)
+    
+This variable is used to convert from angilar velocities to PWM values and back. You should set it in such a way that
+
+.. math::
+    v_\mathrm{min} &= \beta_0 \mathrm{PWM}_\mathrm{min} + \beta_1 \\
+    v_\mathrm{max} &= \beta_0 \mathrm{PWM}_\mathrm{max} + \beta_1
+
+Around line 144 you will also find the limits of angular velocity that are used in ``ensure_w``::
+
+    self.info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
+    self.info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
+    
+Set those to ``vel_min`` and ``vel_max``, respectively.
+
+Running the robot
+-----------------
+
+Congratulations! You are as good as done. The only thing left to change is the supervisor in ``worlds/qb_realtime_pc.xml``. Change the following::
+
+    <supervisor type="qb_realtime_pwmtest.PWMTest"/>
+
+to, for example::
+    
+    <supervisor type="week6.QBWallSupervisor"/>
+    
+to have your robot follow the walls. Now reopen the world, press the 'play' button and watch your robot move.
+
+
 Week 7. Bringing it all together
 ================================
 
@@ -1070,3 +1138,4 @@ Having fun
 ----------
 
 Now that you have a robot that can navigate complicated environments, you can do the ultimate test and make your robot go through a labyrinth. There are several labyrinth worlds available this week, but we suggest you try ``worlds/labyrinth.small.xml`` first. The robot should go through this labyrinth in less than 3 minutes of simulation time.
+

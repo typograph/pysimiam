@@ -49,8 +49,6 @@ class uiSelect(uiParameter):
         self.value = value
         self.value_list = value_list
     
-import simulator as sim
-
 class SimUI:
     """The SimUI class defines a front-end for the :class:`~simulator.Simulator`.
        It contains the necessary functions for the frontend-simulator communication
@@ -65,14 +63,14 @@ class SimUI:
        The constructor of SimUI takes a :class:`~renderer.Renderer` object as parameter.
        This renderer will be passed to the simulator to draw on.
     """
-    def __init__(self, renderer):
-        
+    def __init__(self, renderer, simulator_class):
+         
         self.event_handler = None
         
         self.sim_queue = queue.Queue()
-        
-        # create the simulator thread
-        self.simulator_thread = sim.Simulator(renderer, self.sim_queue)
+         
+         # create the simulator thread
+        self.simulator_thread = simulator_class(renderer, self.sim_queue)
 
         self.in_queue = self.simulator_thread._out_queue
         
