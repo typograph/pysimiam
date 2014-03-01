@@ -6,16 +6,16 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.khepera3 import K3Supervisor
+from supervisors.quickbot import QuickBotSupervisor
 from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 import numpy
 
-class K3FullSupervisor(K3Supervisor):
-    """K3Full supervisor implements the full switching behaviour for navigating labyrinths."""
+class QBFullSupervisor(QuickBotSupervisor):
+    """QBFull supervisor implements the full switching behaviour for navigating labyrinths."""
     def __init__(self, robot_pose, robot_info):
         """Create controllers and the state transitions"""
-        K3Supervisor.__init__(self, robot_pose, robot_info)
+        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
 
         # Fill in some parameters
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
@@ -53,7 +53,7 @@ class K3FullSupervisor(K3Supervisor):
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
-        K3Supervisor.set_parameters(self,params)
+        QuickBotSupervisor.set_parameters(self,params)
         self.gtg.set_parameters(self.parameters)
         self.avoidobstacles.set_parameters(self.parameters)
         self.wall.set_parameters(self.parameters)
@@ -64,16 +64,16 @@ class K3FullSupervisor(K3Supervisor):
 
     def at_obstacle(self):
         """Check if the distance to obstacle is small"""
-        return self.distmin < self.robot.ir_sensors.rmax*0.5
+        return self.distmin < self.robot.ir_sensors.rmax/2.0
         
     def free(self):
         """Check if the distance to obstacle is large"""
-        return self.distmin > self.robot.ir_sensors.rmax*0.75
+        return self.distmin > self.robot.ir_sensors.rmax/1.1
 
     def process_state_info(self, state):
         """Update state parameters for the controllers and self"""
 
-        K3Supervisor.process_state_info(self,state)
+        QuickBotSupervisor.process_state_info(self,state)
 
         # The pose for controllers
         self.parameters.pose = self.pose_est
@@ -89,25 +89,29 @@ class K3FullSupervisor(K3Supervisor):
 
     def draw_foreground(self, renderer):
         """Draw controller info"""
-        K3Supervisor.draw_foreground(self,renderer)
+        QuickBotSupervisor.draw_foreground(self,renderer)
 
         # Make sure to have all headings:
         renderer.set_pose(self.pose_est)
         arrow_length = self.robot_size*5
 
+        # Ensure the headings are calculated
+        
+        # Draw arrow to goal
         if self.current == self.gtg:
-            # Draw arrow to goal
+            goal_angle = self.gtg.get_heading_angle(self.parameters)
             renderer.set_pen(0x00FF00)
             renderer.draw_arrow(0,0,
-                arrow_length*cos(self.gtg.heading_angle),
-                arrow_length*sin(self.gtg.heading_angle))
+                arrow_length*cos(goal_angle),
+                arrow_length*sin(goal_angle))
 
+        # Draw arrow away from obstacles
         elif self.current == self.avoidobstacles:
-            # Draw arrow away from obstacles
+            away_angle = self.avoidobstacles.get_heading_angle(self.parameters)
             renderer.set_pen(0xCC3311)
             renderer.draw_arrow(0,0,
-                arrow_length*cos(self.avoidobstacles.heading_angle),
-                arrow_length*sin(self.avoidobstacles.heading_angle))
+                arrow_length*cos(away_angle),
+                arrow_length*sin(away_angle))
 
         elif self.current == self.wall:
 

@@ -888,5 +888,68 @@ class Week6Test(WeekTestCase):
         self.testsuite.gui.run_simulator_command('add_plotable',self.dst20)
         self.testsuite.gui.run_simulation()
 
+class Week7(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 7"
+    
+    self.week = 7
+    self.tests.append(Week7Test(self, "jbZAu4c1"))
+    
+class Week7Test(WeekTestCase):
+    """Test: check if robot can reach the goal hidden behind many obstacles"""
+    def __init__(self, week, test_id):
+        self.testsuite = week
+        self.name = "Navigating to the goal"
+        self.test_id = test_id
 
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
+        self.switch_RX = re.compile(r'^Switched to (?P<CNT>.*)$')
+        
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 30: # Stop after 30 seconds
+            self.stop_test(False)
+        
+        if event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False)
+            else:
+                m = self.switch_RX.match(message)
+                if m is not None:
+                    self.switches += 1
+                    cnt = m.group('CNT')
+                    if cnt == "Hold":
+                        if self.cdist > 0.05:
+                            print("The robot stopped too far from the goal.")
+                            self.stop_test(False)
+                        else:
+                            self.stop_test(True)
+        elif event == "plot_update": # get dr            
+            self.cdist = args[0][self.dst2goal]
+           
+        return False
+        
+    def stop_test(self, passed):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+        
+        self.testsuite.respond("{:d}".format(passed))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'x_g' not in vals or 'y_g' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world("worlds/week7.xml")
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)
+        
+        self.cdist = 100
+        
+        self.testsuite.gui.run_simulation()
                 
