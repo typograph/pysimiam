@@ -6,7 +6,7 @@ from xmlwriter import XMLWriter
 from collections import OrderedDict
 from traceback import format_exception
 import sys
-from ui import Parameter
+from ui import uiParameter
 
 # Constructing UI from parameters:
 # 
@@ -159,19 +159,19 @@ class Group():
                 self.leafs[dict_key] = IntEntry(child_label, value, -100, 100)
             elif isinstance(value,tuple):
                 self.leafs[dict_key] = ChoiceEntry(child_label,value[0],value[1])
-            elif isinstance(value,Parameter):
-                if value.type == Parameter.INT:
+            elif isinstance(value,uiParameter):
+                if value.type == uiParameter.INT:
                     self.leafs[dict_key] = IntEntry(child_label, value.value, value.min_value, value.max_value)
-                elif value.type == Parameter.FLOAT:
+                elif value.type == uiParameter.FLOAT:
                     self.leafs[dict_key] = FloatEntry(child_label, value.value, value.step, value.min_value, value.max_value)
-                elif value.type == Parameter.BOOL:
+                elif value.type == uiParameter.BOOL:
                     self.leafs[dict_key] = BoolEntry(child_label,value.value)
-                elif value.type == Parameter.SELECT:
+                elif value.type == uiParameter.SELECT:
                     self.leafs[dict_key] = ChoiceEntry(child_label,value.value, value.value_list)
-                elif value.type == Parameter.GROUP:
+                elif value.type == uiParameter.GROUP:
                     self.leafs[dict_key] = Group(child_label,value.contents)
                 else:
-                    raise ValueError("Unrecognized Parameter type {}".format(value.type))
+                    raise ValueError("Unrecognized parameter type {}".format(value.type))
             else:
                 self.leafs[dict_key] = Group(child_label,value)
         

@@ -18,34 +18,34 @@ class uiParameter(Struct):
     def __init__(self, elem_type):
         self.type = elem_type
 
-class uiGroup(Parameter):
+class uiGroup(uiParameter):
     def __init__(self, contents):
-        Parameter.__init__(Parameter.GROUP)
+        uiParameter.__init__(uiParameter.GROUP)
         self.contents = contents
 
-class uiInt(Parameter):
+class uiInt(uiParameter):
     def __init__(self, value, min_value = -100, max_value = 100):
-        Parameter.__init__(self, Parameter.INT)
+        uiParameter.__init__(self, uiParameter.INT)
         self.value = value
         self.min_value = min_value
         self.max_value = max_value
 
-class uiFloat(Parameter):
+class uiFloat(uiParameter):
     def __init__(self, value, step = 1.0, min_value = -1000.0, max_value = 1000.0):
-        Parameter.__init__(self, Parameter.FLOAT)
+        uiParameter.__init__(self, uiParameter.FLOAT)
         self.value = value
         self.step = step
         self.min_value = min_value
         self.max_value = max_value
 
-class uiBool(Parameter):
+class uiBool(uiParameter):
     def __init__(self, value):
-        Parameter.__init__(self, Parameter.BOOL)
+        uiParameter.__init__(self, uiParameter.BOOL)
         self.value = value
 
-class uiSelect(Parameter):
+class uiSelect(uiParameter):
     def __init__(self, value, value_list):
-        Parameter.__init__(self, Parameter.SELECT, value, value_list)
+        uiParameter.__init__(self, uiParameter.SELECT, value, value_list)
         self.value = value
         self.value_list = value_list
     
