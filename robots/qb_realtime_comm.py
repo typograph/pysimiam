@@ -97,7 +97,7 @@ class qb_comm:
 
     Functions for the interface are:
     ==========================  ========================================================================
-    ``quickserver()``           creates the socket interface for PC to quickbot
+    ``qb_comm()``               creates the socket interface for PC to quickbot
     ``read()``                  low-low level udp socket communication, not needed except for extension
     ``write()``                 low-low level udp socket communication, not needed but for extension
     ``get_encoder_ticks()``     returns the encoder ticks ``(tl, tr)`` tuple
@@ -107,14 +107,6 @@ class qb_comm:
     ``send_halt()``             sends the command to stop the quickbot velocitiy
     ``close()``                 the most essential command to call to close the interface
     ==========================  ========================================================================
-
-
-    Specifically, the following variables are critical to setting the quickbot communication::
-    =========== ===========
-    ``baseIP``  192.168.0.6
-    ``robotIP`` 192.168.0.7
-    =========== ===========
-
     """
     def __init__(self, baseIP, robotIP, port):
         """Sets up the listening socket and generates regex comparison formatting."""
@@ -143,7 +135,7 @@ class qb_comm:
 
     def set_pwm(self, l, r, connection):
         """Send the command to set the right and left motor velocities/PWM"""
-        connection.sendtorobot( 'PWM={0},{1}'.format(l, r) )
+        connection.sendtorobot( 'PWM={0},{1}'.format(int(l), int(r)) )
 
     def get_pwm(self, connection):
         """Sends the command to retrieve the right and left motor velocities. Returns a tuple of (vl, vr)"""
@@ -185,7 +177,7 @@ class qb_comm:
         if data is not None:
             m = self.rx_IR.match(data)
             if m is not None: #we get a match
-                return list(map(int,m.groups()))
+                return list(map(float,m.groups()))
 
         return None #default fail
 
