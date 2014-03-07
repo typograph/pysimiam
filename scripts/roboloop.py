@@ -3,8 +3,7 @@ import sys
 
 from pose import Pose
 
-# FIXME from robots.qb_embedded import QuickBot
-from robots.qb_realtime import QuickBot
+from robots.qb_embedded import QuickBot
 from helpers import Struct
 
 import socket
@@ -30,10 +29,7 @@ class RoboLoop():
 
         self.state = PAUSE
         
-# FIXME        self.robot = QuickBot(Pose())
-        self.robot = QuickBot(Pose(), options=Struct({'baseIP':'localhost',
-                                                      'robotIP':'localhost',
-                                                      'port':7777}))
+        self.robot = QuickBot(Pose())
         info = self.robot.get_info()
         info.color = self.robot.get_color()        
         self.supervisor = supervisorclass(Pose(), info)
