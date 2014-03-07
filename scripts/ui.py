@@ -17,11 +17,14 @@ class uiParameter(Struct):
     
     def __init__(self, elem_type):
         self.type = elem_type
-
+        
 class uiGroup(uiParameter):
     def __init__(self, contents):
         uiParameter.__init__(uiParameter.GROUP)
         self.contents = contents
+        
+    def __repr__(self):
+        return 'uiGroup({})'.format(repr(self.contents))        
 
 class uiInt(uiParameter):
     def __init__(self, value, min_value = -100, max_value = 100):
@@ -29,6 +32,9 @@ class uiInt(uiParameter):
         self.value = value
         self.min_value = min_value
         self.max_value = max_value
+
+    def __repr__(self):
+        return 'uiInt({},{},{})'.format(self.value, self.min_value, self.max_value)
 
 class uiFloat(uiParameter):
     def __init__(self, value, step = 1.0, min_value = -1000.0, max_value = 1000.0):
@@ -38,16 +44,25 @@ class uiFloat(uiParameter):
         self.min_value = min_value
         self.max_value = max_value
 
+    def __repr__(self):
+        return 'uiFloat({},{},{},{})'.format(self.value, self.step, self.min_value, self.max_value)
+
 class uiBool(uiParameter):
     def __init__(self, value):
         uiParameter.__init__(self, uiParameter.BOOL)
         self.value = value
+
+    def __repr__(self):
+        return 'uiBool({})'.format(self.value)
 
 class uiSelect(uiParameter):
     def __init__(self, value, value_list):
         uiParameter.__init__(self, uiParameter.SELECT, value, value_list)
         self.value = value
         self.value_list = value_list
+
+    def __repr__(self):
+        return 'uiSelect({},{})'.format(self.value, repr(self.value_list))
     
 class SimUI:
     """The SimUI class defines a front-end for the :class:`~simulator.Simulator`.
