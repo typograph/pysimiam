@@ -87,6 +87,13 @@ class RoboLoop():
         elif cmd == "RUN":
             self.state = RUN
             self.robot.resume()
+        elif cmd == "STATE?":
+            if self.state == RUN:
+                client.sendall("RUN".encode('utf-8'))
+            elif self.state == PAUSE:
+                client.sendall("PAUSE".encode('utf-8'))
+            elif self.state == STOP:
+                client.sendall("STOP".encode('utf-8'))
         else:
             self.log("Command {} not recognized".format(cmd))
             
