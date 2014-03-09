@@ -1139,3 +1139,9 @@ Having fun
 
 Now that you have a robot that can navigate complicated environments, you can do the ultimate test and make your robot go through a labyrinth. There are several labyrinth worlds available this week, but we suggest you try ``worlds/labyrinth.small.xml`` first. The robot should go through this labyrinth in less than 3 minutes of simulation time.
 
+Closing remarks
+===============
+
+Congratulations! You have implemented your first robot that can navigate complex environments. What do you do next? Do you make a robot that can map your apartment? Do you build a quadcopter? Do you create an intelligent vacuum cleaner and dog walker? Do you enter robotic competitions and make the fastest robot that can cross New-York? The possibilities are endless. We are looking forward to all you are going to accomplish!
+
+Thank you for using pySimiam to learn how to control mobile robots. Please help us making pySimiam better by filling this survey: `<http://bit.ly/1oewKPo>`_. 
