@@ -831,7 +831,8 @@ class Week6Test(WeekTestCase):
         self.test_id = test_id
         self.direction = direction
 
-        self.dst20 = 'math.sqrt(robot.get_pose().x**2 + robot.get_pose().y**2)'
+        self.dst20x = 'abs(robot.get_pose().x)'
+        self.dst20y = 'abs(robot.get_pose().y)'
         
     def __call__(self,event,args):
         if self.testsuite.gui.simulator_thread.get_time() > 90: # Stop after 60 seconds
@@ -843,11 +844,15 @@ class Week6Test(WeekTestCase):
                 self.stop_test(False)
         elif event == "plot_update": # get dr
             
-            dst20 = args[0][self.dst20]
-            if self.new_lap and dst20 > 0.1:
+            dst20x = args[0][self.dst20x]
+            dst20y = args[0][self.dst20y]
+            
+            close20 = dst20x < 0.05 and dst20y < 0.3
+            
+            if self.new_lap and not close20:
                 self.new_lap = False
                 self.testsuite.gui.simulator_log("Starting lap {}".format(self.lap_count),"Week6 test",None)
-            elif not self.new_lap and dst20 < 0.1:
+            elif not self.new_lap and close20:
                 self.new_lap = True
                 self.testsuite.gui.simulator_log("Finished lap {}".format(self.lap_count),"Week6 test",None)
                 self.lap_count += 1
@@ -885,7 +890,8 @@ class Week6Test(WeekTestCase):
 
         self.testsuite.gui.dockmanager.clear()
         self.testsuite.gui.run_simulator_command('load_world',world)        
-        self.testsuite.gui.run_simulator_command('add_plotable',self.dst20)
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst20x)
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst20y)
         self.testsuite.gui.run_simulation()
 
 
