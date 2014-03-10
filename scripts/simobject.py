@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, sqrt
 import pylygon
 from pose import Pose
 
@@ -156,17 +156,67 @@ class Path(Cloud):
        :param color: The color of the line (`0xAARRGGBB` or `0xRRGGBB`).
        :type color: int
     
-       The path is used by the simulator to track the history of robot motion"""
+       The path is used by the simulator to track the history of robot motion.
+       
+       In the case that the Path is growing too long, it implements the 
+       """
+    L_crit = 10 # The length of the last path segment that stays 'exact'
+    L_sway = 2  # Number of points from the simplified segment that are going to be simplified again
+
        
     def __init__(self, start, color):
         Cloud.__init__(self, color)
+        
+        self.simple_length = 0
+        
         self.reset(start)
+
+    def RDP(points):
+        """An implementation of the Ramer–Douglas–Peucker algorithm
+        to simplify long paths. At the moment throws away points that are
+        less than two millimeters away from the straight line.
+        """
+        x_start, y_start = points[0]
+        x_end, y_end = points[-1]
+        dx = x_end - x_start
+        dy = y_end - y_start
+        dd = sqrt(dx*dx + dy*dy)
+        
+        if dd == 0:
+            return [points[0]]
+        
+        dmax = 0
+        imax = 0
+        
+        for i in range(1,len(points)-1):
+            xi, yi = points[i]
+            di = abs(dx*(y_start-yi) + dy*(xi-x_start))/dd
+            if di > dmax:
+                imax = i
+                dmax = di
+                
+        if dmax < 0.001:
+            return [points[0], points[-1]]
+        else:
+            return Path.RDP(points[:(imax+1)]) + Path.RDP(points[imax:])[1:]
+        
+
+    def add_point(self,pose):
+        """Append a point at *pose* to the collection. The orientation of the pose is ignored"""
+        if self.points and abs(pose.x - self.points[-1][0]) < 0.001 and abs(pose.y - self.points[-1][1]) < 0.001:
+            return
+        Cloud.add_point(self,pose)
+        
+        if len(self.points) - self.simple_length > 2*Path.L_crit:
+            # Simplify the path leaving the last L_crit points intact
+            self.points = self.points[:self.simple_length] + Path.RDP(self.points[self.simple_length:-Path.L_crit]) + self.points[-Path.L_crit:]
+            self.simple_length = max(0,len(self.points) - Path.L_crit - Path.L_sway)
 
     def reset(self,start):
         """Set the start point to start.x and start.y
            and remove all other points"""
         self.points = [(start.x,start.y)]
-        
+
     def draw(self,r):
         """Draw a polyline with modes at all added points, using the internal color"""
         r.set_pose(self.get_pose()) # Reset everything
