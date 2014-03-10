@@ -7,6 +7,7 @@ from collections import deque
 from time import sleep, clock
 from xmlreader import XMLReader
 import helpers
+from helpers import Struct
 import math
 import sys
 
@@ -128,7 +129,7 @@ class Simulator(threading.Thread):
                     # Create robot
                     robot_class = helpers.load_by_name(thing.robot.type,'robots')
                     if thing.robot.options is not None:
-                        robot = robot_class(thing.robot.pose, options = thing.robot.options)
+                        robot = robot_class(thing.robot.pose, options = Struct(thing.robot.options))
                     else:
                         robot = robot_class(thing.robot.pose)
                     robot.set_logqueue(self.__log_queue)
@@ -143,7 +144,7 @@ class Simulator(threading.Thread):
                     info = robot.get_info()
                     info.color = robot.get_color()
                     if thing.supervisor.options is not None:
-                        supervisor = sup_class(thing.robot.pose, info, options = thing.supervisor.options)
+                        supervisor = sup_class(thing.robot.pose, info, options = Struct(thing.supervisor.options))
                     else:
                         supervisor = sup_class(thing.robot.pose, info)                        
                     supervisor.set_logqueue(self.__log_queue)

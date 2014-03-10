@@ -39,7 +39,7 @@ class FollowWall(PIDController):
         """
         PIDController.set_parameters(self,params)
 
-        self.poses = params.sensor_poses
+        self.sensor_poses = params.sensor_poses
         self.direction = params.direction
         self.distance = params.distance
 

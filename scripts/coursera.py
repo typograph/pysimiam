@@ -26,18 +26,23 @@ class CourseraException(Exception):
 
 class WeekTestCase:
     
-    RX = re.compile(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
+#    RX = re.compile(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)=(?P<value>-?[0-9]+(?:\.[0-9]+)?);")
+    RX = re.compile(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)=(?P<value>[^;]+);")
     
     def __init__(self, week): # Never initialize test-run parameters in the constructor
         self.testsuite = week
         self.name = "Name not set"
         self.test_id = "XXXYYYZZZ"
         
-    def parseChallenge(self,challenge):
+    def parseChallenge(self,challenge, types = {}):
         result = {}
         for m in self.RX.finditer(challenge):
             try:
-                result[m.group('name')] = float(m.group('value'))
+                name = m.group('name')
+                if name in types:
+                    result[name] = types[name](m.group('value'))
+                else:
+                    result[name] = float(m.group('value'))
             except Exception:
                 raise CourseraException("Unknown challenge format. Please contact developers for assistance.")                
         return result
@@ -807,4 +812,175 @@ class Week5Test2(WeekTestCase):
         self.testsuite.gui.load_world('week5_switching.xml')
         self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)        
         self.testsuite.gui.run_simulation()
+
+class Week6(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 6"
+    
+    self.week = 6
+    self.tests.append(Week6Test(self, "L6V17gUC", "left"))
+    self.tests.append(Week6Test(self, "J12UGUtV", "right"))
+    
+class Week6Test(WeekTestCase):
+    """Test: check if robot can follow the wall for two laps"""
+    def __init__(self, week, test_id, direction):
+        self.testsuite = week
+        self.name = "Two laps around the obstacle to the {}".format(direction)
+        self.test_id = test_id
+        self.direction = direction
+
+        self.dst20x = 'abs(robot.get_pose().x)'
+        self.dst20y = 'abs(robot.get_pose().y)'
         
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 90: # Stop after 60 seconds
+            self.stop_test(False)
+        
+        if event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False)
+        elif event == "plot_update": # get dr
+            
+            dst20x = args[0][self.dst20x]
+            dst20y = args[0][self.dst20y]
+            
+            close20 = dst20x < 0.05 and dst20y < 0.3
+            
+            if self.new_lap and not close20:
+                self.new_lap = False
+                self.testsuite.gui.simulator_log("Starting lap {}".format(self.lap_count),"Week6 test",None)
+            elif not self.new_lap and close20:
+                self.new_lap = True
+                self.testsuite.gui.simulator_log("Finished lap {}".format(self.lap_count),"Week6 test",None)
+                self.lap_count += 1
+                if self.lap_count > 2:
+                    self.stop_test(True)
+           
+        return False
+        
+    def stop_test(self, passed):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+        
+        self.testsuite.respond("{:d}".format(passed))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge, {'dir':str})
+        
+        if 'v' not in vals or 'dir' not in vals or 'theta' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        self.new_lap = True
+        self.lap_count = 1
+               
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+            
+        from xmlreader import XMLReader
+        world = XMLReader("worlds/week6_test_{}.xml".format(vals['dir']), 'simulation').read()
+        i = 0
+        while world[i].type != 'robot':
+            i += 1
+        world[i].robot.pose.theta = vals['theta']
+        world[i].supervisor.options = '{{"velocity":{}, "direction":"{}"}}'.format(vals['v'],vals['dir'])
+
+        self.testsuite.gui.dockmanager.clear()
+        self.testsuite.gui.run_simulator_command('load_world',world)        
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst20x)
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst20y)
+        self.testsuite.gui.run_simulation()
+
+class Week7(WeekTest):
+  def __init__(self, gui):
+    WeekTest.__init__(self, gui)
+    
+    self.testname = "Programming Assignment Week 7"
+    
+    self.week = 7
+    self.tests.append(Week7Test(self, "jbZAu4c1"))
+    
+class Week7Test(WeekTestCase):
+    """Test: check if robot can reach the goal hidden behind many obstacles"""
+    def __init__(self, week, test_id):
+        self.testsuite = week
+        self.name = "Navigating to the goal"
+        self.test_id = test_id
+
+        self.dst2goal = 'math.sqrt((robot.get_pose().x - supervisor.parameters.goal.x)**2 + (robot.get_pose().y - supervisor.parameters.goal.y)**2)'
+        self.switch_RX = re.compile(r'^Switched to (?P<CNT>.*)$')
+        
+    def __call__(self,event,args):
+        if self.testsuite.gui.simulator_thread.get_time() > 30: # Stop after 30 seconds
+            self.stop_test(False)
+        
+        if event == "log": # watch for collisions
+            message, objclass, objcolor = args
+            if message.startswith("Collision with"):
+                self.stop_test(False)
+            else:
+                m = self.switch_RX.match(message)
+                if m is not None:
+                    cnt = m.group('CNT')
+                    if cnt == "Hold":
+                        if self.cdist > 0.06:
+                            print("The robot stopped too far from the goal.")
+                            self.stop_test(False)
+                        else:
+                            self.stop_test(True)
+        elif event == "plot_update": # get dr            
+            self.cdist = args[0][self.dst2goal]
+        elif event == "make_param_window": # in the beginning rewrite parameters
+            robot_id, name, params = args
+
+            params[0][1][0] = ('x', self.p.goal.x)
+            params[0][1][1] = ('y', self.p.goal.y)
+            params[1][1][0] = ('v',self.p.velocity.v)
+            params[2][1][0] = (('kp','Proportional gain'), self.p.gains.kp)
+            params[2][1][1] = (('ki','Integral gain'), self.p.gains.ki)
+            params[2][1][2] = (('kd','Differential gain'), self.p.gains.kd)
+           
+            self.testsuite.gui.run_simulator_command('apply_parameters', robot_id, self.p)
+           
+        return False
+        
+    def stop_test(self, passed):
+        self.testsuite.gui.unregister_event_handler()
+        self.testsuite.gui.pause_simulation()   
+        self.testsuite.gui.stop_testing()
+        
+        self.testsuite.respond("{:d}".format(passed))
+        
+    def start_test(self,challenge):
+        vals = self.parseChallenge(challenge)
+        
+        if 'x_g' not in vals or 'y_g' not in vals:
+            raise CourseraException("Unknown challenge format. Please contact developers for assistance.")
+
+        self.p = helpers.Struct()
+        self.p.velocity = helpers.Struct({'v':0.2})
+        self.p.goal = helpers.Struct({'x':vals['x_g'], 'y':vals['y_g']})
+        self.p.gains = helpers.Struct({'kp':4, 'ki':0.1, 'kd':0})
+        
+        # FIXME What follows is a hack, that will only work
+        # in the current GUI implementation. 
+        # For a better solution we need to change the API again
+        docks = self.testsuite.gui.dockmanager.docks
+        if len(docks):
+            dock = docks[list(docks.keys())[0]]
+            struct = dock.widget().contents.get_struct()
+            self.p.gains = struct.gains
+            self.p.velocity = struct.velocity
+
+        self.testsuite.gui.start_testing()
+        self.testsuite.gui.register_event_handler(self)
+        self.testsuite.gui.load_world("worlds/week7.xml")
+        self.testsuite.gui.run_simulator_command('add_plotable',self.dst2goal)
+        
+        self.cdist = 100
+        
+        self.testsuite.gui.run_simulation()
+                

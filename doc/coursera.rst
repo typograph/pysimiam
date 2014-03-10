@@ -907,3 +907,241 @@ The grader will test the following conditions this week:
 
     * **Collision-free navigation with blending**: Does the robot reach the goal in less than 60 seconds without crashing?
     * **Collision-free navigation with switching**: Does the robot reach the goal in less than 60 seconds without crashing and without switching between controllers more often than two times per second on average?
+
+
+Week 6. Following walls
+=======================
+
+The simulator for this week can be run with::
+   
+   >>> python qtsimiam_week6.py
+
+If you wish, you can reuse your PID code in ``controllers/pid_controller.py`` and pose estimation code in ``supervisors/quickbot.py``.
+
+This week you will be implementing a wall following behavior that will aid the robot in navigating around obstacles. Implement these parts in the ``get_heading`` method of ``controllers/week6.py``::
+
+   def get_heading(self, state):
+      """Get the direction away from the obstacles as a vector."""
+      
+      # Week 6 Assignment:
+      
+      # Calculate vectors for the sensors
+      self.vectors = []
+
+      # Calculate the vector along the wall
+      self.along_wall_vector = [0.3,0,1]
+
+      # Calculate the vector to the closest wall point:
+      self.to_wall_vector = [0,0.3,1]
+                           
+      # Calculate and return the heading vector:                            
+      return self.along_wall_vector
+   
+      # End Week 6 Assignment
+
+Estimate wall geometry
+----------------------
+
+We will use the IR sensors to detect an obstacle and construct a vector that approximates a section of the obstacle (`wall`). In the figure, this vector, :math:`u_{fw,t}`, is illustrated in magenta.
+
+.. image:: week-6-part-1.png
+    :align: left
+
+The direction of the wall following behavior (whether the obstacle on the left or right is followed) is determined by ``self.direction``, which can either be equal to ``"right"`` or to ``"left"``. Suppose we want to follow an obstacle to the `left` of the robot, then we would use the left set of IR sensors (0, 1 and 2). If we are following the wall, then at all times there should be at least one sensor that can detect the obstacle. So, we need to pick a second sensor and use the points corresponding to the measurements from these two sensors (see avoid-obstacles in Week 4) to form a line that estimates a section of the obstacle. In the figure on the left, sensors 3 and 4 are used to roughly approximate the edge of the obstacle.
+
+.. image:: week-6-part-1b.png
+    :align: right
+
+The situation is trickier when the robot reaches a corned (see the figure on the right), because typically only a single sensor will be able to detect the wall. The estimate is off as one can see in the figure, but as long as the robot isn't following the wall too closely, it will be ok.
+
+You should first fill in the ``self.vectors`` variable, as you did in week 4, to obtain the set of vectors pointing to the wall. An example strategy for estimating a section of the wall is to pick the two sensors (from IR sensors 0-2) with the smallest reported measurement in ``state.sensor_distances``. Suppose sensor 0 and 1 returned the smallest values, then let :math:`p_1` ``= self.vectors[0]`` and :math:`p_2` ``= self.vectors[1]``. A vector that estimates a section of the obstacle is :math:`u_{fw,t}=p_2-p_1`. 
+
+.. note:: It is important that the sensor with larger abs(θ) (in the example, sensor 0) is assigned to :math:`p_1` and the sensor with the smaller abs(θ) (in the example, sensor 1) is assigned to :math:`p_2`, because we want that the vector points in the direction that robot should travel.
+
+.. note:: In the code, :math:`u_{fw,t}` is represented by ``self.along_wall_vector``.
+
+The figures correspond to the above example strategy, but you may want to experiment with different strategies for computing :math:`u_{fw,t}`. A better estimate would make wall following safer and smoother when the robot navigates around the corners of obstacles. 
+
+Find the closest wall point
+---------------------------
+   
+Now that we have the vector :math:`u_{fw,t}` (represented by the magenta arrow in the figures), we need to compute a vector :math:`u_{fw,p}` that points from the robot to the closest point on :math:`u_{fw,t}`. This vector is visualized as blue arrow in the figures and can be computed using a little bit of linear algebra:
+
+.. math::
+   \begin{split}
+      u'_{fw,t} &= \frac{u_{fw,t}}{\|u_{fw,t}\|}, \quad u_p = \begin{bmatrix} x \\ y \end{bmatrix}, \quad u_a = p_1 \\
+      u_{fw,p} &= (u_a-u_p)-((u_a-u_p)\cdot u'_{fw,t})u'_{fw,t}
+   \end{split}
+
+.. note:: A small technicality is that we are computing :math:`u_{fw,p}` as the the vector pointing from the robot to the closest point on :math:`u_{fw,t}`, as if :math:`u_{fw,t}` were infinitely long.
+
+.. note:: In the code, :math:`u_{fw,p}` is represented by ``self.to_wall_vector``.
+
+Compute the heading vector
+--------------------------
+   
+The last step is to combine :math:`u_{fw,t}` and :math:`u_{fw,p}` such that the robot follows the obstacle all the way around at some distance :math:`d_{fw}` (``self.distance`` in the code). :math:`u_{fw,t}` will ensure that the robot drives in a direction that is parallel to an edge on the obstacle, while :math:`u_{fw,p}` needs to be used to maintain a distance :math:`d_{fw}` from the obstacle.
+
+One way to achieve this is,
+
+.. math::
+   u'_{fw,p} = u_{fw,p}-d_{fw}\frac{u_{fw,p}}{\|u_{fw,p}|},
+
+where :math:`u'_{fw,p}` is now a vector points towards the obstacle when the distance to the obstacle, :math:`d>d_{fw}`, is near zero when the robot is :math:`d_{fw}` away from the obstacle, and points away from the obstacle when :math:`d<d_{fw}`.
+
+All that is left is to linearly combine :math:`u'_{fw,t}` and :math:`u'_{fw,p}` into a single vector :math:`u_{fw}` that can be used with the PID controller to steer the robot along the obstacle at the distance :math:`d_{fw}`. (`Hint`: Think about how this worked with :math:`u_{ao}` and :math:`u_{gtg}` last week). 
+
+Testing
+-------
+
+Running ``qtsimiam_week6.py`` shows you a world with six robots and two obstacles. The robots are set up near the obstacle, so that they can start following it immediately. This is a valid situation, because we are assuming another behavior (like go-to-goal) has brought us near the obstacle.
+
+First, test the construction of ``to_wall_vector`` and ``along_wall_vector``. Do not start the simulation yet. For each robot you should see the two vectors positioned correctly -  the magenta arrow approximately matches up with the edge of the obstacle, and the blue arrow should point from the robot to the closest point on the wall.
+
+Second, test the follow wall behaviour by running the simulation. The robots should be able to follow the obstacle all the way around. Set `distance` to some distance in [0.04, 0.3] m. The robot should follow the wall at approximately the specified distance. If the robot does not follow the wall at the specified distance, then :math:`u'_{fw,p}` is not given enough weight (or :math:`u'_{fw,t}` is given too much weight).  
+
+.. note:: Depending on how the edges of the obstacle are approximated, it is possible for the robot to peel off at one of the corners. This is not the case in the example strategy provided for the first part.
+
+.. note:: If the amount of robots seems overwhelming, you can comment out some of them in the ``worlds/week6.xml``. If the simulation is too slow, turn off drawing of robot trajectories.
+
+Grading
+-------
+
+The grader will test your controller in different worlds (``worlds/week6_test_left.xml`` and ``worlds/week6_test_right.xml``). You can load these worlds into the simulator and try them out. They contain a single robot, that should be able to go around the obstacle two times without crashing in less than 90 seconds.
+
+.. note:: The grader will test the robot using the default gains provided by the supervisor. If you want to use different gains, change the values in ``init_default_parameters`` in ``supervisors/week6.py``
+
+Controlling the real QuickBot
+=============================
+
+If you have built a QuickBot, you can use pySimiam and the controllers/supervisors you implemented to make it autonomous.
+
+Establishing the connection
+---------------------------
+
+First, you have to make sure that pySimiam and the robot can communicate with each other. Start by following the `instructions <https://class.coursera.org/conrob-002/wiki/Hardware>`_ provided by Rowland O'Flaherty to find out the IP addresses of you host computer and the robot, and to start the program on the robot. After this is done, edit the ``worlds/qb_realtime_pc.xml`` world file::
+
+    <?xml version="1.0" ?>
+    <simulation>
+        <robot type="qb_realtime.QuickBot" options='{"baseIP":"192.168.0.1", "robotIP":"192.168.0.6", "port":5005}'>
+            <pose theta="0.0" x="0.0" y="0.0"/>
+            <supervisor type="qb_realtime_pwmtest.PWMTest"/>
+        </robot>
+    </simulation>
+
+You have to set *baseIP* to your host IP address, *robotIP* to your robot IP address, and *port* to the port you chose earlier. Now, you can run the control code::
+    
+    >>> python qtsimiam_realtime.py
+
+If there is no error message after a couple of seconds, the connection with the QuickBot has been established successfully.
+
+Calibrating the motors
+----------------------
+    
+The second step is the calibration of the motors. The angular velocity of the wheels is defined by the `pulse-width-modulated signal <http://en.wikipedia.org/wiki/Pulse-width_modulation>`_ (PWM) that the BeagleBone board is sending to the motors. This dependence is not known apriori, as it depends on the motors, the wheels and the surface. To be able to control your robot reliably, you have to measure this dependence and put into code.
+
+.. image:: pwm2v.png
+    :align: left
+    :width: 400px
+
+To simplify the task, we are going to assume a dependence in the form shown on the graph: there is a minimal PWM number required to make the wheels turn, and after this point the angular velocity increases linearly with the power provided.
+
+When you start the program, the supervisor that you get allows you to control the PWM for left and right wheel separately. Begin by determining the lowest PWM setting for the robot to start moving. Try several values (e.g. 25, 50 and 75) for a rough estimate and then fine-tune the value until you have reached the minimum velocity. Measure the linear speed of the robot, with both wheels at this setting. You can now calculate the angular velocity using the formula from Week 1. Next, set both wheels to a high PWM value (70-90) and measure the speed again. Calculate the angular velocity again.
+
+You have now four numbers - PWM and angular velocity in the minimum (``pwm_min`` and ``vel_min``) and PWM and angular velocity in the maximum (``pwm_max`` and ``vel_max``). Around line 32 in ``robots/qb_realtime.py`` you will find the variable ``beta``::
+    
+    beta = (1.0, 0.0)
+    
+This variable is used to convert from angilar velocities to PWM values and back. You should set it in such a way that
+
+.. math::
+    v_\mathrm{min} &= \beta_0 \mathrm{PWM}_\mathrm{min} + \beta_1 \\
+    v_\mathrm{max} &= \beta_0 \mathrm{PWM}_\mathrm{max} + \beta_1
+
+Around line 144 you will also find the limits of angular velocity that are used in ``ensure_w``::
+
+    self.info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
+    self.info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
+    
+Set those to ``vel_min`` and ``vel_max``, respectively.
+
+Running the robot
+-----------------
+
+Congratulations! You are as good as done. The only thing left to change is the supervisor in ``worlds/qb_realtime_pc.xml``. Change the following::
+
+    <supervisor type="qb_realtime_pwmtest.PWMTest"/>
+
+to, for example::
+    
+    <supervisor type="week6.QBWallSupervisor"/>
+    
+to have your robot follow the walls. Now reopen the world, press the 'play' button and watch your robot move.
+
+
+Week 7. Bringing it all together
+================================
+
+The simulator for this week can be run with::
+    
+    >>> python qtsimiam_week7.py
+
+You are encouraged (but not required) to reuse your code from week 6, by using your version of the follow-wall controller in ``controllers/followwall.py``. You can also reuse parts of your state machine from week 5.
+
+This week you will be combining the go-to-goal, avoid-obstacles, and follow-wall controllers into a full navigation system for the robot. The robot will be able to navigate around a cluttered, complex environment without colliding with any obstacles and reaching the goal location successfully. Implement your solution in ``supervisors/week7.py``.
+  
+By default, the robot is set up to switch between *AvoidObstacles* and *GoToGoal* to navigate the environment. However, if you launch the simulator with this default behavior, you will notice that the robot cannot escape the larger obstacle as it tries to reach the goal located at (1.1,1.1). The robot needs a better strategy for navigation. Instead of just turning away from obstacles, it can follow the obstacle using the *FollowWall* controller from the last week. At some point, however, the robot should detach itself from the wall and go straight for the goal again. There are two conditions that determine this detachment point.
+
+Finding out if any progress is being made
+-----------------------------------------
+
+The ``progress_made`` condition determines whether the robot is making any progress towards the goal. Implement the function ``progress_made`` such that it returns ``True`` if
+
+.. math::
+    \left\|\begin{bmatrix} x-x_g \\ y-y_g \end{bmatrix}\right\| < d_{\text{progress}}-\epsilon,
+
+where ε = 0.1 gives a little bit of slack, and :math:`d_{\text{progress}}` is the closest (in terms of distance) the robot has progressed towards the goal. This distance can be set before switching to the *FollowWall* behaviour in the ``at_obstacle`` condition.
+
+Finding out if going straight for the goal makes sense
+------------------------------------------------------
+
+The ``can_detach`` condition determines whether going straight for the goal would bring the robot further away from the obstacles. Implement the function ``can_detach`` such that it returns ``True`` if the vector towards the goal is pointing away from the wall. In other words, the robot should detach from the wall on the left if :math:`u_gtg \times u_fw > 0`, and from the wall on the right if :math:`u_gtg \times u_fw < 0`.
+
+Switching
+---------
+  
+Now, we are ready to implement a finite state machine (FSM) that solves the full navigation problem. As already seen in Week 5, a finite state machine is nothing but a set of states (controllers) and switching conditions, that first check which state (or behavior) the robot is in, then based on whether a condition is satisfied, the FSM switches to another state or stays in the same state. Some of the logic that should be part of the FSM is:
+   
+    #. If ``at_goal``, then switch to *Hold*.
+    #. If ``unsafe``, then switch to *AvoidObstacles*.
+    #. If in state *GoToGoal* and ``at_obstacle`` and not ``can_detach``, then check whether the robot needs to follow the wall on the left or on the right and set ``self.parameters.direction`` and :math:`d_{\text{progress}}`  (the best place to do so is inside the ``at_obstacle`` condition if it evaluates to ``True``). Then switch to state *FollowWall*. 
+    #. If in state *FollowWall*, check whether ``progress_made`` and ``can_detach`` are both true. If so, switch to state *GoToGoal*, otherwise keep following the wall.
+
+Testing
+-------
+
+To test your code, the simulator is set up to run a simple FSM that is unable to exit the large obstacle and advance towards the goal.
+
+Testing the full navigation systems is mostly a binary test: does the robot successfully reach the goal located at (1.1,1.1) or not? However, let us consider a few key situations that will likely be problematic.
+  
+ #. First, the default code has the problem that the robot is stuck inside the large obstacle. The reason for this situation is that avoid obstacle is not enough to push the robot far enough way from the obstacle, such that when go-to-goal kicks back in, the robot is clear of the obstacle and has a free path towards the goal. This is solved by using *FollowWall* instead of *AvoidObstacles* when close to an obstacle.
+ #. Second, assuming that the robot has escaped the interior of the large obstacle and is in wall following mode, there is a point at which progress is again being made towards the goal and folloing the wall is no longer necessary. The robot should then stop wall following and resume its go-to-goal behavior. A common problem is that the robot either continues to follow the edge of the large obstacle and never makes the switch to go-to-goal. Another common problem is that the FSM switches to the go-to-goal behavior before the robot has the chance to escape the interior of the large obstacle using wall following. Troubleshoot either problem by revisiting the logic that uses the ``progress_made`` and ``can_detach`` conditions to transition from ``FollowWall`` to ``GoToGoal``.
+  
+.. note:: Remember that adding ``print`` calls to different parts of your code can help you debug your problems. By default, the supervisor prints out the state that it switches to.
+
+Grading
+-------
+
+The grader this week will check if your robot reaches the goal successfully in a cluttered environment within 30 seconds and stops there.
+
+Having fun
+----------
+
+Now that you have a robot that can navigate complicated environments, you can do the ultimate test and make your robot go through a labyrinth. There are several labyrinth worlds available this week, but we suggest you try ``worlds/labyrinth.small.xml`` first. The robot should go through this labyrinth in less than 3 minutes of simulation time.
+
+Closing remarks
+===============
+
+Congratulations! You have implemented your first robot that can navigate complex environments. What do you do next? Do you make a robot that can map your apartment? Do you build a quadcopter? Do you create an intelligent vacuum cleaner and dog walker? Do you enter robotic competitions and make the fastest robot that can cross New-York? The possibilities are endless. We are looking forward to all you are going to accomplish!
+
+Thank you for using pySimiam to learn how to control mobile robots. Please help us making pySimiam better by filling this survey: `<http://bit.ly/1oewKPo>`_. 

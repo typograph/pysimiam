@@ -5,82 +5,65 @@ except ImportError:
 
 from helpers import Struct
 
-class Parameter(Struct):
-    """Parameter represents a single GUI element that is used to build a parameter window
+class uiParameter(Struct):
+    """uiParameter represents a single GUI element that is used to build a parameter window
        in the UI (simulator event "make_param_window").
        
-       The following parameters are supported::
-       
-            Parameter(Parameter.GROUP, contents)
-            Parameter(Parameter.INT, value, min_value = -100, max_value = 100)
-            Parameter(Parameter.FLOAT, value, step = 1.0, min_value = -1000.0, max_value = 1000.0)
-            Parameter(Parameter.BOOL, value)
-            Parameter(Parameter.SELECT, value, available_values)
-              
+       It has one parameter, ``type``, that defines the type of the parameter. Possible parameter
+       types are GROUP, INT, FLOAT, BOOL and SELECT.
     """
     
     GROUP, INT, FLOAT, BOOL, SELECT = 0,1,2,3,4
     
-    def __init__(self, elem_type, *args, **kwargs):
-
+    def __init__(self, elem_type):
         self.type = elem_type
+        
+class uiGroup(uiParameter):
+    def __init__(self, contents):
+        uiParameter.__init__(uiParameter.GROUP)
+        self.contents = contents
+        
+    def __repr__(self):
+        return 'uiGroup({})'.format(repr(self.contents))        
 
-        if elem_type == self.GROUP and len(args) == 1:           
-            self.contents = args[0]
-            
-        elif elem_type == self.INT and len(args) >= 1 and len(args) <= 3:            
-            self.value = args[0]
+class uiInt(uiParameter):
+    def __init__(self, value, min_value = -100, max_value = 100):
+        uiParameter.__init__(self, uiParameter.INT)
+        self.value = value
+        self.min_value = min_value
+        self.max_value = max_value
 
-            if len(args) > 1:
-                self.min_value = args[1]
-            elif 'min_value' in kwargs:
-                self.min_value = kwargs['min_value']
-            else:
-                self.min_value = -100
-                
-            if len(args) > 2:
-                self.max_value = args[2]
-            elif 'max_value' in kwargs:
-                self.max_value = kwargs['max_value']
-            else:
-                self.max_value = 100
-                
-        elif elem_type == self.FLOAT and len(args) >= 1 and len(args) <= 4:
-            self.value = args[0]
+    def __repr__(self):
+        return 'uiInt({},{},{})'.format(self.value, self.min_value, self.max_value)
 
-            if len(args) > 1:
-                self.step = args[1]
-            elif 'step' in kwargs:
-                self.step = kwargs['step']
-            else:
-                self.step = 1.0
+class uiFloat(uiParameter):
+    def __init__(self, value, step = 1.0, min_value = -1000.0, max_value = 1000.0):
+        uiParameter.__init__(self, uiParameter.FLOAT)
+        self.value = value
+        self.step = step
+        self.min_value = min_value
+        self.max_value = max_value
 
-            if len(args) > 2:
-                self.min_value = args[2]
-            elif 'min_value' in kwargs:
-                self.min_value = kwargs['min_value']
-            else:
-                self.min_value = -1000.0
-                
-            if len(args) > 3:
-                self.max_value = args[3]
-            elif 'max_value' in kwargs:
-                self.max_value = kwargs['max_value']
-            else:
-                self.max_value = 1000.0
+    def __repr__(self):
+        return 'uiFloat({},{},{},{})'.format(self.value, self.step, self.min_value, self.max_value)
 
-        elif elem_type == self.BOOL and len(args) == 1:
-            self.value = args[0]
-            
-        elif elem_type == self.SELECT and len(args) == 2:
-            self.value = args[0]
-            self.value_list = args[1]
-            
-        else:
-            raise ValueError("Wrong parameters to ui.Parameter {} {}".format(args,kwargs))
+class uiBool(uiParameter):
+    def __init__(self, value):
+        uiParameter.__init__(self, uiParameter.BOOL)
+        self.value = value
+
+    def __repr__(self):
+        return 'uiBool({})'.format(self.value)
+
+class uiSelect(uiParameter):
+    def __init__(self, value, value_list):
+        uiParameter.__init__(self, uiParameter.SELECT, value, value_list)
+        self.value = value
+        self.value_list = value_list
+
+    def __repr__(self):
+        return 'uiSelect({},{})'.format(self.value, repr(self.value_list))
     
-import simulator as sim
-
 class SimUI:
     """The SimUI class defines a front-end for the :class:`~simulator.Simulator`.
        It contains the necessary functions for the frontend-simulator communication
@@ -95,14 +78,14 @@ class SimUI:
        The constructor of SimUI takes a :class:`~renderer.Renderer` object as parameter.
        This renderer will be passed to the simulator to draw on.
     """
-    def __init__(self, renderer):
-        
+    def __init__(self, renderer, simulator_class):
+         
         self.event_handler = None
         
         self.sim_queue = queue.Queue()
-        
-        # create the simulator thread
-        self.simulator_thread = sim.Simulator(renderer, self.sim_queue)
+         
+         # create the simulator thread
+        self.simulator_thread = simulator_class(renderer, self.sim_queue)
 
         self.in_queue = self.simulator_thread._out_queue
         

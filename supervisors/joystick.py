@@ -12,7 +12,7 @@ from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 from pose import Pose
 from helpers import Struct
-from ui import Parameter as uiP
+from ui import uiInt, uiBool
 
 class QBJoystickSupervisor(QuickBotSupervisor):
     """Control the robot with a joystick!!!
@@ -44,11 +44,11 @@ class QBJoystickSupervisor(QuickBotSupervisor):
         if p is None:
             p = self.parameters
         
-        return [('joystick', [(('i_j',"Joystick index"), uiP(uiP.INT,p.joystick.i_j,0,self.jcontroller.joystick_count()-1)), \
-                              (('i_x',"Omega axis"), uiP(uiP.INT,p.joystick.i_x,0,100)), \
-                              (('inv_x',"Invert axis"), uiP(uiP.BOOL,p.joystick.inv_x)), \
-                              (('i_y',"Velocity axis"), uiP(uiP.INT,p.joystick.i_y,0,100)), \
-                              (('inv_y',"Invert axis"), uiP(uiP.BOOL,p.joystick.inv_y))])]
+        return [('joystick', [(('i_j',"Joystick index"), uiInt(p.joystick.i_j,0,self.jcontroller.joystick_count()-1)), \
+                              (('i_x',"Omega axis"), uiInt(p.joystick.i_x,0,100)), \
+                              (('inv_x',"Invert axis"), uiBool(p.joystick.inv_x)), \
+                              (('i_y',"Velocity axis"), uiInt(p.joystick.i_y,0,100)), \
+                              (('inv_y',"Invert axis"), uiBool(p.joystick.inv_y))])]
 
     def draw_background(self, renderer):
         pass

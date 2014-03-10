@@ -9,11 +9,13 @@ sys.path.insert(0, './gui')
 from PyQt4 import QtGui
 
 from qt_mainwindow import SimulationWidget
+from coursera import Week7
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     simWidget = SimulationWidget()
     simWidget.superv_action.trigger()
     simWidget.show()
+    simWidget.setTestSuite(Week7)
     simWidget.load_world("week7.xml")
     app.exec_()

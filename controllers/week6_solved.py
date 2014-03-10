@@ -6,36 +6,25 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.pid_controller import PIDController
+from controllers.week6 import FollowWall as FollowWallStub
 import math
 import numpy
 from pose import Pose
 
-class FollowWall(PIDController):
+class FollowWall(FollowWallStub):
     """Follow walls is a controller that keeps a certain distance
     to the wall and drives alongside it in clockwise or counter-clockwise
     fashion."""
     def __init__(self, params):
         '''Initialize internal variables'''
-        PIDController.__init__(self,params)
-
-    def set_parameters(self, params):
-        """Set PID values, sensor poses, direction and distance.
-        
-        The params structure is expected to have sensor poses in the robot's
-        reference frame as ``params.sensor_poses``, the direction of wall
-        following (either 'right' for clockwise or 'left' for anticlockwise)
-        as ``params.direction`` and the desired distance to the wall 
-        to maintain as ``params.distance``.
-        """
-        PIDController.set_parameters(self,params)
-
-        self.sensor_poses = params.sensor_poses
-        self.direction = params.direction
-        self.distance = params.distance
+        FollowWallStub.__init__(self,params)
         
     def get_heading(self, state):
         """Get the direction along the wall as a vector."""
+        
+        # Week 6 Assignment:
+        
+        use_cached = False
         
         # Calculate vectors for the sensors
         if state.direction == 'left': # 0-2
@@ -71,4 +60,5 @@ class FollowWall(PIDController):
         else:
             return 0.3*self.along_wall_vector + 3 * offset * self.to_wall_vector
     
+        # End Week 6 Assignment
                

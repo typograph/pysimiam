@@ -10,14 +10,14 @@
             <point x="0.15388418" y="0.1118034"/>
         </geometry>
     </marker>
-    <robot type="Khepera3">
+    <robot type="QuickBot">
         <pose theta="0.0" x="-2.5" y="2.5"/>
-        <supervisor type="K3BlendingSupervisor"/>
+        <supervisor type="week7_solved.QBFullSupervisor"/>
     </robot>
-    <robot type="Khepera3">
+<!--    <robot type="Khepera3">
         <pose theta="3.14159265359" x="2.5" y="-2.5"/>
         <supervisor type="K3BlendingSupervisor"/>
-    </robot>
+    </robot> -->
     <obstacle>
         <pose theta="0" x="-1.0" y="0.89999998"/>
         <geometry>

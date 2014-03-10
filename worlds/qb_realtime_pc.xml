@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<simulation>
+    <robot type="qb_realtime.QuickBot" options='{"baseIP":"192.168.0.1", "robotIP":"192.168.0.6", "port":5005}'>
+        <pose theta="0.0" x="0.0" y="0.0"/>
+        <supervisor type="qb_realtime_pwmtest.PWMTest"/>
+    </robot>
+</simulation>

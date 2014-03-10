@@ -6,23 +6,32 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.khepera3 import K3Supervisor
+from supervisors.quickbot import QuickBotSupervisor
 from helpers import Struct
 from numpy import array, dot
+from ui import uiFloat
 
 from math import pi, sin, cos, log1p, sqrt, atan2
 
-class K3WallSupervisor(K3Supervisor):
-    """K3Wall supervisor uses a follow-wall controller to make the robot drive at a certain distance from obstacles."""
-    def __init__(self, robot_pose, robot_info):
+class QBWallSupervisor(QuickBotSupervisor):
+    """QBWall supervisor uses a follow-wall controller to make the robot drive at a certain distance from obstacles."""
+    def __init__(self, robot_pose, robot_info, options = None):
         """Create the controller"""
-        K3Supervisor.__init__(self, robot_pose, robot_info)
+        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
+
+        if options is not None:
+            try:
+                self.parameters.direction = options.direction
+                self.parameters.velocity.v = options.velocity
+                self.parameters.gains = options.gains
+            except:
+                pass
 
         # Fill in poses for the controller
         self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
         
         # Create and set the controller
-        self.current = self.create_controller('week6.FollowWall', self.parameters)
+        self.current = self.create_controller('week6_solved.FollowWall', self.parameters)
 
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
@@ -40,7 +49,7 @@ class K3WallSupervisor(K3Supervisor):
         p.wall.distance = self.parameters.distance
         p.velocity = self.parameters.velocity
         p.gains = self.parameters.gains
-        return p        
+        return p
 
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
@@ -50,32 +59,31 @@ class K3WallSupervisor(K3Supervisor):
         return [
             (('wall', "Follow wall"), [
                 ('direction', (p.direction,['left','right'])),
-                (('distance','Distance to wall'), p.distance)]),
-            ('velocity', [('v',p.velocity.v)]),
+                (('distance','Distance to wall'), uiFloat(p.distance,0.1))]),
+            ('velocity', [('v',uiFloat(p.velocity.v,0.1))]),
             (('gains',"PID gains"), [
-                (('kp','Proportional gain'), p.gains.kp),
-                (('ki','Integral gain'), p.gains.ki),
-                (('kd','Differential gain'), p.gains.kd)])]
+                (('kp','Proportional gain'), uiFloat(p.gains.kp,0.1)),
+                (('ki','Integral gain'), uiFloat(p.gains.ki,0.1)),
+                (('kd','Differential gain'), uiFloat(p.gains.kd,0.1))])]
                     
     def init_default_parameters(self):
         """Init parameters with default values"""
-        self.parameters = Struct()
-        self.parameters.direction = 'left'
-        self.parameters.distance = 0.2
-        self.parameters.velocity = Struct()
-        self.parameters.velocity.v = 0.2
-        self.parameters.gains = Struct()
-        self.parameters.gains.kp = 10.0
-        self.parameters.gains.ki = 2.0
-        self.parameters.gains.kd = 0.0
+        self.parameters = Struct({"direction":'left', \
+                                  "distance":0.2, \
+                                  "velocity":{"v":0.2}, \
+                                  "gains":{"kp":3.0, "ki": 0.1, "kd": 0.0}})
 
     def process_state_info(self,state):
         """Update state parameters for the controllers and self"""
 
-        K3Supervisor.process_state_info(self,state)
+        QuickBotSupervisor.process_state_info(self,state)
         
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
+        self.parameters.pose = self.pose_est
+   
+    def draw_background(self, renderer):
+        pass
    
     def draw_foreground(self, renderer):
         """Draw controller info"""

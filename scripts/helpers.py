@@ -56,7 +56,7 @@ class Struct:
         return "Struct\n {}".format("\n ".join((str_field(k,v) for k,v in self.__dict__.items())))
     
     def __repr__(self):
-        return json.dumps(self.__dict__) # This might be the same as repr(dict), but it's safer.
+        return json.dumps(self.__dict__, default = lambda x: x.__dict__) # This might be the same as repr(dict), but it's safer.
     
     def __eq__(self,other):
         if not isinstance(other,Struct):
