@@ -6,9 +6,9 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.khepera3 import K3Supervisor
-from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
+from core.supervisor import Supervisor
+from supervisors.khepera3 import K3Supervisor
 
 class K3BlendingSupervisor(K3Supervisor):
     """K3Blending supervisor has two controllers - hold and blending, that blends

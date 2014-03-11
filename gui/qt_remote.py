@@ -7,15 +7,16 @@
 #
 
 import sys
-sys.path.insert(0, './scripts')
-from PyQt4 import QtGui, QtCore
 import os
-from qt_paramwindow import ParamWidget
-from qt_courseradock import CourseraDock
-from qt_logdock import LogDock
-from ui import uiParameter, uiInt, uiFloat, uiBool, uiSelect, uiGroup
-
 import socket
+
+from PyQt4 import QtGui, QtCore
+
+from core.ui import uiParameter, uiInt, uiFloat, uiBool, uiSelect, uiGroup
+
+from .qt_paramwindow import ParamWidget
+from .qt_courseradock import CourseraDock
+from .qt_logdock import LogDock
 
 class PlayPauseAction(QtGui.QAction):
     def __init__(self, parent, run_slot, pause_slot):

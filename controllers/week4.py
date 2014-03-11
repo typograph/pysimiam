@@ -6,9 +6,10 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.pid_controller import PIDController
 import math
 import numpy
+
+from controllers.pid_controller import PIDController
 
 class AvoidObstacles(PIDController):
     """Avoid obstacles is an example controller that checks the sensors

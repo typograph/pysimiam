@@ -2,7 +2,7 @@
 # Renderer class
 #
 # A glue layer between SimObject and UI
-from pose import Pose
+from .pose import Pose
 from math import tan, sqrt, atan2
 
 class Renderer:

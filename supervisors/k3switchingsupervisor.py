@@ -1,6 +1,6 @@
-from supervisors.khepera3 import K3Supervisor
-from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
+from core.supervisor import Supervisor
+from supervisors.khepera3 import K3Supervisor
 
 class K3DefaultSupervisor(K3Supervisor):
     """K3Default supervisor creates two controllers: gotogoal and avoidobstacles. This module is intended to be a template for student supervisor and controller integration"""

@@ -6,11 +6,11 @@
 #
 
 import random
-from simobject import SimObject
-from pose import Pose
 from math import sin, cos, sqrt
 
-from robot import Robot
+from .simobject import SimObject
+from .pose import Pose
+from .robot import Robot
 
 class Sensor:
     """Base superclass for sensor objects"""

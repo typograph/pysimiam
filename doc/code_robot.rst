@@ -4,7 +4,7 @@ Robots and the world
 Robot
 -------------------------------
 
-.. automodule:: robot
+.. automodule:: core.robot
     :members:
 
 .. _robot-supervisor-link:
@@ -32,6 +32,6 @@ This output will be fed to the robot at the end of the cycle.
 
 Sensor
 -------------------------------
-.. automodule:: sensor
+.. automodule:: core.sensor
     :member-order: bysource
     :members:

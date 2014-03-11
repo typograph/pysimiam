@@ -1,6 +1,6 @@
 from numpy import degrees
-from pose import Pose
-from renderer import Renderer
+from core.pose import Pose
+from core.renderer import Renderer
 from PyQt4.QtGui import QPainter,QColor,QPolygonF,QPen
 from PyQt4.QtCore import QPointF,QLineF,QRectF,Qt
 

@@ -1,6 +1,7 @@
-from xmlobject import XMLObject
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as dom
+
+from .xmlobject import XMLObject
 
 class XMLWriter(XMLObject):
     """

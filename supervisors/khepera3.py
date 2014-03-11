@@ -6,11 +6,12 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisor import Supervisor
-from helpers import Struct
-from pose import Pose
 from math import pi, sin, cos, log1p
-from simobject import Path
+
+from core.supervisor import Supervisor
+from core.helpers import Struct
+from core.pose import Pose
+from core.simobject import Path
 
 class K3Supervisor(Supervisor):
     """The K3Supervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting Khepera3 supervisor. Students are intended to inherit from this class when making their own supervisors. An example of implementation is the :class:`~k3defaultsupervisor.K3DefaultSupervisor` class in which this class is used to reduce noisy code interactions.

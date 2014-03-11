@@ -6,9 +6,11 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.quickbot import QuickBotSupervisor
-from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
+
+from core.supervisor import Supervisor
+
+from supervisors.quickbot import QuickBotSupervisor
 
 class QBSwitchingSupervisor(QuickBotSupervisor):
     """QBSwitching supervisor switches between go-to-goal and avoid-obstacles controllers to make the robot reach the goal smoothly and without colliding wth walls."""

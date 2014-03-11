@@ -1,11 +1,11 @@
 from time import time
 import sys
 
-from pose import Pose
+from .pose import Pose
 
 # FIXME from robots.qb_embedded import QuickBot
 from robots.qb_realtime import QuickBot
-from helpers import Struct
+from .helpers import Struct
 
 import socket
 from select import select

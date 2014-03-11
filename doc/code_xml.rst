@@ -31,12 +31,12 @@ The actual format of the file is defined by the supervisor's
 Readers and writers
 -------------------
 
-.. automodule:: xmlreader
+.. automodule:: core.xmlreader
     :members:
 
-.. automodule:: xmlwriter
+.. automodule:: core.xmlwriter
     :members:
 
-.. automodule:: xmlobject
+.. automodule:: core.xmlobject
     :members:
 

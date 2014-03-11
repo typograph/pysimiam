@@ -1,4 +1,4 @@
-from simobject import SimObject
+from .simobject import SimObject
 
 class Robot(SimObject):
     """The robot is a :class:`~simobject.SimObject` that implements drawing

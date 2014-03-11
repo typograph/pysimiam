@@ -1,6 +1,6 @@
 from math import sin, cos, sqrt
-import pylygon
-from pose import Pose
+from . import pylygon
+from .pose import Pose
 
 class SimObject:
     """The base class for all objects that can be drawn in the simulator. 
@@ -172,7 +172,7 @@ class Path(Cloud):
         self.reset(start)
 
     def RDP(points):
-        """An implementation of the Ramer–Douglas–Peucker algorithm
+        """An implementation of the Ramer-Douglas-Peucker algorithm
         to simplify long paths. At the moment throws away points that are
         less than two millimeters away from the straight line.
         """

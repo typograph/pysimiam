@@ -17,9 +17,11 @@ import hashlib
 import base64
 import re
 import math
-import helpers
-from pose import Pose
 import numpy as np
+
+from . import helpers
+from .helpers import Struct
+from .pose import Pose
 
 class CourseraException(Exception):
     pass
@@ -189,7 +191,6 @@ class Week2Test1(WeekTestCase):
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
-        from pose import Pose
         
         info = QuickBot(Pose()).get_info()
         info.color = 0
@@ -216,16 +217,13 @@ class Week2Test2(WeekTestCase):
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot
-        from pose import Pose
-        from helpers import Struct
-        from math import pi
         
         bot = QuickBot(Pose())
         info = bot.get_info()
         info.color = 0
         s = QuickBotSupervisor(Pose(),info)
         params = Struct()
-        params.goal = theta*180/pi
+        params.goal = theta*180/math.pi
         params.velocity = v
         params.pgain = 1
         s.set_parameters(params)
@@ -239,7 +237,7 @@ class Week2Test2(WeekTestCase):
         xe,ye,te = s.pose_est
         xr,yr,tr = bot.get_pose()
         
-        self.testsuite.respond("{:0.3f},{:0.3f},{:0.3f}".format(abs((xr-xe)/xr), abs((yr-ye)/yr), abs(abs(tr-te)%(2*pi)/tr)))
+        self.testsuite.respond("{:0.3f},{:0.3f},{:0.3f}".format(abs((xr-xe)/xr), abs((yr-ye)/yr), abs(abs(tr-te)%(2*math.pi)/tr)))
 
 class Week2Test3(WeekTestCase):
     
@@ -259,7 +257,6 @@ class Week2Test3(WeekTestCase):
                     
         from supervisors.week2 import QuickBotSupervisor
         from robots.quickbot import QuickBot, QuickBot_IRSensor
-        from pose import Pose
         
         bot = QuickBot(Pose())
         sensor = QuickBot_IRSensor(Pose(),bot)
@@ -484,7 +481,6 @@ class Week3Test3(WeekTestCase):
 
         QuickBotSupervisor = helpers.load_by_name('week3.QBGTGSupervisor','supervisors')
         QuickBot = helpers.load_by_name('QuickBot','robots')
-        from pose import Pose
         
         bot = QuickBot(Pose())
         info = bot.get_info()
@@ -880,7 +876,7 @@ class Week6Test(WeekTestCase):
         self.testsuite.gui.start_testing()
         self.testsuite.gui.register_event_handler(self)
             
-        from xmlreader import XMLReader
+        from .xmlreader import XMLReader
         world = XMLReader("worlds/week6_test_{}.xml".format(vals['dir']), 'simulation').read()
         i = 0
         while world[i].type != 'robot':

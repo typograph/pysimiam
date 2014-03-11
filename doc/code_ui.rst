@@ -4,12 +4,12 @@ Graphical Interface
 Drawing
 --------
 
-.. autoclass:: renderer.Renderer
+.. autoclass:: core.renderer.Renderer
     :members:
 
-.. autoclass:: qt_renderer.QtRenderer
+.. autoclass:: gui.qt_renderer.QtRenderer
 
-.. autoclass:: wx_renderer.wxGCRenderer
+.. autoclass:: gui.wx_renderer.wxGCRenderer
 
 
 UI
@@ -25,20 +25,20 @@ two thread-safe queues. One queue contains the commands for the simulator,
 the other queue contains messages from the simulator. The communication
 is implemented in the base ui class, `ui.SimUI`.
 
-.. automodule:: ui
+.. automodule:: core.ui
     :members:
 
 PyQt4 implementation
 ^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: qt_mainwindow
+.. automodule:: gui.qt_mainwindow
     :members:
         
-.. automodule:: qt_paramwindow
+.. automodule:: gui.qt_paramwindow
     :members:
 
 wxPython implementation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: wx_mainwindow
+.. automodule:: gui.wx_mainwindow
     :members:

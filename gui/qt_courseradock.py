@@ -1,10 +1,10 @@
 from PyQt4 import QtGui
 from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper, QSettings
-from helpers import Struct
+from core.helpers import Struct
 from collections import OrderedDict
 from traceback import format_exception
 import sys
-from coursera import CourseraException
+from core.coursera import CourseraException
 
 class CourseraDock(QtGui.QDockWidget):
     

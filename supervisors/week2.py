@@ -6,13 +6,13 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisor import Supervisor
-from helpers import Struct
-from pose import Pose
 from numpy import array, dot
-from simobject import Path
-
 from math import pi, sin, cos, log1p, sqrt, atan2
+
+from core.supervisor import Supervisor
+from core.helpers import Struct
+from core.pose import Pose
+from core.simobject import Path
 
 class QuickBotSupervisor(Supervisor):
     """The QuickBotSupervisor inherits from the superclass 'supervisor.Supervisor' to implement detailed calculations for any inheriting QuickBot supervisor. 

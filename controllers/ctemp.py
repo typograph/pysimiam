@@ -3,10 +3,10 @@ Author: John Alexander
 ChangeDate: 8 FEB 2013; 2300EST
 Description: This is a template for the controller class for PySimiam.
 """
-
-from controller import Controller
 import math
 import numpy
+
+from .controller import Controller
 
 class Ctemp(Controller):
     def __init__(self):

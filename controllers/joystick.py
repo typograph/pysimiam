@@ -6,12 +6,13 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controller import Controller
 import math
 import numpy
 
 import pygame
 from pygame import joystick
+
+from core.controller import Controller
 
 class JoystickController(Controller):
     """The joystick controller steers the robot according to the joystick input."""

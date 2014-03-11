@@ -92,20 +92,20 @@ test the drawing, positioning of the sensors and the dynamics.
 API
 ---
 
-.. automodule:: pose
+.. automodule:: core.pose
    :noindex:
    :members:
 
-.. automodule:: simobject
+.. automodule:: core.simobject
    :noindex:
    :member-order: bysource
    :members:
       
-.. automodule:: robot
+.. automodule:: core.robot
    :noindex:
    :members:
      
-.. automodule:: sensor
+.. automodule:: core.sensor
    :noindex:
    :member-order: bysource
    :members:

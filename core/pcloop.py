@@ -5,15 +5,15 @@ except ImportError:
     import queue
 from collections import deque
 from time import sleep, time
-from xmlreader import XMLReader
-import helpers
-from helpers import Struct
+from .xmlreader import XMLReader
+from . import helpers
+from .helpers import Struct
 from math import sqrt
 import sys
 
-import pose
-import simobject
-import supervisor
+from . import pose
+from . import simobject
+from . import supervisor
 
 import gc
 

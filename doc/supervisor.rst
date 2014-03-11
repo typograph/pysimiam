@@ -143,7 +143,7 @@ can draw content directly related to the current state of the world.
 API
 ---
 
-.. automodule:: supervisor
+.. automodule:: core.supervisor
     :noindex:
     :members:
 

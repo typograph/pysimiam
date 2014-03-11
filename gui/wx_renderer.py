@@ -6,9 +6,11 @@
 
 import numpy as np
 from math import sin,cos
+
 import wx
-from renderer import Renderer
-from pose import Pose
+
+from core.renderer import Renderer
+from core.pose import Pose
 
 class wxGCRenderer(Renderer):
     """An implementation of :class:`~renderer.Renderer` for wxPython.

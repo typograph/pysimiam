@@ -6,11 +6,12 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.quickbot import QuickBotSupervisor
-from supervisor import Supervisor
-from ui import uiFloat
 from math import sqrt, sin, cos, atan2
-import numpy
+
+from core.ui import uiFloat
+from core.supervisor import Supervisor
+
+from supervisors.quickbot import QuickBotSupervisor
 
 class QBFullSupervisor(QuickBotSupervisor):
     """QBFull supervisor implements the full switching behaviour for navigating labyrinths."""

@@ -3,17 +3,18 @@
 #Author: Tim Fuchs
 #Description: This is the top-level application for QtSimiam.
 import sys
-sys.path.insert(0, './scripts')
 from PyQt4 import QtGui, QtCore
 import os
-from qt_renderer import QtRenderer
-from qt_paramwindow import ParamDock, DockManager
-from qt_courseradock import CourseraDock
-from qt_logdock import LogDock
-from ui import SimUI
 from traceback import format_exception
-from qt_plotwindow import create_predefined_plot_window # ,create_plot_window
-from simulator import Simulator
+
+from core.ui import SimUI
+from core.simulator import Simulator
+
+from .qt_renderer import QtRenderer
+from .qt_paramwindow import ParamDock, DockManager
+from .qt_courseradock import CourseraDock
+from .qt_logdock import LogDock
+from .qt_plotwindow import create_predefined_plot_window # ,create_plot_window
 
 class PlayPauseAction(QtGui.QAction):
     def __init__(self, parent, run_slot, pause_slot):

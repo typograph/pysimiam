@@ -6,9 +6,10 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controller import Controller
 import math
 import numpy
+
+from core.controller import Controller
 
 class PIDController(Controller):
     """The PID controller is a general-purpose controller that steers the robot to a certain heading direction. The heading is recalculated on every execution."""

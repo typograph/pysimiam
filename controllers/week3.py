@@ -6,9 +6,10 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controller import Controller
 import math
 import numpy
+
+from core.controller import Controller
 
 class GoToGoal(Controller):
     """Go-to-goal steers the robot to a predefined position in the world."""

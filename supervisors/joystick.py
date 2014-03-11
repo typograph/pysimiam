@@ -6,13 +6,15 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.quickbot import QuickBotSupervisor
-from simobject import Path
-from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
-from pose import Pose
-from helpers import Struct
-from ui import uiInt, uiBool
+
+from core.simobject import Path
+from core.supervisor import Supervisor
+from core.pose import Pose
+from core.helpers import Struct
+from core.ui import uiInt, uiBool
+
+from supervisors.quickbot import QuickBotSupervisor
 
 class QBJoystickSupervisor(QuickBotSupervisor):
     """Control the robot with a joystick!!!

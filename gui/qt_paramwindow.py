@@ -1,12 +1,15 @@
-from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
-from helpers import Struct
-from xmlreader import XMLReader
-from xmlwriter import XMLWriter
+import sys
+
 from collections import OrderedDict
 from traceback import format_exception
-import sys
-from ui import uiParameter
+
+from PyQt4 import QtGui
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
+
+from core.helpers import Struct
+from core.ui import uiParameter
+from core.xmlreader import XMLReader
+from core.xmlwriter import XMLWriter
 
 # Constructing UI from parameters:
 # 

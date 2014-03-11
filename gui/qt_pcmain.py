@@ -7,17 +7,19 @@
 #
 
 import sys
-sys.path.insert(0, './scripts')
-from PyQt4 import QtGui, QtCore
 import os
-from qt_renderer import QtRenderer
-from qt_paramwindow import ParamDock, DockManager
-from qt_courseradock import CourseraDock
-from qt_logdock import LogDock
-from ui import SimUI
 from traceback import format_exception
-from qt_plotwindow import create_predefined_plot_window # ,create_plot_window
-from pcloop import PCLoop
+
+from PyQt4 import QtGui, QtCore
+
+from core.ui import SimUI
+from core.pcloop import PCLoop
+
+from .qt_renderer import QtRenderer
+from .qt_paramwindow import ParamDock, DockManager
+from .qt_courseradock import CourseraDock
+from .qt_logdock import LogDock
+from .qt_plotwindow import create_predefined_plot_window # ,create_plot_window
 
 class PlayPauseAction(QtGui.QAction):
     def __init__(self, parent, run_slot, pause_slot):

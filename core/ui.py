@@ -3,7 +3,7 @@ try:
 except ImportError:
     import queue
 
-from helpers import Struct
+from .helpers import Struct
 
 class uiParameter(Struct):
     """uiParameter represents a single GUI element that is used to build a parameter window

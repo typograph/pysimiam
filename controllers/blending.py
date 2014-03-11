@@ -6,9 +6,10 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.pid_controller import PIDController
 import math
 import numpy
+
+from controllers.pid_controller import PIDController
 
 class Blending(PIDController):
     """A controller blending go-to-goal and avoid-obstacles behaviour"""

@@ -1,5 +1,5 @@
+from core.supervisor import Supervisor
 from supervisors.khepera3 import K3Supervisor
-from supervisor import Supervisor
 
 class Template(K3Supervisor):
     """The template supervisor implements all required functions to operate a supervisor"""

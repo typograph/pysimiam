@@ -6,12 +6,13 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.quickbot import QuickBotSupervisor
-from helpers import Struct
 from numpy import array, dot
-from ui import uiFloat
-
 from math import pi, sin, cos, log1p, sqrt, atan2
+
+from core.helpers import Struct
+from core.ui import uiFloat
+
+from supervisors.quickbot import QuickBotSupervisor
 
 class QBWallSupervisor(QuickBotSupervisor):
     """QBWall supervisor uses a follow-wall controller to make the robot drive at a certain distance from obstacles."""

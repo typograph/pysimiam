@@ -1,5 +1,4 @@
-from rect import Rect
-
+from .rect import Rect
 
 class QuadTree(object):
     """ QuadTree data structure of simulated objects

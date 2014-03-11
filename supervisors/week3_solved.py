@@ -7,8 +7,8 @@
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
 from supervisors.week3 import QBGTGSupervisor
-from simobject import Path
-from supervisor import Supervisor
+from core.simobject import Path
+from core.supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
 
 class QBGTGSupervisorX(QBGTGSupervisor):

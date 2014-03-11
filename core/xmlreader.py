@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
-from xmlobject import XMLObject
-from helpers import Struct
-from pose import Pose
+from .xmlobject import XMLObject
+from .helpers import Struct
+from .pose import Pose
 
 class XMLReader(XMLObject):
     """

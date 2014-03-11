@@ -1,5 +1,5 @@
 # PySimiam Supervisor
-import helpers
+from . import helpers
 
 class Supervisor:
     """

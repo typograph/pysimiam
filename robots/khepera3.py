@@ -1,9 +1,10 @@
 import numpy as np
-from pose import Pose
-from sensor import ProximitySensor
-from robot import Robot
 from math import ceil, exp, sin, cos, tan, pi
-from helpers import Struct
+
+from core.pose import Pose
+from core.sensor import ProximitySensor
+from core.robot import Robot
+from core.helpers import Struct
 
 class Khepera3_IRSensor(ProximitySensor):
     """Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors"""
