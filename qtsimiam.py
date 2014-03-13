@@ -6,7 +6,7 @@
 import sys
 from PyQt4 import QtGui
 
-from gui.qt_mainwindow import SimulationWidget
+from gui.qt.mainwindow import SimulationWidget
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

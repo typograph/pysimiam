@@ -5,7 +5,7 @@
 import sys
 from PyQt4 import QtGui
 
-from gui.qt_mainwindow import SimulationWidget
+from gui.qt.mainwindow import SimulationWidget
 from core.coursera import Week1
 
 if __name__ == "__main__":

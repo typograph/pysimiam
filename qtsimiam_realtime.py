@@ -8,7 +8,7 @@ sys.path.insert(0, './scripts')
 sys.path.insert(0, './gui')
 from PyQt4 import QtGui
 
-from qt_pcmain import SimulationWidget
+from gui.qt.pcmain import SimulationWidget
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

@@ -7,9 +7,9 @@ Drawing
 .. autoclass:: core.renderer.Renderer
     :members:
 
-.. autoclass:: gui.qt_renderer.QtRenderer
+.. autoclass:: gui.qt.renderer.QtRenderer
 
-.. autoclass:: gui.wx_renderer.wxGCRenderer
+.. autoclass:: gui.wx.renderer.wxGCRenderer
 
 
 UI
@@ -31,14 +31,14 @@ is implemented in the base ui class, `ui.SimUI`.
 PyQt4 implementation
 ^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: gui.qt_mainwindow
+.. automodule:: gui.qt.mainwindow
     :members:
         
-.. automodule:: gui.qt_paramwindow
+.. automodule:: gui.qt.paramwindow
     :members:
 
 wxPython implementation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: gui.wx_mainwindow
+.. automodule:: gui.wx.mainwindow
     :members:
