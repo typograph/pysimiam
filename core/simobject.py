@@ -171,7 +171,8 @@ class Path(Cloud):
         
         self.reset(start)
 
-    def RDP(points):
+    @classmethod
+    def RDP(cls,points):
         """An implementation of the Ramer-Douglas-Peucker algorithm
         to simplify long paths. At the moment throws away points that are
         less than two millimeters away from the straight line.

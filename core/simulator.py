@@ -14,6 +14,7 @@ from . import supervisor
 from .quadtree import QuadTree, Rect
 from . import helpers
 from .helpers import Struct
+from .xmlreader import XMLReader
 
 PAUSE = 0
 RUN = 1
@@ -140,12 +141,10 @@ class Simulator(threading.Thread):
                     # Create supervisor
                     sup_class = helpers.load_by_name(thing.supervisor.type,'supervisors')
                     
-                    info = robot.get_info()
-                    info.color = robot.get_color()
                     if thing.supervisor.options is not None:
-                        supervisor = sup_class(thing.robot.pose, info, options = Struct(thing.supervisor.options))
+                        supervisor = sup_class(thing.robot.pose, robot.get_color(), robot.get_info(), options = Struct(thing.supervisor.options))
                     else:
-                        supervisor = sup_class(thing.robot.pose, info)                        
+                        supervisor = sup_class(thing.robot.pose, robot.get_color(), robot.get_info())                        
                     supervisor.set_logqueue(self.__log_queue)
                     name = "Robot {}: {}".format(len(self.__robots)+1, sup_class.__name__)
                     if self.__supervisor_param_cache is not None and \
