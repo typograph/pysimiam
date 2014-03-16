@@ -1,8 +1,8 @@
-from PyQt4 import QtGui
-from PyQt4.QtCore import Qt, pyqtSignal
+from .Qt import QtGui
+from .Qt.QtCore import Qt, Signal
 
 class LogDock(QtGui.QDockWidget):
-    closed = pyqtSignal(bool)
+    closed = Signal(bool)
     def __init__(self, parent):
         """Construct a new dockwindow with the log """
         

@@ -1,4 +1,4 @@
-from PyQt4 import QtGui
+from .Qt import QtGui
 
 from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas

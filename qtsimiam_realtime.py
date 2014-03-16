@@ -2,12 +2,9 @@
 # QtSimiam main executable
 # Author: Tim Fuchs <typograph@elec.ru>
 # Description: This is the top-level application for QtSimiam for controlling real robots.
-
 import sys
-sys.path.insert(0, './scripts')
-sys.path.insert(0, './gui')
-from PyQt4 import QtGui
 
+from qui.qt.Qt import QtGui
 from gui.qt.pcmain import SimulationWidget
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QSignalMapper, QSettings
+from .Qt import QtGui
+from .Qt.QtCore import Slot, Signal, Qt, QSignalMapper, QSettings
 from core.helpers import Struct
 from collections import OrderedDict
 from traceback import format_exception
@@ -8,7 +8,7 @@ from core.coursera import CourseraException
 
 class CourseraDock(QtGui.QDockWidget):
     
-    closed = pyqtSignal(bool)
+    closed = Signal(bool)
     
     btn_default_stylesheet = """background-color: rgb(216, 229, 226);
                                 border: 1px solid black;
@@ -46,12 +46,8 @@ class CourseraDock(QtGui.QDockWidget):
         self.password.textEdited.connect(self.check_logpass)
         
         self.cache = QSettings('pySimiam','coursera')
-        if sys.version_info[0] < 3:
-            self.login.setText(self.cache.value('username','').toString())
-            self.password.setText(self.cache.value('password','').toString())
-        else:
-            self.login.setText(self.cache.value('username',''))
-            self.password.setText(self.cache.value('password',''))
+        self.login.setText(self.cache.value('username',''))
+        self.password.setText(self.cache.value('password',''))
         
         self.tests = []
         
@@ -97,7 +93,7 @@ class CourseraDock(QtGui.QDockWidget):
         for btn in self.tests:
             btn.setEnabled(enable)
     
-    @pyqtSlot(int)
+    @Slot(int)
     def test(self,i):
         self.enable_testing(False)
         self.tester.setuser(self.login.text(),self.password.text())
@@ -116,10 +112,7 @@ class CourseraDock(QtGui.QDockWidget):
         self.enable_testing(True)
         
     def check_logpass(self):
-        if sys.version_info[0] < 3:
-            valid_ = not self.login.text().isEmpty() and not self.password.text().isEmpty()
-        else:
-            valid_ = bool(self.login.text()) and bool(self.password.text())
+        valid_ = bool(self.login.text()) and bool(self.password.text())
         if valid_:
             self.cache.setValue('username',self.login.text())
             self.cache.setValue('password',self.password.text())

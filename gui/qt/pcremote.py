@@ -10,7 +10,7 @@ import sys
 import os
 import socket
 
-from PyQt4 import QtGui, QtCore
+from .Qt import QtGui, QtCore
 
 from core.ui import uiParameter, uiInt, uiFloat, uiBool, uiSelect, uiGroup
 
@@ -55,7 +55,7 @@ class PlayPauseAction(QtGui.QAction):
         self.setStatusTip(actset[3])
 
 class ControlWidget(QtGui.QWidget):
-    connected = QtCore.pyqtSignal()
+    connected = QtCore.Signal()
     
     def __init__(self, parent = None):
         QtGui.QWidget.__init__(self,parent)

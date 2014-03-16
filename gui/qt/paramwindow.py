@@ -3,8 +3,8 @@ import sys
 from collections import OrderedDict
 from traceback import format_exception
 
-from PyQt4 import QtGui
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, Qt, QObject, QEvent
+from .Qt import QtGui
+from .Qt.QtCore import Slot, Signal, Qt, QObject, QEvent
 
 from core.helpers import Struct
 from core.ui import uiParameter
@@ -224,7 +224,7 @@ class Contents(Group):
         self.set_value(params)
         
 class ParamWidget(QtGui.QWidget):
-    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    apply_request = Signal((object,object))
     
     def __init__(self, parent, window_id, parameters):
         """Construct a new dockwindow following the parameters dict.
@@ -269,12 +269,12 @@ class ParamWidget(QtGui.QWidget):
         except ValueError as e:
             print("Invalid parameters: {}".format(e))
     
-    @pyqtSlot()
+    @Slot()
     def apply_click(self):
         p = self.contents.get_struct()
         self.apply_request.emit(self.id_,p)
     
-    @pyqtSlot()
+    @Slot()
     def save_click(self):
         filename = QtGui.QFileDialog.getSaveFileName(self,
                         "Select a file for parameters",
@@ -288,7 +288,7 @@ class ParamWidget(QtGui.QWidget):
                 #QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
                 QtGui.QMessageBox.critical(self,"Saving parameters failed","\n".join(format_exception(*sys.exc_info())))
     
-    @pyqtSlot()
+    @Slot()
     def load_click(self):
         filename = QtGui.QFileDialog.getOpenFileName(self,
                         "Select a file with parameters",
@@ -306,8 +306,8 @@ class ParamWidget(QtGui.QWidget):
                 self.contents.use_xmlstruct(cache)
 
 class ParamDock(QtGui.QDockWidget):
-    title_click = pyqtSignal()
-    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    title_click = Signal()
+    apply_request = Signal((object,object))
 
     def __init__(self, parent, window_id, window_name, window_color, parameters):
         """Construct a new dockwindow following the parameters dict.
@@ -375,7 +375,7 @@ class ParamDock(QtGui.QDockWidget):
         return self.widget() == self.__panel
         
 class DockManager(QObject):
-    apply_request = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    apply_request = Signal((object,object))
     
     """Provides a dock for the Qt Simulator Widget to controll PID elements"""
     def __init__(self, parent):
@@ -422,11 +422,11 @@ class DockManager(QObject):
     
     def add_dock(self, robot_id, name, parameters, side):
         if name in self.docks:
-            self.docks[name].reset(robot_id, robot_id.get_color(), parameters)
+            self.docks[name].reset(robot_id, robot_id.color, parameters)
             return
         
         dock = ParamDock(self.parent(),
-                         robot_id, name, robot_id.get_color(),
+                         robot_id, name, robot_id.color,
                          parameters)
         self.docks[name] = dock
         
@@ -456,7 +456,7 @@ class DockManager(QObject):
     def add_dock_right(self, robot_id, name, parameters):
         self.add_dock(robot_id, name, parameters, 'right')
         
-    @pyqtSlot(QObject)
+    @Slot(QObject)
     def remove_dock(self, dock):
         if dock in self.docks_left:
             self.docks_left.remove(old_dock)
@@ -467,7 +467,7 @@ class DockManager(QObject):
                 del self.docks[k]
                 break
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def dock_level_changed(self, tl):
         dock = self.sender()
         if tl:
@@ -494,7 +494,7 @@ class DockManager(QObject):
                     self.active_right = None
         # otherwise already shown. Wait for location change
 
-    @pyqtSlot(Qt.DockWidgetArea)
+    @Slot(Qt.DockWidgetArea)
     def dock_location_changed(self,loc):
         dock = self.sender()
         if loc == Qt.LeftDockWidgetArea:
@@ -510,7 +510,7 @@ class DockManager(QObject):
         else:
             raise ValueError("Undefined dock location")
     
-    @pyqtSlot()
+    @Slot()
     def dock_user_expanded(self):
         dock = self.sender()
         if dock.is_collapsed():

@@ -3,7 +3,7 @@
 #Author: Tim Fuchs
 #Description: This is the top-level application for QtSimiam.
 import sys
-from PyQt4 import QtGui, QtCore
+from .Qt import QtGui, QtCore
 import os
 from traceback import format_exception
 
@@ -400,33 +400,33 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
         &copy; Pysimiam Team
         """)
     
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_rewind(self): # Start from the beginning
         self.speed_slider.setEnabled(False)
         #self.time_label.setText("00:00.0")
         self.run_simulator_command('reset_simulation')
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_run(self): # Run/unpause
         self.run_simulation()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_pause(self): # Pause
         self.speed_slider.setEnabled(False)        
         self.pause_simulation()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_step(self): # Pause
         #self.speed_slider.setEnabled(False)
         self.step_simulation()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_open_world(self):
         self.on_pause()
         if self.world_dialog.exec_():
             self.load_world(self.world_dialog.selectedFiles()[0])
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_screenshot(self):
         if self.screenshot_dialog.exec_():
             # Remember, direct access to the renderer is not thread-safe
@@ -435,56 +435,56 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
             else:
                 self.viewer.export_bitmap(self.screenshot_dialog.selectedFiles()[0])
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def refresh_view(self):
         self.run_simulator_command('refresh')
             
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def show_grid(self,show):
         self.run_simulator_command('show_grid',show)
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def show_sensors(self,show):
         self.run_simulator_command('show_sensors',show)
             
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def show_tracks(self,show):
         self.run_simulator_command('show_tracks',show)
             
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def show_supervisors(self,show):
         self.run_simulator_command('show_supervisors',show)
             
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def zoom_scene(self):
         self.zoom_slider.setEnabled(False)
         self.rotate_action.setEnabled(False)
         self.run_simulator_command('focus_on_world')
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def zoom_robot(self):
         self.zoom_slider.setEnabled(True)
         self.rotate_action.setEnabled(True)
         self.run_simulator_command('focus_on_robot',self.rotate_action.isChecked())
         self.run_simulator_command('adjust_zoom',5.0**(self.zoom_slider.value()/100.0))
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def rot_robot(self):
         self.run_simulator_command('focus_on_robot',self.rotate_action.isChecked())
             
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def scale_zoom(self,value):
         zoom = 5.0**(value/100.0)
         self.run_simulator_command('adjust_zoom',zoom)
         self.zoom_label.setText(" Zoom: %.1fx "%(zoom))
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def scale_time(self,value):
         m = 10.0**((value-self.zoom_factor)/100.0)
         self.run_simulator_command('set_time_multiplier',m)
         self.speed_label.setText(" Speed: %.1fx "%m)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def update_time(self):
         if self.simulator_thread.is_running():
             t = self.simulator_thread.get_time()
@@ -571,7 +571,7 @@ class SimulationWidget(SimUI, QtGui.QMainWindow):
 
 class SimulatorViewer(QtGui.QFrame):
     
-    resized = QtCore.pyqtSignal()
+    resized = QtCore.Signal()
     
     def __init__(self, parent = None):
         super(SimulatorViewer, self).__init__(parent)

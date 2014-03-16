@@ -4,8 +4,8 @@
 # Description: This is the top-level application for QtSimiam.
 #from __future__ import print_function
 import sys
-from PyQt4 import QtGui
 
+from qui.qt.Qt import QtGui
 from gui.qt.mainwindow import SimulationWidget
 
 if __name__ == "__main__":
