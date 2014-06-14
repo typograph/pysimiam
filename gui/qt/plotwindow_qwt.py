@@ -1,3 +1,12 @@
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+# This is the graph plotting based on Qwt library
+#
+
 from .Qt import QtGui
 from .Qt.QtCore import Slot, Signal, Qt, QObject, QEvent
 from .Qt.Qwt5 import QwtPlot, QwtPlotCurve, QwtLegend, QwtData, QwtPlotMagnifier, QwtPlotPanner

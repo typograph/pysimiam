@@ -1,3 +1,12 @@
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+# This is the graph plotting based on QtGraph library
+#
+
 import pyqtgraph as pg
 from random import randint
 

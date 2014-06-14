@@ -51,9 +51,13 @@ A specific binding can be selected with a SELECT_QT_BINDING attribute on sys:
 setattr(sys, 'SELECT_QT_BINDING', MY_BINDING_NAME)
 """
 
-import __builtin__
 import os
 import sys
+
+if sys.version_info[0] < 3:
+    from __builtin__ import __import__ as orig_import
+else:
+    from builtins import __import__ as orig_import
 
 QT_BINDING = None
 QT_BINDING_MODULES = {}
@@ -121,7 +125,7 @@ def _register_binding_module(module_name, module):
 def _named_import(name):
     parts = name.split('.')
     assert(len(parts) >= 2)
-    module = __builtin__.__import__(name)
+    module = orig_import(name)
     for m in parts[1:]:
         module = module.__dict__[m]
     module_name = parts[-1]

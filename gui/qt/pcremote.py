@@ -1,7 +1,8 @@
 #
-# (c) PySimiam Team 2014
+# (c) PySimiam Team
 #
-# Contact person: Tim Fuchs <typograph@elec.ru>
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
 #
 # The Qt interface for PC-controlled real robots
 #

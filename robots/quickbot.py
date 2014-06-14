@@ -1,11 +1,10 @@
 #
-# (c) PySimiam Team 2014
-#
-# Contact person: Tim Fuchs <typograph@elec.ru>
+# (c) PySimiam Team
 #
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
+
 import numpy as np
 from math import ceil, exp, sin, cos, tan, pi
 
@@ -13,6 +12,7 @@ from core.pose import Pose
 from core.sensor import ProximitySensor
 from core.robot import Robot
 from core.helpers import Struct
+
 
 class QuickBot_IRSensor(ProximitySensor):
     """Inherits from the proximity sensor class. Performs calculations specific to the khepera3 for its characterized proximity sensors"""
@@ -149,26 +149,29 @@ class QuickBot(Robot):
         # initialize motion
         self.ang_velocity = (0.0,0.0)
 
-        self.info = Struct()
-        self.info.wheels = Struct()
+        self.__info = Struct()
+        self.__info.wheels = Struct()
         # these were the original parameters
-        self.info.wheels.radius = 0.0325
-        self.info.wheels.base_length = 0.09925
-        self.info.wheels.ticks_per_rev = 16.0
-        self.info.wheels.left_ticks = 0
-        self.info.wheels.right_ticks = 0
+        self.__info.wheels.radius = 0.0325
+        self.__info.wheels.base_length = 0.09925
+        self.__info.wheels.ticks_per_rev = 16.0
+        self.__info.wheels.left_ticks = 0
+        self.__info.wheels.right_ticks = 0
         
-        self.info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
-        self.info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
+        self.__info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
+        self.__info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
         
         self.left_revolutions = 0.0
         self.right_revolutions = 0.0
         
-        self.info.ir_sensors = Struct()
-        self.info.ir_sensors.poses = ir_sensor_poses
-        self.info.ir_sensors.readings = None
-        self.info.ir_sensors.rmax = 0.3
-        self.info.ir_sensors.rmin = 0.04
+        self.__info.ir_sensors = Struct()
+        self.__info.ir_sensors.poses = ir_sensor_poses
+#        self.__info.ir_sensors.readings = None
+        self.__info.ir_sensors.rmax = 0.3
+        self.__info.ir_sensors.rmin = 0.04
+        
+        #self.state = Struct()
+        #self.state.ir_readings = None
 
     def draw(self,r):
         r.set_pose(self.get_pose())
@@ -184,7 +187,7 @@ class QuickBot(Robot):
         r.draw_polygon(self._shapes.right_wheel)
         
         r.set_pen(0x01000000)
-        r.set_brush(self.get_color())
+        r.set_brush(self.color)
         r.draw_polygon(self._shapes.base_plate)
 
         r.set_pen(0x10000000)
@@ -223,20 +226,24 @@ class QuickBot(Robot):
 
         self.left_revolutions += vl*dt/2/pi
         self.right_revolutions += vr*dt/2/pi
-        self.info.wheels.left_ticks = int(self.left_revolutions*self.info.wheels.ticks_per_rev)
-        self.info.wheels.right_ticks = int(self.right_revolutions*self.info.wheels.ticks_per_rev)
+        self.__info.wheels.left_ticks = int(self.left_revolutions*self.__info.wheels.ticks_per_rev)
+        self.__info.wheels.right_ticks = int(self.right_revolutions*self.__info.wheels.ticks_per_rev)
         
     def get_info(self):
-        self.info.ir_sensors.readings = [sensor.reading() for sensor in self.ir_sensors]
-        return self.info
+        return self.__info
+    
+    def get_state(self):
+        return Struct(
+            {"ir_readings": 
+                [sensor.reading() for sensor in self.ir_sensors]})
     
     def set_inputs(self,inputs):
         self.set_wheel_speeds(inputs)
     
     def diff2uni(self,diff):
         (vl,vr) = diff
-        v = (vl+vr) * self.info.wheels.radius/2;
-        w = (vr-vl) * self.info.wheels.radius/self.info.wheels.base_length;
+        v = (vl+vr) * self.__info.wheels.radius/2;
+        w = (vr-vl) * self.__info.wheels.radius/self.__info.wheels.base_length;
         return (v,w)
     
     def get_wheel_speeds(self):
@@ -248,8 +255,8 @@ class QuickBot(Robot):
         else:
             (vl, vr) = args[0]
             
-        left_ms  = max(-self.info.wheels.max_velocity, min(self.info.wheels.max_velocity, vl))
-        right_ms = max(-self.info.wheels.max_velocity, min(self.info.wheels.max_velocity, vr))
+        left_ms  = max(-self.__info.wheels.max_velocity, min(self.__info.wheels.max_velocity, vl))
+        right_ms = max(-self.__info.wheels.max_velocity, min(self.__info.wheels.max_velocity, vr))
 
         self.ang_velocity = (left_ms, right_ms)
 

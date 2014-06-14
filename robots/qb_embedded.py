@@ -1,8 +1,8 @@
 #!/usr/bin/python
 """
-@brief QuickBot class for Beaglebone Black
+@brief QuickBot class for Beaglebone Black using PySimiam
 
-@author Rowland O'Flaherty (rowlandoflaherty.com)
+@author Rowland O'Flaherty (rowlandoflaherty.com) & Tim Fuchs (typograph at elec dot ru)
 @date 02/07/2014
 @version: 1.0
 @copyright: Copyright (C) 2014, Georgia Tech Research Corporation see the LICENSE file included with this software (see LINENSE file)

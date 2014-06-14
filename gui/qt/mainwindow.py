@@ -1,7 +1,10 @@
-#!/usr/bin/python
-#QtSimiam
-#Author: Tim Fuchs
-#Description: This is the top-level application for QtSimiam.
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+
 import sys
 from .Qt import QtGui, QtCore
 import os

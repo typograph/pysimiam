@@ -1,3 +1,9 @@
+#
+# (c) PySimiam Team
+#
+# This is a class for communicating with a QuickBot over the network
+#
+
 import re
 import sys
 import time

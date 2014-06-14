@@ -81,7 +81,7 @@ class QBWallSupervisor(QuickBotSupervisor):
         
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
    
     def draw_background(self, renderer):
         pass
@@ -90,7 +90,7 @@ class QBWallSupervisor(QuickBotSupervisor):
         """Draw controller info"""
         
         """Draw follow wall"""
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         arrow_length = self.robot.wheels.base_length*5
         
         # Draw vector to wall:

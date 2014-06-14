@@ -21,7 +21,7 @@ class Template(K3Supervisor):
         #Add some data to variable self.parameters
         #Below are some default parameters
         #-------------------------------------
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         self.parameters.ir_readings = self.robot.ir_sensors.readings
         #You may want to convert to distance from readings 
         #using the K3Supervisor methods.

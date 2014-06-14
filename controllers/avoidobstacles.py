@@ -1,11 +1,10 @@
 #
-# (c) PySimiam Team 2013
-#
-# Contact person: Tim Fuchs <typograph@elec.ru>
+# (c) PySimiam Team
 #
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
+
 import math
 import numpy
 
@@ -15,55 +14,43 @@ from controllers.pid_controller import PIDController
 
 class AvoidObstacles(PIDController):
     """Avoid obstacles is an example controller that checks the sensors
-       for any readings, constructs 'obstacle' vectors and directs the robot
-       in the direction of their weighted sum."""
-    def __init__(self, params):
+    for any readings, constructs 'obstacle' vectors and directs the robot
+    in the direction of their weighted sum.
+       
+    The constructor expects two parameters:
+    
+    :param sensor_poses: A list of poses of all the sensors in the robot's
+                         frame of reference
+    :type  sensor_poses: [:class:`~pose.Pose`]
+    :param sensor_weights: A list of sensor weights of the same length
+                           as *sensor_poses*
+    :type  sensor_weights: [float] or None
+
+    The parameters for the :meth:`~controller.Controller.set_parameters`
+    are the same as for the :class:`~pid_controller.PIDController`'s
+    :meth:`~pid_controller.PIDController.set_parameters`
+ 
+    """
+    def __init__(self, sensor_poses, sensor_weights=None):
         '''Initialize internal variables'''
-        PIDController.__init__(self,params)
+        PIDController.__init__(self)
 
-    def set_parameters(self, params):
-        """Set PID values and sensor poses.
-        
-        The params structure is expected to have sensor poses in the robot's
-        reference frame as ``params.sensor_poses``.
-        """
-        PIDController.set_parameters(self,params)
+        self.sensor_poses = sensor_poses
 
-        self.sensor_poses = params.sensor_poses
-
-        # Now we know the poses, it makes sense to also
-        # calculate the weights
-        #self.weights = [(math.cos(p.theta)+1.5) for p in self.sensor_poses]
-        self.weights = [1.0, 1.0, 0.5, 1.0, 1.0]
-        
         # Normalizing weights
-        ws = sum(self.weights)
-        self.weights = [w/ws for w in self.weights]
+        if sensor_weights is None:
+            sensor_weights = [1]*len(sensor_poses)
+        ws = sum(sensor_weights)
+        self.weights = [w/ws for w in sensor_weights]
 
-    def get_heading(self, state):
+    def get_heading(self, sensor_distances):
         """Get the direction away from the obstacles as a vector."""
         
         # Calculate heading:
         x, y = 0, 0
-        for d,p,w in zip(state.sensor_distances, self.sensor_poses, self.weights):
+        for d,p,w in zip(sensor_distances, self.sensor_poses, self.weights):
             pose = Pose(d) >> p
             x += pose.x*w
             y += pose.y*w
                 
-        # End Week 4 Assignment
-     
         return numpy.array([x, y, 1])
-    
-    def execute(self, state, dt):
-        
-        v, w = PIDController.execute(self, state, dt)
-        
-        # Week 5 code
-        #
-        
-        dmin = min(state.sensor_distances)
-        v *= ((dmin - 0.04)/0.26)**2
-        
-        # 
-        
-        return v, w    

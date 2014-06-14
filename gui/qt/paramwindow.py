@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+
 import sys
 
 from collections import OrderedDict

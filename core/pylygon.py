@@ -1,5 +1,7 @@
+#
 # Based on work by Chandler Armstrong (omni dot armstrong at gmail dot com)
-
+# with changes by the PySimiam Team.
+#
 
 """
 polygon object

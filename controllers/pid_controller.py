@@ -1,21 +1,22 @@
 #
 # (c) PySimiam Team 2013
 #
-# Contact person: Tim Fuchs <typograph@elec.ru>
-#
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
+
 import math
 import numpy
 
 from core.controller import Controller
 
 class PIDController(Controller):
-    """The PID controller is a general-purpose controller that steers the robot to a certain heading direction. The heading is recalculated on every execution."""
-    def __init__(self, params):
+    """The PID controller is a general-purpose controller
+    that steers the robot to a certain heading direction.
+    The heading is recalculated on every execution."""
+    def __init__(self):
         '''Initialize internal variables'''
-        Controller.__init__(self,params)
+        Controller.__init__(self)
         
         # This angle shows the direction that the controller
         # tries to follow. It is used by the supervisor
@@ -27,22 +28,20 @@ class PIDController(Controller):
         self.E = 0
         self.error_1 = 0
 
-    def set_parameters(self, params):
-        """Set PID values
-        
-        The params structure is expected to have in the `gains` field three
-        parameters for the PID gains.
-        
-        :param params.gains.kp: Proportional gain
-        :type params.gains.kp: float
-        :param params.gains.ki: Integral gain
-        :type params.gains.ki: float
-        :param params.gains.kd: Differential gain
-        :type params.gains.kd: float
+    def set_parameters(self, kp, ki, kd, v):
+        """Set PID gains and target speed
+
+        :param kp: Proportional gain
+        :type  kp: float
+        :param ki: Integral gain
+        :type  ki: float
+        :param kd: Differential gain
+        :type  kd: float
+        :param v: target speed
+        :type  v: float
         """
-        self.kp = params.gains.kp
-        self.ki = params.gains.ki
-        self.kd = params.gains.kd
+        self.kp, self.ki, self.kd = kp, ki, kd
+        self.v = v
 
     def get_heading(self, state):
         """Get the direction in which the controller wants to move the robot
@@ -84,6 +83,4 @@ class PIDController(Controller):
         w_ = self.kp*error + self.ki*self.E + self.kd*dE
         
         # The linear velocity is given to us:
-        v_ = state.velocity.v
-
-        return [v_, w_]
+        return self.v, w_

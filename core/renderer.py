@@ -1,7 +1,10 @@
 #
-# Renderer class
+# (c) PySimiam Team
 #
-# A glue layer between SimObject and UI
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+# 
+
 from .pose import Pose
 from math import tan, sqrt, atan2
 
@@ -12,7 +15,7 @@ class Renderer:
         to the UI that the program is using.
         
         The base class does not impose any restrictions on the type of
-        the *canvas* parameter. It is up to a specific implementation to
+        the *canvas* parameter. It is up to the specific implementation to
         interpret this parameter correctly.
     """
     

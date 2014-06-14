@@ -1,5 +1,10 @@
 #
-# Sensors
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 #
 # In the original Sim.I.Am code there is no base class, as the sensors are
 # completely arbitrary objects
@@ -58,7 +63,7 @@ class ProximitySensor(MountedSensor):
                          (self.rmax*cos(self.phi/2),-self.rmax*sin(self.phi/2))]
                     
         self.__distance = 65536
-        self.set_color(0x33FF5566)
+        self.color = 0x33FF5566
 
     def get_cone(self, distance):
         return [(self.rmin*cos(self.phi/2),self.rmin*sin(self.phi/2)),
@@ -88,15 +93,15 @@ class ProximitySensor(MountedSensor):
         if sim_object is None:
             # reset distance to max
             self.__distance = 65536
-            self.set_color(0x33FF5566)
+            self.color = 0x33FF5566
             self.pts = self.get_cone(self.rmax)
             return True
         else:
             distance_to_obj = self.get_distance_to(sim_object)
             if distance_to_obj:
                 if self.__distance > distance_to_obj:
-                    #self.set_color(0x336655FF)
-                    self.set_color(0xCCFF5566)
+                    #self.color = 0x336655FF
+                    self.color = 0xCCFF5566
                     self.pts = self.get_cone(distance_to_obj)
                     self.__distance = distance_to_obj
                     return True
@@ -104,8 +109,8 @@ class ProximitySensor(MountedSensor):
 
     def draw(self, r):
         """draws the sensor simobject"""
-        r.set_pose(self.get_pose())
-        r.set_brush(self.get_color())
+        r.set_pose(self.pose)
+        r.set_brush(self.color)
         r.draw_ellipse(0,0,min(1,self.rmin/2),min(1,self.rmin/2))
         r.draw_polygon(self.pts)
         

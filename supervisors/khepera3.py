@@ -88,7 +88,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         return ir_distances
     
     def estimate_pose(self):
-        """Update self.pose_est using odometry"""
+        """Update self.robot.pose using odometry"""
         
         # Get tick updates
         dtl = self.robot.wheels.left_ticks - self.left_ticks
@@ -98,7 +98,7 @@ The UI may use the get_parameters function interface to create docker windows fo
         self.left_ticks += dtl
         self.right_ticks += dtr
         
-        x, y, theta = self.pose_est
+        x, y, theta = self.robot.pose
 
         R = self.robot.wheels.radius
         L = self.robot.wheels.base_length

@@ -1,7 +1,7 @@
-# Testing solutions for Coursera
-# (c) PySimiam Team 2014
 #
-# Contact person: Tim Fuchs <typograph@elec.ru>
+# Testing solutions for Coursera
+#
+# (c) PySimiam Team
 #
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
@@ -234,7 +234,7 @@ class Week2Test2(WeekTestCase):
             bot.move(tc)
             bot.set_inputs(s.execute(bot.get_info(), tc))
             
-        xe,ye,te = s.pose_est
+        xe,ye,te = s.robot.pose
         xr,yr,tr = bot.get_pose()
         
         self.testsuite.respond("{:0.3f},{:0.3f},{:0.3f}".format(abs((xr-xe)/xr), abs((yr-ye)/yr), abs(abs(tr-te)%(2*math.pi)/tr)))

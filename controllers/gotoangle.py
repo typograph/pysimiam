@@ -11,34 +11,44 @@ import math
 from core.controller import Controller
 
 class GoToAngle(Controller):
-    """Go-to-goal steers the robot to a predefined position in the world."""
-    def __init__(self, params):
+    """Go-to-goal steers the robot to a predefined position in the world.
+    
+       The state of this controller expected in execute
+       should be the pose of the robot (:class:`~pose.Pose`).
+    """
+    def __init__(self):
         """Initialize internal variables"""
-        Controller.__init__(self,params)
+        Controller.__init__(self)
 
-    def set_parameters(self, params):
+    def set_parameters(self, kp, v, goal_angle):
         """Set PID values
         
-        The params structure is expected to have in the `gains` field three
-        parameters for the PID gains.
-        
-        :param params.gains.kp: Proportional gain
-        :type params.gains.kp: float
-        :param params.gains.ki: Integral gain
-        :type params.gains.ki: float
-        :param params.gains.kd: Differential gain
-        :type params.gains.kd: float
+        :param kp: Proportional gain
+        :type kp: float
+        :param v: Target speed
+        :type v: float
+        :param goal_angle: Target direction
+        :type goal_angle: float
         """
-        self.kp = params.pgain
+        self.kp = kp
+        self.v = v
+        self.goal = goal_angle
                
     def execute(self, state, dt):
-        """Calculate errors and steer the robot"""
+        """Calculate errors and steer the robot
+        
+        :param state: The estimated robot pose
+        :type state: :class:`~pose.Pose`
+        :param dt: time since last call
+        :type dt: float
+        
+        """
      
         # The goal:
-        theta_g = state.goal*math.pi/180
+        theta_g = self.goal*math.pi/180
         
         # The robot:
-        x_r, y_r, theta = state.pose
+        x_r, y_r, theta = state
 
         # 1. Calculate simple proportional error
         error = (theta_g - theta + math.pi)%(2*math.pi) - math.pi
@@ -47,6 +57,4 @@ class GoToAngle(Controller):
         w_ = self.kp*error
         
         # 3. The linear velocity is given to us:
-        v_ = state.velocity
-
-        return [v_, w_]
+        return [self.v, w_]

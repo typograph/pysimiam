@@ -1,10 +1,22 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
+"""The implementation of the simulator loop on the robot side.
+
+   To be run on the robot.
+"""
+
 from time import time
 import sys
 
 from .pose import Pose
 
-# FIXME from robots.qb_embedded import QuickBot
-from robots.qb_realtime import QuickBot
+from robots.qb_embedded import QuickBot
+#from robots.qb_realtime import QuickBot
 from .helpers import Struct
 
 import socket
@@ -16,8 +28,14 @@ STOP = 2
 
 class RoboLoop():
     """The RoboLoop runs QuickBot with a selected supervisor.
+    
        It also runs a server on the specified port, and sets the parameters
        of the robot on external demand.
+
+       :param port: The port on the robot to listen on,
+       :type port: int
+       :param supervisorclass: The class of the supervisor object to create,
+       :type supervisorclass: class
     """
 
     def __init__(self, port, supervisorclass):
@@ -30,23 +48,16 @@ class RoboLoop():
 
         self.state = PAUSE
         
-# FIXME        self.robot = QuickBot(Pose())
-        self.robot = QuickBot(Pose(), options=Struct({'baseIP':'localhost',
-                                                      'robotIP':'localhost',
-                                                      'port':7777}))
-        info = self.robot.get_info()
-        info.color = self.robot.get_color()        
-        self.supervisor = supervisorclass(Pose(), info)
+        self.robot = QuickBot(Pose())
+#        self.robot = QuickBot(Pose(), options=Struct({'baseIP':'localhost',
+                                                      #'robotIP':'localhost',
+                                                      #'port':7777}))
+        self.supervisor = supervisorclass(Pose(), self.robot.color, self.robot.info )
 
     def run(self):
-        """Start the thread. In the beginning there's no world, no obstacles
-           and no robots.
-           
-           The simulator will try to draw the world undependently of the
-           simulation status, so that the commands from the UI get processed.
-        """
+        """Start the thread. In the loop there is an empty world with one robot."""
 
-        self.log('starting main loop')
+        log(self, 'starting main loop')
 
         self.time = time()        
 
@@ -92,7 +103,7 @@ class RoboLoop():
             self.state = RUN
             self.robot.resume()
         else:
-            self.log("Command {} not recognized".format(cmd))
+            log(self, "Command {} not recognized".format(cmd))
             
         client.shutdown(socket.SHUT_RDWR)
         client.close()

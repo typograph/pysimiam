@@ -7,40 +7,44 @@
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
 from supervisors.quickbot import QuickBotSupervisor
-from supervisor import Supervisor
+from core.supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
-from ui import uiFloat
+from core.ui import uiFloat
 import numpy
+from core.helpers import Struct
 
 class QBFullSupervisor(QuickBotSupervisor):
     """QBFull supervisor implements the full switching behaviour for navigating labyrinths."""
-    def __init__(self, robot_pose, robot_info, options = None):
+    def __init__(self, robot_pose, robot_color, robot_info, options=None):
         """Create controllers and the state transitions"""
-        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
+        
+        self.params = self.get_default_parameters()
+        
+        QuickBotSupervisor.__init__(self, robot_pose, robot_color, robot_info)
 
         self.extgoal = False
 
         if options is not None:
             try:
-                self.parameters.goal.x = options.x
-                self.parameters.goal.y = options.y
+                self.params.goal.x = options.x
+                self.params.goal.y = options.y
                 self.extgoal = True
             except Exception:
                 pass
             
         # Fill in some parameters
-        self.parameters.sensor_poses = robot_info.ir_sensors.poses[:]
-        self.parameters.ir_max = robot_info.ir_sensors.rmax
-        self.parameters.direction = 'left'
-        self.parameters.distance = 0.2
-        
-        self.robot = robot_info
+        self.params.sensor_poses = robot_info.ir_sensors.poses[:]
+        self.params.ir_max = robot_info.ir_sensors.rmax
+        self.params.direction = 'left'
+        self.params.distance = 0.2
         
         #Add controllers
-        self.avoidobstacles = self.create_controller('AvoidObstacles', self.parameters)
-        self.gtg = self.create_controller('GoToGoal', self.parameters)
-        self.wall = self.create_controller('FollowWall', self.parameters)
-        self.hold = self.create_controller('Hold', None)
+        self.avoidobstacles = self.create_controller('AvoidObstacles', self.params)
+        self.gtg = self.create_controller('GoToGoal', self.params)
+        self.wall = self.create_controller('FollowWall', self.params)
+        self.hold = self.create_controller('Hold')
+        
+        self.wall.set_parameters(self.params)
 
         # Week 7 Assignment:
         
@@ -66,12 +70,29 @@ class QBFullSupervisor(QuickBotSupervisor):
         # Start in the 'go-to-goal' state
         self.current = self.gtg
 
+    def get_default_parameters(self):
+        p = Struct()
+        p.goal = Struct()
+        p.goal.x = 1.0
+        p.goal.y = 1.0
+        p.velocity = Struct()
+        p.velocity.v = 0.1
+        p.gains = Struct()
+        p.gains.kp = 4.0
+        p.gains.ki = 0.1
+        p.gains.kd = 0.0
+        
+        return p
+
+    def get_parameters(self):
+        return self.params
+
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
-        QuickBotSupervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.parameters)
-        self.avoidobstacles.set_parameters(self.parameters)
-        self.wall.set_parameters(self.parameters)
+        self.params = params
+        self.gtg.set_parameters(self.params)
+        self.avoidobstacles.set_parameters(self.params)
+        self.wall.set_parameters(self.params)
 
     def at_goal(self):
         """Check if the distance to goal is small"""
@@ -79,13 +100,13 @@ class QBFullSupervisor(QuickBotSupervisor):
 
     def at_obstacle(self):
         """Check if the distance to obstacle is small"""
-        atobst =  self.distmin < self.robot.ir_sensors.rmax/1.1
+        atobst =  self.distmin < self.robot.info.ir_sensors.rmax/1.1
         if atobst:
-            ind_dmin = list(self.parameters.sensor_distances).index(self.distmin)
+            ind_dmin = list(self.params.sensor_distances).index(self.distmin)
             if ind_dmin > 2:
-                self.parameters.direction = 'right'
+                self.params.direction = 'right'
             elif ind_dmin < 2:
-                self.parameters.direction = 'left'
+                self.params.direction = 'left'
             else:
                 return False
             self.progress = self.distance_from_goal
@@ -93,8 +114,8 @@ class QBFullSupervisor(QuickBotSupervisor):
 
     def unsafe(self):
         """Check if we are too close to the wall for safe cruising"""
-        return self.distmin < self.robot.ir_sensors.rmin*2.0 or \
-               self.parameters.sensor_distances[2] < self.robot.ir_sensors.rmax/2.0
+        return self.distmin < self.robot.info.ir_sensors.rmin*2.0 or \
+               self.params.sensor_distances[2] < self.robot.info.ir_sensors.rmax/2.0
         
     def safe(self):
         return self.distmin > self.robot.ir_sensors.rmin*4.0
@@ -105,44 +126,47 @@ class QBFullSupervisor(QuickBotSupervisor):
 
     def detach(self):
         """Check if detatching from the wall makes sense (the goal is on the right side"""
-        goal_angle = self.gtg.get_heading_angle(self.parameters)
-        wall_angle = self.wall.get_heading_angle(self.parameters)
-        if goal_angle > wall_angle and self.parameters.direction == "right":
+        goal_angle = self.gtg.get_heading_angle(self.params)
+        wall_angle = self.wall.get_heading_angle(self.params)
+        if goal_angle > wall_angle and self.params.direction == "right":
             return True
-        if goal_angle < wall_angle and self.parameters.direction == "left":
+        if goal_angle < wall_angle and self.params.direction == "left":
             return True
         return False
 
-    def process_state_info(self, state):
+    def process_robot_state(self, state):
         """Update state parameters for the controllers and self"""
 
-        QuickBotSupervisor.process_state_info(self,state)
+        QuickBotSupervisor.process_robot_state(self,state)
 
         # The pose for controllers
-        self.parameters.pose = self.pose_est
+        self.params.pose = self.robot.pose
 
         # Distance to the goal
-        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        self.distance_from_goal = sqrt((self.robot.pose.x - self.params.goal.x)**2 + (self.robot.pose.y - self.params.goal.y)**2)
         
         # Sensor readings in real units
-        self.parameters.sensor_distances = self.get_ir_distances()
+        self.params.sensor_distances = self.get_ir_distances()
         
         # Distance to the closest obstacle        
-        self.distmin = min(self.parameters.sensor_distances)
+        self.distmin = min(self.params.sensor_distances)
+
+    def get_controller_state(self, controller):
+        return self.params
 
     def draw_foreground(self, renderer):
         """Draw controller info"""
         QuickBotSupervisor.draw_foreground(self,renderer)
 
         # Make sure to have all headings:
-        renderer.set_pose(self.pose_est)
-        arrow_length = self.robot_size*5
+        renderer.set_pose(self.robot.pose)
+        arrow_length = self.robot.size*5
 
         # Ensure the headings are calculated
         
         # Draw arrow to goal
         if self.current == self.gtg:
-            goal_angle = self.gtg.get_heading_angle(self.parameters)
+            goal_angle = self.gtg.get_heading_angle(self.params)
             renderer.set_pen(0x00FF00)
             renderer.draw_arrow(0,0,
                 arrow_length*cos(goal_angle),
@@ -150,7 +174,7 @@ class QBFullSupervisor(QuickBotSupervisor):
 
         # Draw arrow away from obstacles
         elif self.current == self.avoidobstacles:
-            away_angle = self.avoidobstacles.get_heading_angle(self.parameters)
+            away_angle = self.avoidobstacles.get_heading_angle(self.params)
             renderer.set_pen(0xCC3311)
             renderer.draw_arrow(0,0,
                 arrow_length*cos(away_angle),
@@ -181,7 +205,7 @@ class QBFullSupervisor(QuickBotSupervisor):
     def get_ui_description(self,p = None):
         """Returns the UI description for the docker"""
         if p is None:
-            p = self.parameters
+            p = self.params
         
         ui =   [('goal', [('x',uiFloat(p.goal.x,0.1)), ('y',uiFloat(p.goal.y,0.1))]),
                 ('velocity', [('v',uiFloat(p.velocity.v,0.1))]),

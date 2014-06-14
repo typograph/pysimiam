@@ -43,16 +43,16 @@ class K3DefaultSupervisor(K3Supervisor):
         """Selects the best controller based on ir sensor readings
         Updates parameters.pose and parameters.ir_readings"""
 
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         self.parameters.sensor_distances = self.get_ir_distances()
         
-        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        self.distance_from_goal = sqrt((self.robot.pose.x - self.parameters.goal.x)**2 + (self.robot.pose.y - self.parameters.goal.y)**2)
         self.distmin = min(self.parameters.sensor_distances)
     
     def draw_foreground(self, renderer):
         K3Supervisor.draw_foreground(self,renderer)
 
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         arrow_length = self.robot_size*5
 
         away_angle = self.avoidobstacles.get_heading_angle(self.parameters)

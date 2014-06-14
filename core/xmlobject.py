@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 import xml.etree.ElementTree as ET
 
 class XMLObject(object):
@@ -27,10 +34,10 @@ class XMLObject(object):
         """ 
         Validate the XML in *file_* against a given schema.
 
-|        *Parameters:* 
-|            *schema*........path to the schema file (*must* be RelaxNG)
-|        *Return:* 
-|         True if schema validates successfully, False otherwise 
+        *Parameters:* 
+           *schema*........path to the schema file (*must* be RelaxNG)
+        *Return:* 
+           True if schema validates successfully, False otherwise 
         """
 
         try:

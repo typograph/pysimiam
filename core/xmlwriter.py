@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as dom
 

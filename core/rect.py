@@ -21,8 +21,6 @@ class Rect(object):
     This Rect class is different to the Pygame Rect class, in that is stores
     coordinates internally as floats, and uses a left-handed coordinate
     system.
-
-
     """
     def __init__(self, xywh):
         """

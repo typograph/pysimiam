@@ -60,7 +60,7 @@ class QBAvoidSupervisor(QuickBotSupervisor):
         QuickBotSupervisor.process_state_info(self,state)
 
         # The pose for controllers
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
 
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
@@ -71,7 +71,7 @@ class QBAvoidSupervisor(QuickBotSupervisor):
     def draw_foreground(self, renderer):
         """Draw controller info"""
 
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         arrow_length = self.robot_size*5
         
         # Draw arrow away from obstacles

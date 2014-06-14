@@ -59,5 +59,5 @@ class QBSwitchingSupervisor(QBSwitchingSupervisorBase):
 
         QBSwitchingSupervisorBase.process_state_info(self,state)
 
-        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        self.distance_from_goal = sqrt((self.robot.pose.x - self.parameters.goal.x)**2 + (self.robot.pose.y - self.parameters.goal.y)**2)
         self.distmin = min(self.parameters.sensor_distances)        

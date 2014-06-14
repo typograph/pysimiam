@@ -44,7 +44,7 @@ class QuickBotSupervisor2(QuickBotSupervisor):
     
 
     def estimate_pose(self):
-        """Update self.pose_est using odometry"""
+        """Update self.robot.pose using odometry"""
         
         # Get tick updates
         dtl = self.robot.wheels.left_ticks - self.prev_left_ticks
@@ -54,7 +54,7 @@ class QuickBotSupervisor2(QuickBotSupervisor):
         self.prev_left_ticks += dtl
         self.prev_right_ticks += dtr
         
-        x, y, theta = self.pose_est
+        x, y, theta = self.robot.pose
 
         R = self.robot.wheels.radius
         L = self.robot.wheels.base_length
@@ -75,8 +75,8 @@ class QuickBotSupervisor2(QuickBotSupervisor):
         x_new = x + x_dt
         y_new = y + y_dt
            
-        #self.log("{} {} {}".format(x_dt,y_dt,theta_dt))
-        #self.log("{} - {}, {} - {}".format(self.robot.wheels.left_ticks,
+        #log(self, "{} {} {}".format(x_dt,y_dt,theta_dt))
+        #log(self, "{} - {}, {} - {}".format(self.robot.wheels.left_ticks,
                                            #self.prev_left_ticks, self.robot.wheels.right_ticks,
                                            #self.prev_right_ticks))
            

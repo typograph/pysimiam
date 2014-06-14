@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 import threading
 try:
     import Queue as queue
@@ -14,6 +21,7 @@ import sys
 from . import pose
 from . import simobject
 from . import supervisor
+from .log import log
 
 import gc
 
@@ -79,7 +87,7 @@ class PCLoop(threading.Thread):
     def read_config(self, filename):
         '''Load in the objects from the world XML file '''
 
-        self.log('reading initial configuration')
+        log(self, 'reading initial configuration')
         try:
             self.__world = XMLReader(filename, 'simulation').read()
         except Exception as e:
@@ -132,19 +140,22 @@ class PCLoop(threading.Thread):
                         self.__robot = robot_class(thing.robot.pose)
                     self.__robot.set_logqueue(self.__log_queue)
                     if thing.robot.color is not None:
-                        self.__robot.set_color(thing.robot.color)
+                        self.__robot.color = thing.robot.color)
                     else:
-                        self.__robot.set_color(self.__nice_colors[0])
+                        self.__robot.color = self.__nice_colors[0]
                         
                     # Create supervisor
                     sup_class = helpers.load_by_name(thing.supervisor.type,'supervisors')
                     
-                    info = self.__robot.get_info()
-                    info.color = self.__robot.get_color()
                     if thing.supervisor.options is not None:
-                        self.__supervisor = sup_class(thing.robot.pose, info, options = Struct(thing.supervisor.options))
+                        self.__supervisor = sup_class(thing.robot.pose,
+                                                      self.__robot.color,
+                                                      self.__robot.info,
+                                                      options = Struct(thing.supervisor.options))
                     else:
-                        self.__supervisor = sup_class(thing.robot.pose, info)                        
+                        self.__supervisor = sup_class(thing.robot.pose,
+                                                      self.__robot.color,
+                                                      self.__robot.info)
                     self.__supervisor.set_logqueue(self.__log_queue)
                     name = "Robot {}".format(sup_class.__name__)
                     if self.__supervisor_param_cache is not None:
@@ -154,9 +165,9 @@ class PCLoop(threading.Thread):
                                              self.__supervisor.get_ui_description())))
                    
                     # Create trackers
-                    self.__tracker = simobject.Path(thing.robot.pose,self.__robot.get_color())
+                    self.__tracker = simobject.Path(thing.robot.pose,self.__robot.color)
                 except:
-                    self.log("[PCLoop.construct_world] Robot creation failed!")
+                    log(self, "[PCLoop.construct_world] Robot creation failed!")
                     if self.__robot is not None:
                         del self.__robot
                         self.__robot = None
@@ -220,7 +231,7 @@ class PCLoop(threading.Thread):
            The simulator will try to draw the world undependently of the
            simulation status, so that the commands from the UI get processed.
         """
-        self.log('starting simulator thread')
+        log(self, 'starting simulator thread')
 
         time_constant = 0.02 # 20 milliseconds
         
@@ -250,8 +261,8 @@ class PCLoop(threading.Thread):
                     self.fwd_logqueue()
                     self.__robot.set_inputs(inputs)
                     self.fwd_logqueue()
-                    self.__robot.set_pose(self.__supervisor.pose_est)
-                    self.__tracker.add_point(self.__supervisor.pose_est)
+                    self.__robot.set_pose(self.__supervisor.robot.pose)
+                    self.__tracker.add_point(self.__supervisor.robot.pose)
                     self.fwd_logqueue()
 
                 else:
@@ -267,7 +278,7 @@ class PCLoop(threading.Thread):
                 self.fwd_logqueue()
   
             except RuntimeError as e:
-                self.log(str(e))
+                log(self, str(e))
             except Exception as e:
                 self._out_queue.put(("exception",sys.exc_info()))
                 self.pause_simulation()
@@ -391,12 +402,12 @@ class PCLoop(threading.Thread):
             self.__supervisor.set_parameters(parameters)
             self.__draw_once()
         else:
-            self.log("Robot not found")
+            log(self, "Robot not found")
 
     # Stops the thread
     def stop(self):
         """Stop the simulator thread when the entire program is closed"""
-        self.log('stopping simulator thread')
+        log(self, 'stopping simulator thread')
         self.__stop = True
         self._out_queue.put(('stopped',()))
 
@@ -442,34 +453,15 @@ class PCLoop(threading.Thread):
                     try:
                         self.__class__.__dict__[name](self,*args)
                     except TypeError:
-                        self.log("Wrong simulator event parameters {}{}".format(name,args))
+                        log(self, "Wrong simulator event parameters {}{}".format(name,args))
                         self._out_queue.put(("exception",sys.exc_info()))
                     except Exception as e:
                         self._out_queue.put(("exception",sys.exc_info()))
                 else:
-                    self.log("Unknown simulator event '{}'".format(name))
+                    log(self, "Unknown simulator event '{}'".format(name))
             else:
-                self.log("Wrong simulator event format '{}'".format(tpl))
+                log(self, "Wrong simulator event format '{}'".format(tpl))
             self.__in_queue.task_done()
-    
-    def log(self, message, obj=None):
-        if obj is None:
-            obj = self
-        print("{}: {}".format(obj.__class__.__name__,message))
-        self._out_queue.put(("log",(message,obj.__class__.__name__,None)))
-        
-    def fwd_logqueue(self):
-        while self.__log_queue:
-            obj, message = self.__log_queue.popleft()
-            
-            color = None
-            # Get the color
-            if isinstance(obj,simobject.SimObject):
-                color = obj.get_color()
-            elif isinstance(obj,supervisor.Supervisor):
-                color = obj.robot_color
                 
-            self._out_queue.put(("log",(message,obj.__class__.__name__,color)))
-    
 #end class Simulator
 

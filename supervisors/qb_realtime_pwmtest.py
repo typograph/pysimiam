@@ -44,6 +44,6 @@ class PWMTest(Supervisor):
         self.left_ticks = robot_info.wheels.left_ticks
         self.right_ticks = robot_info.wheels.right_ticks
         if dl > 0:
-            self.log("Encoders: {} L , {} R".format(self.left_ticks,self.right_ticks))
+            log(self, "Encoders: {} L , {} R".format(self.left_ticks,self.right_ticks))
         return self.parameters.left, self.parameters.right
 

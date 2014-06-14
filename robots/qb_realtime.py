@@ -134,26 +134,26 @@ class QuickBot(RealBot, qb_comm):
                           Pose(-0.0690,-0.0534, np.radians(-90))
                           ]                          
         
-        self.info = Struct()
-        self.info.wheels = Struct()
+        self.__info = Struct()
+        self.__info.wheels = Struct()
 
-        self.info.wheels.radius = 0.0325
-        self.info.wheels.base_length = 0.09925
-        self.info.wheels.ticks_per_rev = 16
-        self.info.wheels.left_ticks = 0
-        self.info.wheels.right_ticks = 0
+        self.__info.wheels.radius = 0.0325
+        self.__info.wheels.base_length = 0.09925
+        self.__info.wheels.ticks_per_rev = 16
+        self.__info.wheels.left_ticks = 0
+        self.__info.wheels.right_ticks = 0
         
-        self.info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
-        self.info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
+        self.__info.wheels.max_velocity = 2*pi*130/60 # 130 RPM
+        self.__info.wheels.min_velocity = 2*pi*30/60  #  30 RPM
 
-        self.info.wheels.vel_left = 0
-        self.info.wheels.vel_right = 0
+        self.__info.wheels.vel_left = 0
+        self.__info.wheels.vel_right = 0
 
-        self.info.ir_sensors = Struct()
-        self.info.ir_sensors.poses = ir_sensor_poses
-        self.info.ir_sensors.rmax = 0.3
-        self.info.ir_sensors.rmin = 0.04
-        self.info.ir_sensors.readings = [133]*len(self.info.ir_sensors.poses)
+        self.__info.ir_sensors = Struct()
+        self.__info.ir_sensors.poses = ir_sensor_poses
+        self.__info.ir_sensors.rmax = 0.3
+        self.__info.ir_sensors.rmin = 0.04
+        self.__info.ir_sensors.readings = [133]*len(self.__info.ir_sensors.poses)
 
         self.walls = Cloud(0) # Black, no readings
 
@@ -164,13 +164,13 @@ class QuickBot(RealBot, qb_comm):
         # This code will raise an exception if not able to connect
         
         if options is None:
-            self.log("No IP/port supplied to connect to the robot")
+            log(self, "No IP/port supplied to connect to the robot")
             qb_comm.__init__(self, "localhost", "localhost", 5005)
         else:
             try:
                 qb_comm.__init__(self, options.baseIP, options.robotIP, options.port)
             except AttributeError:
-                self.log("No IP/port supplied in the options to connect to the robot")
+                log(self, "No IP/port supplied in the options to connect to the robot")
                 qb_comm.__init__(self, "localhost", "localhost", 5005)
                 
         self.ping() # Check if the robot is there
@@ -181,8 +181,8 @@ class QuickBot(RealBot, qb_comm):
         RealBot.set_pose(self,rpose)
         
         # We have to update walls here. WHY?
-        for pose, dst in zip(self.info.ir_sensors.poses,np.polyval(self.ir_coeff, self.info.ir_sensors.readings)):
-            if dst/self.info.ir_sensors.rmax <= 0.99:
+        for pose, dst in zip(self.__info.ir_sensors.poses,np.polyval(self.ir_coeff, self.__info.ir_sensors.readings)):
+            if dst/self.__info.ir_sensors.rmax <= 0.99:
                 self.walls.add_point(Pose(dst) >> pose >> self.get_pose())
 
     def draw(self,r):
@@ -201,7 +201,7 @@ class QuickBot(RealBot, qb_comm):
         r.draw_polygon(self._shapes.right_wheel)
         
         r.set_pen(0x01000000)
-        r.set_brush(self.get_color())
+        r.set_brush(self.color)
         r.draw_polygon(self._shapes.base_plate)
 
         r.set_pen(0x10000000)
@@ -228,8 +228,8 @@ class QuickBot(RealBot, qb_comm):
         renderer.add_pose(pose)
         
         phi = np.radians(3) # 6/2
-        rmin = self.info.ir_sensors.rmin
-        rmax = self.info.ir_sensors.rmax
+        rmin = self.__info.ir_sensors.rmin
+        rmax = self.__info.ir_sensors.rmax
 
         if dst/rmax > 0.99:
             renderer.set_brush(0x33FF5566)
@@ -250,12 +250,12 @@ class QuickBot(RealBot, qb_comm):
         """Draw the sensors that this robot has"""
         renderer.set_pose(self.get_pose())
         
-        distances = np.polyval(self.ir_coeff,self.info.ir_sensors.readings)
-        for pose, distance in zip(self.info.ir_sensors.poses, distances):
+        distances = np.polyval(self.ir_coeff,self.__info.ir_sensors.readings)
+        for pose, distance in zip(self.__info.ir_sensors.poses, distances):
             self.draw_sensor(renderer,pose,distance)
 
     def get_info(self):
-        return self.info
+        return self.__info
     
     def v2pwm(self,vl,vr):
         """Convert from angular velocity to PWM"""
@@ -282,7 +282,7 @@ class QuickBot(RealBot, qb_comm):
                 raise RuntimeError("Communication with QuickBot failed")
         
         if speeds is not None:
-            self.info.wheels.vel_left, self.info.wheels.vel_right = self.pwm2v(*speeds)
+            self.__info.wheels.vel_left, self.__info.wheels.vel_right = self.pwm2v(*speeds)
 
     def update_external_info(self):
         "Communicate with the robot"
@@ -295,17 +295,17 @@ class QuickBot(RealBot, qb_comm):
             if ticks is None:
                 raise RuntimeError("Communication with QuickBot failed")
             
-            self.info.wheels.left_ticks, self.info.wheels.right_ticks = ticks
+            self.__info.wheels.left_ticks, self.__info.wheels.right_ticks = ticks
 
             irs = self.get_ir_raw_values(connection)
             if irs is None:
                 raise RuntimeError("Communication with QuickBot failed")
             
-            self.info.ir_sensors.readings = irs
+            self.__info.ir_sensors.readings = irs
 
     def reset(self):        
         self.__paused = True
-        self.info.wheels.vel_left, self.info.wheels.vel_right = 0,0
+        self.__info.wheels.vel_left, self.__info.wheels.vel_right = 0,0
         self.send_reset()
         
     def pause(self):        
@@ -314,5 +314,5 @@ class QuickBot(RealBot, qb_comm):
     
     def resume(self):
         self.__paused = False
-        self.set_inputs((self.info.wheels.vel_left, self.info.wheels.vel_right))
+        self.set_inputs((self.__info.wheels.vel_left, self.__info.wheels.vel_right))
 

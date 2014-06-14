@@ -5,45 +5,25 @@ from core.controller import Controller
 
 class Template(Controller):
     """Template controller with required functions"""
-    def __init__(self, params):
-        #Must declare some k values
-        self.kp=10
-        self.ki=0
-        self.kd=0
+    def __init__(self, o1, o2):
+        Controller.__init__(self)
+        self.o1 = o1
+        self.o2 = o2
 
-        #Good idea to initialize some error variables 
-        # E - integral error
-        # error_1 - the previous error measurement
-        self.E = 0
-        self.error_1 = 0
-
-    def set_parameters(self, params):
+    def set_parameters(self, p1, p2, p3):
         """Set PID values
         
-        :param params.kp: Proportional gain
-        :type params.kp: float
-        :param params.ki: Integral gain
-        :type params.ki: float
-        :param params.kd: Differential gain
-        :type params.kd: float
         """
-        self.kp = params.kp
-        self.ki = params.ki
-        self.kd = params.kd
+        self.p1 = p1
+        self.p2 = p2
+        self.p3 = p3
 
     def execute(self, state, dt):
         """Required function: must return a unicycle model
 
         return --> unicycle model list [velocity, omega]"""
 
-        #1. Calculate simple proportional error
-        #2. Correct for angles (angle may be greater than PI)
-        #3. Calculate integral error
-        #4. Calculate differential error
-        #5. Calculate desired omega
-
-        #You need to modify these values!!
         v_ = 0 #some default value
         w_ = 0 #another default value
-        #6. Return solution
+
         return [v_, w_]

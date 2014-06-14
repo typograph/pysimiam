@@ -16,15 +16,16 @@ from supervisors.quickbot import QuickBotSupervisor
 
 class QBGTGSupervisor(QuickBotSupervisor):
     """QBGTG supervisor uses one go-to-goal controller to make the robot reach the goal."""
-    def __init__(self, robot_pose, robot_info):
+    def __init__(self, robot_pose, robot_color, robot_info, options=None):
         """Create the controller"""
-        QuickBotSupervisor.__init__(self, robot_pose, robot_info)
         
         # Create the tracker
         self.tracker = Path(robot_pose, 0)
 
         # Create the controller
-        self.gtg = self.create_controller('week3.GoToGoal', self.parameters)
+        self.gtg = self.create_controller('week3.GoToGoal', self.get_default_parameters())
+
+        QuickBotSupervisor.__init__(self, robot_pose, robot_color, robot_info)
 
         # Set the controller
         self.current = self.gtg
@@ -32,18 +33,18 @@ class QBGTGSupervisor(QuickBotSupervisor):
     def set_parameters(self,params):
         """Set parameters for itself and the controllers"""
         QuickBotSupervisor.set_parameters(self,params)
-        self.gtg.set_parameters(self.parameters)
+#        self.gtg.set_parameters(self.parameters)
 
-    def process_state_info(self, state):
+    def process_robot_info(self, state):
         """Update state parameters for the controllers and self"""
 
-        QuickBotSupervisor.process_state_info(self,state)
+        QuickBotSupervisor.process_robot_info(self,state)
 
         # The pose for controllers
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         
         # Update the trajectory
-        self.tracker.add_point(self.pose_est)
+        self.tracker.add_point(self.robot.pose)
 
     def draw_background(self, renderer):
         """Draw controller info"""
@@ -56,7 +57,7 @@ class QBGTGSupervisor(QuickBotSupervisor):
         """Draw controller info"""
         QuickBotSupervisor.draw_foreground(self,renderer)
        
-        renderer.set_pose(Pose(self.pose_est.x,self.pose_est.y))
+        renderer.set_pose(Pose(self.robot.pose.x,self.robot.pose.y))
         arrow_length = self.robot_size*5
         
         # Draw arrow to goal
@@ -67,8 +68,8 @@ class QBGTGSupervisor(QuickBotSupervisor):
 
     def at_goal(self):
         distance_to_goal = sqrt( \
-                                (self.pose_est.x - self.parameters.goal.x)**2
-                              + (self.pose_est.y - self.parameters.goal.y)**2)
+                                (self.robot.pose.x - self.parameters.goal.x)**2
+                              + (self.robot.pose.y - self.parameters.goal.y)**2)
         
         return distance_to_goal < 0.02
 

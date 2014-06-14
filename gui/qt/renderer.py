@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+
 from numpy import degrees
 from core.pose import Pose
 from core.renderer import Renderer

@@ -22,15 +22,15 @@ class K3BlendingSupervisor(K3Supervisor):
         """Blend the behaviour of several controllers"""
         # Copied from Supervisor
         self.robot = robot_info
-        self.pose_est = self.estimate_pose()
+        self.robot.pose = self.estimate_pose()
 
         # Check if we are in place
-        distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        distance_from_goal = sqrt((self.robot.pose.x - self.parameters.goal.x)**2 + (self.robot.pose.y - self.parameters.goal.y)**2)
         if distance_from_goal < self.robot.wheels.base_length/2:
             return (0,0)
 
         # Fill parameters for the controllers
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         self.parameters.sensor_distances = self.get_ir_distances()
 
         # now instead of choosing one controller, blend results
@@ -57,7 +57,7 @@ class K3BlendingSupervisor(K3Supervisor):
 
     def draw_foreground(self, renderer):
         K3Supervisor.draw_foreground(self,renderer)
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
 
         # Draw direction from obstacles
         renderer.set_pen(0xFF0000)
@@ -68,9 +68,9 @@ class K3BlendingSupervisor(K3Supervisor):
 
         # Draw direction to goal
         renderer.set_pen(0x444444)
-        goal_angle = atan2(self.parameters.goal.y - self.pose_est.y,
-                           self.parameters.goal.x - self.pose_est.x) \
-                     - self.pose_est.theta
+        goal_angle = atan2(self.parameters.goal.y - self.robot.pose.y,
+                           self.parameters.goal.x - self.robot.pose.x) \
+                     - self.robot.pose.theta
         renderer.draw_arrow(0,0,
             arrow_length*cos(goal_angle),
             arrow_length*sin(goal_angle))

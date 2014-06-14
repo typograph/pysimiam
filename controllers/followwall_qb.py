@@ -1,11 +1,10 @@
 #
-# (c) PySimiam Team 2013
+# (c) PySimiam Team
 # 
-# Contact person: Tim Fuchs <typograph@elec.ru>
-#
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
+
 import math
 import numpy
 
@@ -16,47 +15,55 @@ from controllers.pid_controller import PIDController
 class FollowWall(PIDController):
     """Follow walls is a controller that keeps a certain distance
     to the wall and drives alongside it in clockwise or counter-clockwise
-    fashion."""
-    def __init__(self, params):
+    fashion. Works for the QuickBot robot.
+    
+    The constructor expects a list of sensor poses
+    in the robot's frame of reference
+    """
+    def __init__(self, sensor_poses):
         '''Initialize internal variables'''
-        PIDController.__init__(self,params)
+        PIDController.__init__(self)
+        self.sensor_poses = sensor_poses
 
-    def set_parameters(self, params):
-        """Set PID values, sensor poses, direction and distance.
+    def set_parameters(self, direction, distance, ks, v):
+        """Set PID values, direction and distance.
         
-        The params structure is expected to have sensor poses in the robot's
-        reference frame as ``params.sensor_poses``, the direction of wall
-        following (either 'right' for clockwise or 'left' for anticlockwise)
-        as ``params.direction`` and the desired distance to the wall 
-        to maintain as ``params.distance``.
+        :param direction: The direction of wall following
+        :type  direction: 'left' or 'right'
+        :param distance: The desired distance to the wall to maintain
+        :type  distance: float
+        :param ks: PID gains
+        :type  ks: (kp, ki, kd)
+        :param v: Target speed
+        :type  v: float
         """
-        PIDController.set_parameters(self,params)
+        kp, ki, kd = ks
+        PIDController.set_parameters(self, kp, ki, kd, v)
 
-        self.sensor_poses = params.sensor_poses
-        self.direction = params.direction
-        self.distance = params.distance
+        self.direction = direction
+        self.distance = distance
         
-    def get_heading(self, state):
+    def get_heading(self, sensor_distances):
         """Get the direction along the wall as a vector."""
         
         # Calculate vectors for the sensors
-        if state.direction == 'left': # 0-2
-            d, i = min( zip(state.sensor_distances[:3],[0,1,2]) )
-            if i == 0 or (i == 1 and state.sensor_distances[0] <= state.sensor_distances[2]):
+        if self.direction == 'left': # 0-2
+            d, i = min( zip(sensor_distances[:3],[0,1,2]) )
+            if i == 0 or (i == 1 and sensor_distances[0] <= sensor_distances[2]):
                 i, j, k = 1, 0, 2
                 
             else:
                 i, j, k = 2, 1, 0
             
         else : # 2-4
-            d, i = min( zip(state.sensor_distances[2:],[2,3,4]) )
-            if i == 4 or (i == 3 and state.sensor_distances[4] <= state.sensor_distances[2]):
+            d, i = min( zip(sensor_distances[2:],[2,3,4]) )
+            if i == 4 or (i == 3 and sensor_distances[4] <= sensor_distances[2]):
                 i, j, k = 3, 4, 2
             else:
                 i, j, k = 2, 3, 4
                 
-        p_front = Pose(state.sensor_distances[i]) >> self.sensor_poses[i]
-        p_back = Pose(state.sensor_distances[j]) >> self.sensor_poses[j]
+        p_front = Pose(sensor_distances[i]) >> self.sensor_poses[i]
+        p_back = Pose(sensor_distances[j]) >> self.sensor_poses[j]
 
         self.vectors = [(p_front.x,p_front.y,1), (p_back.x, p_back.y, 1)]
 
@@ -67,7 +74,7 @@ class FollowWall(PIDController):
         self.along_wall_vector = numpy.array([p_front.x-p_back.x, p_front.y-p_back.y, 1])
 
         # Calculate and return the heading vector:
-        offset = abs(ms/math.sqrt(ds)) - state.distance
+        offset = abs(ms/math.sqrt(ds)) - self.distance
         if offset > 0:
             return 0.3*self.along_wall_vector + 2 * offset * self.to_wall_vector
         else:

@@ -137,10 +137,10 @@ class K3FullSupervisor(K3Supervisor):
         K3Supervisor.process_state_info(self,state)
 
         # The pose for controllers
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         
         # Distance to the goal
-        self.distance_from_goal = sqrt((self.pose_est.x - self.parameters.goal.x)**2 + (self.pose_est.y - self.parameters.goal.y)**2)
+        self.distance_from_goal = sqrt((self.robot.pose.x - self.parameters.goal.x)**2 + (self.robot.pose.y - self.parameters.goal.y)**2)
         
         # Sensor readings in real units
         self.parameters.sensor_distances = self.get_ir_distances()
@@ -161,7 +161,7 @@ class K3FullSupervisor(K3Supervisor):
         """Draw controller info"""
         K3Supervisor.draw_foreground(self,renderer)
 
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         arrow_length = self.robot_size*5
 
         if self.current == self.gtg:

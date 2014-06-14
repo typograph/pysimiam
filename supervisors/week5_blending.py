@@ -38,7 +38,7 @@ class QBBlendingSupervisor(QuickBotSupervisor):
         QuickBotSupervisor.process_state_info(self,state)
 
         # The pose for controllers
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
 
         # Sensor readings in world units
         self.parameters.sensor_distances = self.get_ir_distances()
@@ -47,7 +47,7 @@ class QBBlendingSupervisor(QuickBotSupervisor):
         """Draw controller info"""
         QuickBotSupervisor.draw_foreground(self,renderer)
 
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         arrow_length = self.robot_size*5
         
         # Draw arrow to goal

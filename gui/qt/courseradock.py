@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class is part of the Qt GUI implementation
+# of the PySimiam user interface.
+#
+
 from .Qt import QtGui
 from .Qt.QtCore import Slot, Signal, Qt, QSignalMapper, QSettings
 from core.helpers import Struct

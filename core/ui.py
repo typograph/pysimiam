@@ -1,3 +1,10 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 try:
     import Queue as queue
 except ImportError:
@@ -64,7 +71,7 @@ class uiSelect(uiParameter):
     def __repr__(self):
         return 'uiSelect({},{})'.format(self.value, repr(self.value_list))
     
-class SimUI:
+class SimUI(object):
     """The SimUI class defines a front-end for the :class:`~simulator.Simulator`.
        It contains the necessary functions for the frontend-simulator communication
        and stubs for the message callbacks.
@@ -153,7 +160,7 @@ class SimUI:
         """A request from the supervisor to create a parameter window.
            *robot_id* is guaranteed to uniquely identify a robot in a simulation.
            Currently, *robot_id* is the actual robot object.
-           It can be used e.g. to extract the color of the robot as ``robot_id.get_color()``.
+           It can be used e.g. to extract the color of the robot as ``robot_id.color``.
            *name* is the desired window name, and *parameters* is the structure
            returned by :meth:`~supervisor.Supervisor.get_ui_description`.
         """

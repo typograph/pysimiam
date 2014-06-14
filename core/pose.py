@@ -1,8 +1,17 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
 import numpy as np
 from math import sin,cos,pi
 
 class Pose(object):
-    """The pose class allows for a posing of objects in 2D space. The pose uses a right-hand coordinate system with counter-clockwise measurement of theta from the x-axis
+    """The pose class allows for a posing of objects in 2D space.
+       The pose uses a right-hand coordinate system
+       with counter-clockwise measurement of theta from the x-axis
     
     
        There are several ways to create a pose:
@@ -24,11 +33,9 @@ class Pose(object):
     def __init__(self, *args, **kwargs):
         """Units in mm.  
         @param: args - (x, y, theta) tuple, Pose object, (x, y) tuple"""
-        #Units in mm
-        #convert to float just in case someone types an integer
         
-        self.x, self.y, self.theta = 0,0,0
-        self.set_pose(*args,**kwargs)
+        self.x, self.y, self.theta = 0.0,0.0,0.0
+        self.set_pose(*args, **kwargs)
         
     def set_pose(self, *args, **kwargs):
         """Set all or some pose parameters.
@@ -42,7 +49,7 @@ class Pose(object):
            ``set_pose(theta = pi, y = 3.0)``  Only change the y position and orientation
            ``set_pose(another_pose, y = 1)``  Use x and theta from another pose, use y=1
            =================================  ============================================
-            """
+           """
         if len(args) == 1 and isinstance(args[0], Pose):           
             self.x, self.y, self.theta = args[0]
         elif len(args) > 3:
@@ -81,8 +88,8 @@ class Pose(object):
         yield self.theta
 
     def get_transformation(self):
-        """Get the 3x3 transformation matrix associated with the pose."""
-        #Z-axis ccw rotation transformation matrix
+        """Get the 3x3 transformation matrix associated with the pose as NumPy array."""
+        # Z-axis ccw rotation transformation matrix
         T = np.array([\
             [np.cos(self.theta), -np.sin(self.theta), self.x],\
             [np.sin(self.theta), np.cos(self.theta), self.y],\
@@ -110,7 +117,7 @@ class Pose(object):
            This operation is not commutative.
            
            If ``b`` is a pose in ``a`` frame of reference, ``b >> a`` is the same pose 
-           if the frame of reference that ``a`` is defined.
+           in the frame of reference where ``a`` is defined.
            """
         if not isinstance(other,Pose):
             return NotImplemented
@@ -128,6 +135,9 @@ class Pose(object):
             return NotImplemented
         rx, ry, rt = other
         return Pose((self.x-rx)*cos(rt)+(self.y-ry)*sin(rt),-(self.x-rx)*sin(rt)+(self.y-ry)*cos(rt),self.theta-rt)
+    
+    def __repr__(self):
+        return "Pose({},{},{})".format(self.x, self.y, self.theta)
 
 #end class Pose
 

@@ -1,3 +1,12 @@
+#
+# (c) PySimiam Team
+#
+# This class was implemented as a weekly programming excercise
+# of the 'Control of Mobile Robots' course by Magnus Egerstedt.
+#
+
+"""Drawable objects of PySimiam."""
+
 from math import sin, cos, sqrt
 from . import pylygon
 from .pose import Pose
@@ -16,16 +25,18 @@ class SimObject:
     def __init__(self, pose, color = 0):
         """Create an object at *pose* with *color*
         """
-        self.set_color(color)
+        self.color = color
         self.set_pose(pose)
 
-    def get_color(self):
-        """Get the internal color of the object"""
-        return self.__color
-    
-    def set_color(self, color):
-        """Set the internal color of the object"""
-        self.__color = color
+    #def get_color(self):
+        #"""Get the internal color of the object"""
+        #return self.__color
+
+    #def set_color(self, color):
+        #"""Set the internal color of the object"""
+        #self.__color = color
+
+    #color = property(get_color, set_color, doc="The color of the object")
 
     def get_pose(self):
         """Get the pose of the object in world coordinates"""
@@ -35,6 +46,10 @@ class SimObject:
         """Set the pose of the object in world coordinates"""
         self.__world_envelope = None
         self.__pose = pose
+
+    pose = property(lambda self: self.get_pose(),
+                    lambda self,p: self.set_pose(p),
+                    doc="The pose of the object in world coordinates")
 
     def draw(self, renderer):
         """Draws the object using *renderer* (see :class:`~renderer.Renderer`).
@@ -51,6 +66,9 @@ class SimObject:
            bounding polygon.
         """
         raise NotImplementedError("SimObject.get_envelope")
+    
+    envelope = property(lambda self: self.get_envelope(),
+                        doc="The list of points describing the bounding polygon")
     
     def get_world_envelope(self, recalculate=False):
         """Get the envelope of the object in world coordinates.
@@ -125,8 +143,8 @@ class Polygon(SimObject):
 
     def draw(self,r):
         """Draw the envelope (shape) filling it with the internal color."""
-        r.set_pose(self.get_pose())
-        r.set_brush(self.get_color())
+        r.set_pose(self.pose)
+        r.set_brush(self.color)
         r.draw_polygon(self.get_envelope())
 
 class Cloud(SimObject):
@@ -141,9 +159,9 @@ class Cloud(SimObject):
         self.points.append((pose.x,pose.y))
 
     def draw(self,r):
-        """Draw a polyline with modes at all added points, using the internal color"""
-        r.set_pose(self.get_pose()) # Reset everything
-        r.set_pen(self.get_color())
+        """Draw a polyline with nodes at all added points, using the internal color"""
+        r.set_pose(self.pose) # Reset everything
+        r.set_pen(self.color)
         r.draw_points(self.points)
     
 class Path(Cloud):
@@ -158,8 +176,9 @@ class Path(Cloud):
     
        The path is used by the simulator to track the history of robot motion.
        
-       In the case that the Path is growing too long, it implements the 
-       """
+       In the case that the Path is growing too long, it implements the
+       Ramer-Douglas-Peucker algorithm to reduce the amount of segments to draw.
+    """
     L_crit = 10 # The length of the last path segment that stays 'exact'
     L_sway = 2  # Number of points from the simplified segment that are going to be simplified again
 
@@ -220,8 +239,8 @@ class Path(Cloud):
 
     def draw(self,r):
         """Draw a polyline with modes at all added points, using the internal color"""
-        r.set_pose(self.get_pose()) # Reset everything
-        r.set_pen(self.get_color())
+        r.set_pose(self.pose) # Reset everything
+        r.set_pen(self.color)
         for i in range(1,len(self.points)):
             x1,y1 = self.points[i-1]
             x2,y2 = self.points[i]

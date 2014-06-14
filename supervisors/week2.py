@@ -76,7 +76,7 @@ class QuickBotSupervisor(Supervisor):
         return (vl,vr)
             
     def estimate_pose(self):
-        """Update self.pose_est using odometry"""
+        """Update self.robot.pose using odometry"""
         
         #Insert Week 2 Assignment Code Here
 
@@ -87,7 +87,7 @@ class QuickBotSupervisor(Supervisor):
         # Save the wheel encoder ticks for the next estimate
         
         #Get the present pose estimate
-        x, y, theta = self.pose_est          
+        x, y, theta = self.robot.pose          
                 
         #Use your math to update these variables... 
         theta_new = 0 
@@ -112,7 +112,7 @@ class QuickBotSupervisor(Supervisor):
     def execute(self, robot_info, dt):
         """Inherit default supervisor procedures and return unicycle model output (x, y, theta)"""
         output = Supervisor.execute(self, robot_info, dt)
-        self.tracker.add_point(self.pose_est)
+        self.tracker.add_point(self.robot.pose)
         return self.uni2diff(output)
 
     def process_state_info(self, state):
@@ -120,7 +120,7 @@ class QuickBotSupervisor(Supervisor):
 
         Supervisor.process_state_info(self,state)
         
-        self.parameters.pose = self.pose_est
+        self.parameters.pose = self.robot.pose
         
         print("process_state_info")
     
@@ -128,7 +128,7 @@ class QuickBotSupervisor(Supervisor):
         """Draw a circular goal and path"""
 
         # Draw goal
-        renderer.set_pose(Pose(self.pose_est.x,self.pose_est.y,pi*self.parameters.goal/180))
+        renderer.set_pose(Pose(self.robot.pose.x,self.robot.pose.y,pi*self.parameters.goal/180))
         renderer.set_pen(0)
 #        renderer.draw_line(0.03,0,100,0)
         renderer.draw_arrow(0.05,0,0.5,0,close=True)
@@ -139,7 +139,7 @@ class QuickBotSupervisor(Supervisor):
     def draw_foreground(self, renderer):
         """Draw ir_sensors"""
                
-        renderer.set_pose(self.pose_est)
+        renderer.set_pose(self.robot.pose)
         renderer.set_brush(0)
         renderer.draw_ellipse(0,0,0.01,0.01)
                

@@ -1,9 +1,15 @@
+#
+# (c) PySimiam Team
+#
+# This class simulates a Khepera 3 robot.
+#
+
 import numpy as np
 from math import ceil, exp, sin, cos, tan, pi
 
 from core.pose import Pose
 from core.sensor import ProximitySensor
-from core.robot import Robot
+from core.robot import SimBot
 from core.helpers import Struct
 
 class Khepera3_IRSensor(ProximitySensor):
@@ -19,10 +25,10 @@ class Khepera3_IRSensor(ProximitySensor):
         else:
             return (3960*exp(-30*(dst-self.rmin)));
 
-class Khepera3(Robot):
+class Khepera3(SimBot):
     """Inherts for the simobject--->robot class for behavior specific to the Khepera3""" 
     def __init__(self, pose, color = 0xFFFFFF):
-        Robot.__init__(self, pose, color)
+        SimBot.__init__(self, pose, color)
         
         # create shape
         self._p1 = np.array([[-0.031,  0.043, 1],
@@ -66,24 +72,24 @@ class Khepera3(Robot):
         # initialize motion
         self.ang_velocity = (0.0,0.0)
 
-        self.info = Struct()
-        self.info.wheels = Struct()
+        self.__info = Struct()
+        self.__info.wheels = Struct()
         # these were the original parameters
-        self.info.wheels.radius = 0.021
-        self.info.wheels.base_length = 0.0885
-        self.info.wheels.ticks_per_rev = 2764.8
-        self.info.speed_factor = 6.2953e-6
-        self.info.wheels.left_ticks = 0
-        self.info.wheels.right_ticks = 0
+        self.__info.wheels.radius = 0.021
+        self.__info.wheels.base_length = 0.0885
+        self.__info.wheels.ticks_per_rev = 2764.8
+        self.__info.speed_factor = 6.2953e-6
+        self.__info.wheels.left_ticks = 0
+        self.__info.wheels.right_ticks = 0
         
         self.left_revolutions = 0.0
         self.right_revolutions = 0.0
         
-        self.info.ir_sensors = Struct()
-        self.info.ir_sensors.poses = ir_sensor_poses
-        self.info.ir_sensors.readings = None
-        self.info.ir_sensors.rmax = 0.2
-        self.info.ir_sensors.rmin = 0.02
+        self.__info.ir_sensors = Struct()
+        self.__info.ir_sensors.poses = ir_sensor_poses
+        self.__info.ir_sensors.readings = None
+        self.__info.ir_sensors.rmax = 0.2
+        self.__info.ir_sensors.rmin = 0.02
 
     def draw(self,r):
         r.set_pose(self.get_pose())
@@ -91,7 +97,7 @@ class Khepera3(Robot):
         r.set_brush(0xCCCCCC)
         r.draw_polygon(self._p2)
         r.set_pen(0x01000000)
-        r.set_brush(self.get_color())
+        r.set_brush(self.color)
         r.draw_polygon(self._p1)
         
     def get_envelope(self):
@@ -115,20 +121,20 @@ class Khepera3(Robot):
 
         self.left_revolutions += vl*dt/2/pi
         self.right_revolutions += vr*dt/2/pi
-        self.info.wheels.left_ticks = int(self.left_revolutions*self.info.wheels.ticks_per_rev)
-        self.info.wheels.right_ticks = int(self.right_revolutions*self.info.wheels.ticks_per_rev)
+        self.__info.wheels.left_ticks = int(self.left_revolutions*self.__info.wheels.ticks_per_rev)
+        self.__info.wheels.right_ticks = int(self.right_revolutions*self.__info.wheels.ticks_per_rev)
         
     def get_info(self):
-        self.info.ir_sensors.readings = [sensor.reading() for sensor in self.ir_sensors]
-        return self.info
+        self.__info.ir_sensors.readings = [sensor.reading() for sensor in self.ir_sensors]
+        return self.__info
     
     def set_inputs(self,inputs):
         self.set_wheel_speeds(inputs)
     
     def diff2uni(self,diff):
         (vl,vr) = diff
-        v = (vl+vr) * self.info.wheels.radius/2;
-        w = (vr-vl) * self.info.wheels.radius/self.info.wheels.base_length;
+        v = (vl+vr) * self.__info.wheels.radius/2;
+        w = (vr-vl) * self.__info.wheels.radius/self.__info.wheels.base_length;
         return (v,w)
     
     def get_wheel_speeds(self):
@@ -147,7 +153,7 @@ class Khepera3(Robot):
         # and a factor depending on controller settings
         # The default is 20e6/8
         
-        mult = self.info.wheels.ticks_per_rev * 0xFFFF00 * 8 / 20e6 / 2 / pi
+        mult = self.__info.wheels.ticks_per_rev * 0xFFFF00 * 8 / 20e6 / 2 / pi
         
         left_ms  = max(-48000, min(48000, int(mult * vl)))
         right_ms = max(-48000, min(48000, int(mult * vr)))
