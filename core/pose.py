@@ -51,12 +51,12 @@ class Pose(object):
            =================================  ============================================
            """
         if len(args) == 1 and isinstance(args[0], Pose):           
-            self.x, self.y, self.theta = args[0]
+            self.x, self.y, self.theta = args[0] # Already floats
         elif len(args) > 3:
             raise ValueError("Too many parameters for Pose")
         elif len(args) > 0:
             try:
-                self.x, self.y, self.theta = args[0]
+                self.x, self.y, self.theta = map(float,args[0])
                 if len(args) > 1:
                     raise ValueError("Too many parameters for Pose")
             except TypeError:
@@ -103,17 +103,26 @@ class Pose(object):
         """Compare this pose to *other*. Returns True if the relative distance
            in x, y and theta is smaller than *epsilon*
         """
-        return (self.x - other.x)/(self.x + other.x) < epsilon \
-           and (self.y - other.y)/(self.y + other.y) < epsilon \
-           and (self.theta - other.theta)%(2*pi)/(2*pi) < epsilon
+        def dtheta(t1,t2):
+            dt = (t1-t2)/(2*pi)
+            return abs(dt - round(dt))
+
+        return abs(self.x - other.x) <= epsilon*abs(self.x + other.x) \
+           and abs(self.y - other.y) <= epsilon*abs(self.y + other.y) \
+           and dtheta(self.theta, other.theta) < epsilon
     
     def __eq__(self,other):
         if not isinstance(other,Pose):
             return NotImplemented
         return self.iscloseto(other,1e-8)
+
+    def __ne__(self,other):
+        if not isinstance(other,Pose):
+            return NotImplemented
+        return not self.iscloseto(other,1e-8)
     
     def __rshift__(self,other):
-        """A shifted Pose is the same pose in the coordinate system defined by the other pose.
+        """A shifted Pose is the same pose in the coordinate system containing the other pose.
            This operation is not commutative.
            
            If ``b`` is a pose in ``a`` frame of reference, ``b >> a`` is the same pose 
@@ -122,7 +131,9 @@ class Pose(object):
         if not isinstance(other,Pose):
             return NotImplemented
         rx, ry, rt = other
-        return Pose(rx+self.x*cos(rt)-self.y*sin(rt),ry+self.x*sin(rt)+self.y*cos(rt),self.theta+rt)
+        return Pose(rx+self.x*cos(rt)-self.y*sin(rt),
+                    ry+self.x*sin(rt)+self.y*cos(rt),
+                    self.theta+rt)
 
     def __lshift__(self,other):
         """An unshifted Pose is the same pose in the local coordinate system of other pose.
@@ -134,23 +145,11 @@ class Pose(object):
         if not isinstance(other,Pose):
             return NotImplemented
         rx, ry, rt = other
-        return Pose((self.x-rx)*cos(rt)+(self.y-ry)*sin(rt),-(self.x-rx)*sin(rt)+(self.y-ry)*cos(rt),self.theta-rt)
+        return Pose( (self.x-rx)*cos(rt)+(self.y-ry)*sin(rt),
+                    -(self.x-rx)*sin(rt)+(self.y-ry)*cos(rt),
+                     self.theta-rt)
     
     def __repr__(self):
         return "Pose({},{},{})".format(self.x, self.y, self.theta)
 
 #end class Pose
-
-# Testing
-
-if __name__ == "__main__":
-    a = Pose(1,2,3)
-    b = Pose(6,7,8)
-    c = Pose(1,2,3)
-    print(a==c)
-    print(b)
-    print(b << a)
-    print(b >> a)
-    print((b >> a) << a == b)
-    print((b << a) >> a == b)
-    

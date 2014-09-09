@@ -1,0 +1,107 @@
+# Copyright (c) 2009-2011, Dan Bravender <dan.bravender@gmail.com>
+
+import random
+import os
+import functools
+
+import sys
+
+if sys.version_info[0] < 3:
+    def iteritems(dictionary):
+        return dictionary.iteritems()
+else:
+    def iteritems(dictionary):
+        return dictionary.items()
+    xrange = range
+
+def integers(low=0, high=100):
+    '''Endlessly yields random integers between (inclusively) low and high.
+       Yields low then high first to test boundary conditions.
+    '''
+    yield low
+    yield high
+    while True:
+        yield random.randint(low, high)
+
+def floats(low=0.0, high=100.0):
+    '''Endlessly yields random floats between (inclusively) low and high.
+       Yields low then high first to test boundary conditions.
+    '''
+    yield low
+    yield high
+    while True:
+        yield random.uniform(low, high)
+
+def lists(items=integers(), size=(0, 100)):
+    '''Endlessly yields random lists varying in size between size[0]
+       and size[1]. Yields a list of the low size and the high size
+       first to test boundary conditions.
+    '''
+    yield [items.next() for _ in xrange(size[0])]
+    yield [items.next() for _ in xrange(size[1])]
+    while True:
+        yield [items.next() for _ in xrange(random.randint(size[0], size[1]))]
+
+def tuples(items=integers(), size=(0, 100)):
+    '''Endlessly yields random tuples varying in size between size[0]
+       and size[1]. Yields a tuple of the low size and the high size
+       first to test boundary conditions.
+    '''
+    yield tuple([items.next() for _ in xrange(size[0])])
+    yield tuple([items.next() for _ in xrange(size[1])])
+    while True:
+        yield tuple([items.next() for _ in xrange(random.randint(size[0], size[1]))])
+
+def key_value_generator(keys=integers(), values=integers()):
+    while True:
+        yield [keys.next(), values.next()]
+
+def dicts(key_values=key_value_generator(), size=(0, 100)):
+    while True:
+        x = {}
+        for _ in xrange(random.randint(size[0], size[1])):
+            item, value = key_values.next()
+            while item in x:
+                item, value = key_values.next()
+            x.update({item: value})
+        yield x
+
+def unicodes(size=(0, 100), minunicode=0, maxunicode=255):
+    for r in (size[0], size[1]):
+        yield unicode('').join(unichr(random.randint(minunicode, maxunicode)) \
+                for _ in xrange(r))
+    while True:
+        yield unicode('').join(unichr(random.randint(minunicode, maxunicode)) \
+                for _ in xrange(random.randint(size[0], size[1])))
+
+characters = functools.partial(unicodes, size=(1, 1))
+
+def objects(_object_class, _fields={}, *init_args, **init_kwargs):
+    ''' Endlessly yields objects of given class, with fields specified
+        by given dictionary. Uses given constructor arguments while creating
+        each object.
+    '''
+    while True:
+        ctor_args = [arg.next() for arg in init_args]
+        ctor_kwargs = (dict((k, v.next()) for k, v in iteritems(init_kwargs)))
+        obj = _object_class(*ctor_args, **ctor_kwargs)
+        for k, v in iteritems(_fields):
+            setattr(obj, k, v.next())
+        yield obj
+
+def forall(tries=100, **kwargs):
+    def wrap(f):
+        @functools.wraps(f)
+        def wrapped(*inargs, **inkwargs):
+            for _ in xrange(tries):
+                random_kwargs = { name: next(gen) for (name, gen) in iteritems(kwargs) }
+                if 'QC_VERBOSE' in os.environ:
+                    from pprint import pprint
+                    pprint(random_kwargs)
+                random_kwargs.update(**inkwargs)
+                f(*inargs, **random_kwargs)
+        return wrapped
+    return wrap
+
+#__all__ = ['integers', 'floats', 'lists', 'tuples', 'unicodes', 'characters', 'objects', 'forall']
+
