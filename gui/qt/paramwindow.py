@@ -14,9 +14,7 @@ from .Qt import QtGui
 from .Qt.QtCore import Slot, Signal, Qt, QObject, QEvent
 
 from core.helpers import Struct
-from core.ui import uiParameter
-from core.xmlreader import XMLReader
-from core.xmlwriter import XMLWriter
+from core import ui
 
 # Constructing UI from parameters:
 # 
@@ -32,97 +30,81 @@ from core.xmlwriter import XMLWriter
 # A dictionary node which contains dictionary nodes is a groupbox,
 # if it has at least one of such nodes inside
 
-class FloatEntry():
-    def __init__(self, label, value, step, min_value, max_value):
-        self.label = label
-        self.value = value
-        self.step = step
-        self.min_value = min_value
-        self.max_value = max_value
-    
-    def create_widgets(self,parent,layout):
-        """Create a label and a spinbox in layout"""
-        self.control = QtGui.QDoubleSpinBox(parent)
-        self.control.setMinimum(self.min_value)
-        self.control.setMaximum(self.max_value)
-        self.control.setSingleStep(self.step)
-        self.control.setValue(self.value)
-        layout.addRow(self.label,self.control)
-    
+class ValueEntry():
+    def __init__(self, ui_descr):
+        self.ui = ui_descr
+        self.control = None
+
+    def update_slot(self, v):
+        self.ui.value = v
+
     def get_value(self):
         return self.control.value()
 
     def get_struct(self):
         return self.get_value()
-        
+            
     def set_value(self, value):
         self.control.setValue(value)
+       
+    def create_widgets(self, parent, layout):
+        raise NotImplemented()
 
-class IntEntry():
-    def __init__(self, label, value, min_value, max_value):
-        self.label = label
-        self.value = value
-        self.min_value = min_value
-        self.max_value = max_value
+class FloatEntry(ValueEntry):
     
     def create_widgets(self, parent, layout):
-        """Create a label and a spinbox in layout"""
-        self.control = QtGui.QSpinBox(parent)
-        self.control.setMinimum(self.min_value)
-        self.control.setMaximum(self.max_value)
-        self.control.setValue(self.value)
-        layout.addRow(self.label,self.control)
+        """Create a label and a float spinbox in layout"""
+        self.control = QtGui.QDoubleSpinBox(parent)
+        self.control.setMinimum(self.ui.min_value)
+        self.control.setMaximum(self.ui.max_value)
+        self.control.setSingleStep(self.ui.step)
+        self.control.setValue(self.ui.value)
+        self.control.valueChanged.connect(self.update_slot)
+        layout.addRow(self.ui.label,self.control)
     
-    def get_value(self):
-        return self.control.value()
-
-    def get_struct(self):
-        return self.get_value()
-        
-    def set_value(self, value):
-        self.control.setValue(value)
-        
-class BoolEntry():
-    def __init__(self, label, value):
-        self.label = label
-        self.value = value
+class IntEntry(ValueEntry):
+    
+    def create_widgets(self, parent, layout):
+        """Create a label and an int spinbox in layout"""
+        self.control = QtGui.QSpinBox(parent)
+        self.control.setMinimum(self.ui.min_value)
+        self.control.setMaximum(self.ui.max_value)
+        self.control.setValue(self.ui.value)
+        self.control.valueChanged.connect(self.update_slot)
+        layout.addRow(self.ui.label,self.control)
+            
+class BoolEntry(ValueEntry):
     
     def create_widgets(self,parent,layout):
-        """Create a label and a spinbox in layout"""
+        """Create a label and a checkbox in layout"""
         self.control = QtGui.QCheckBox(parent)
-        self.control.setChecked(self.value)
-        layout.addRow(self.label,self.control)
+        self.control.setChecked(self.ui.value)
+        layout.addRow(self.ui.label,self.control)
     
     def get_value(self):
         return self.control.isChecked()
 
-    def get_struct(self):
-        return self.get_value()
-        
     def set_value(self, value):
         self.control.setChecked(value)
 
-class ChoiceEntry():
-    def __init__(self,label,value,options):
-        self.label = label
-        self.value = value
-        self.options = options
-        self.radios = []
+class ChoiceEntry(ValueEntry):
     
     def create_widgets(self,parent,layout):
-        """Create a label and a spinbox in layout"""
+        """Create a label and a combobox in layout"""
         self.control = QtGui.QFrame(parent)
         self.control.setFrameStyle(QtGui.QFrame.StyledPanel | QtGui.QFrame.Sunken)
         vlayout = QtGui.QVBoxLayout(self.control)
         vlayout.setContentsMargins(5,5,5,5)
         vlayout.setSpacing(5)
         self.control.setLayout(vlayout)
+
+        self.radios = []
         
-        for opt in self.options:
-            w = QtGui.QRadioButton(opt, self.control)
+        for value in self.ui.value_list:
+            w = QtGui.QRadioButton(value, self.control)
             vlayout.addWidget(w)
             self.radios.append(w)
-            if opt == self.value:
+            if value == self.ui.value:
                 w.setChecked(True)
         
         layout.addRow(self.label,self.control)
@@ -131,59 +113,29 @@ class ChoiceEntry():
         for r in self.radios:
             if r.isChecked():
                 return str(r.text())
-        return self.value
-
-    def get_struct(self):
-        return self.get_value()
+        return self.ui.value
         
     def set_value(self, value):
-        self.value = value
-        i = self.options.index(value)
+        self.ui.value = value
+        i = self.ui.value_list.index(value)
         if i >= 0:
             self.radios[i].toggle()
     
 class Group():
-    def __init__(self,label,parameters):
-        self.label = label
+    
+    _class_map = {
+        ui.PInt:IntEntry,
+        ui.PFloat:FloatEntry,
+        ui.PBool:BoolEntry,
+        ui.PSelect:ChoiceEntry,
+        ui.PGroup:Group
+        }
+    
+    def __init__(self,ui_descr):
+        self.ui = ui_descr
         self.leafs = OrderedDict()
-        for key, value in parameters:
-            if isinstance(key,str):
-                dict_key = key
-                child_label = key.capitalize()
-            elif isinstance(key,tuple):
-                child_label = key[1]
-                if len(key) == 2:
-                    dict_key = key[0]
-                elif len(key) == 3:
-                    dict_key = (key[0], key[2])
-                else:
-                    raise ValueError("Too many entries in key")                                
-            else:
-                raise ValueError("Invalid tree key")
-            
-            if isinstance(value,float):
-                self.leafs[dict_key] = FloatEntry(child_label,value,1.0,-1000.0,1000.0)
-            elif isinstance(value,bool): # A bool is an int, so it is important to check for bools first
-                self.leafs[dict_key] = BoolEntry(child_label, value)
-            elif isinstance(value,int):
-                self.leafs[dict_key] = IntEntry(child_label, value, -100, 100)
-            elif isinstance(value,tuple):
-                self.leafs[dict_key] = ChoiceEntry(child_label,value[0],value[1])
-            elif isinstance(value,uiParameter):
-                if value.type == uiParameter.INT:
-                    self.leafs[dict_key] = IntEntry(child_label, value.value, value.min_value, value.max_value)
-                elif value.type == uiParameter.FLOAT:
-                    self.leafs[dict_key] = FloatEntry(child_label, value.value, value.step, value.min_value, value.max_value)
-                elif value.type == uiParameter.BOOL:
-                    self.leafs[dict_key] = BoolEntry(child_label,value.value)
-                elif value.type == uiParameter.SELECT:
-                    self.leafs[dict_key] = ChoiceEntry(child_label,value.value, value.value_list)
-                elif value.type == uiParameter.GROUP:
-                    self.leafs[dict_key] = Group(child_label,value.contents)
-                else:
-                    raise ValueError("Unrecognized parameter type {}".format(value.type))
-            else:
-                self.leafs[dict_key] = Group(child_label,value)
+        for element in ui_descr.contents:
+            self.leafs[element.name] = _class_map[type(element)](element)
         
     def create_widgets(self, parent, layout):
         self.box = QtGui.QGroupBox(self.label,parent)
@@ -206,29 +158,25 @@ class Group():
     def get_struct(self):
         p = Struct()
         for key, leaf in self.leafs.items():
-            if isinstance(key, tuple):
-                if key[0] not in p.__dict__:
-                    p.__dict__[key[0]] = {}
-                p.__dict__[key[0]][key[1]] = leaf.get_struct()
-            else:
-                p.__dict__[key] = leaf.get_struct()
+            p.__dict__[key] = leaf.get_struct()
         return p
 
 class Contents(Group):
-    def __init__(self,parameters):
-        Group.__init__(self,'',parameters)
     
     def create_widgets(self, parent, layout):
         form_layout = QtGui.QFormLayout()
         for leaf in self.leafs.values():
             leaf.create_widgets(parent,form_layout)
         layout.addLayout(form_layout)
-    
-    def get_xmlstruct(self):
-        return self.get_value()
 
-    def use_xmlstruct(self, params):
-        self.set_value(params)
+    def write_xml_to_file(self, filename):
+        with open(filename,"w") as f:
+            f.write(self.get_xml)
+            f.write('\n')
+            
+    def parse_xml_from_file(self, filename):
+        with open(filename,"r") as f:
+            pass
         
 class ParamWidget(QtGui.QWidget):
     apply_request = Signal((object,object))
@@ -288,11 +236,9 @@ class ParamWidget(QtGui.QWidget):
                         "supervisors",
                         "XML files (*.xml)")
         if filename is not None:
-            writer = XMLWriter(filename, 'parameters', self.contents.get_xmlstruct())
             try:
-                writer.write()
+                self.contents.write_xml_to_file(filename)
             except Exception as e:
-                #QtGui.QMessageBox.critical(self,"Saving parameters failed",str(e))
                 QtGui.QMessageBox.critical(self,"Saving parameters failed","\n".join(format_exception(*sys.exc_info())))
     
     @Slot()
@@ -302,13 +248,10 @@ class ParamWidget(QtGui.QWidget):
                         "supervisors",
                         "XML files (*.xml)")
         if filename is not None:
-            reader = XMLReader(filename, 'parameters')
             cache = self.contents.get_xmlstruct()
             try:
-                self.contents.use_xmlstruct(reader.read())
+                self.contents.parse_xml_from_file(filename)
             except Exception as e:
-
-                #QtGui.QMessageBox.critical(self,"Loading parameters failed",str(e))
                 QtGui.QMessageBox.critical(self,"Loading parameters failed","\n".join(format_exception(*sys.exc_info())))
                 self.contents.use_xmlstruct(cache)
 
