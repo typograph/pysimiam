@@ -1,5 +1,5 @@
 import xml.parsers.expat as expat
-from core.helpers import Struct
+from core.struct import Struct
 from core.pose import Pose
 import re
 
