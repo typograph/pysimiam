@@ -4,10 +4,10 @@ class Rect(object):
     The Rect class is used for storing and manipulating rectangular areas.
 
     It has left, bottom, width and height attributes, which are automatically
-    changed by assignment to the right, top, topleft, topright, bottomleft, 
+    changed by assignment to the right, top, topleft, topright, bottomleft,
     bottomright or center properties.
 
-    Rects can be added to greater a greater containing rectangle, or a 
+    Rects can be added to greater a greater containing rectangle, or a
     Rect.union classmethod is available to sum a list of Rect objects.
 
     The collidepoint and intersects methods are used for collision testing.
@@ -101,10 +101,13 @@ class Rect(object):
         """
         Add another rect to this rect, expanding as needed.
         """
+        new_right = max(self.right, other.right)
         self.left = min(self.left, other.left)
+        self.width = new_right - self.left
+
+        new_top = max(self.top, other.top)
         self.bottom = min(self.bottom, other.bottom)
-        self.width = max(self.right, other.right) - self.left
-        self.height = max(self.top, other.top) - self.bottom
+        self.height = new_top - self.bottom
 
     @classmethod
     def sum(cls, others):
@@ -167,3 +170,5 @@ class Rect(object):
     def fits(self, other):
         return self.width >= other.width and self.height >= other.height
 
+    def __eq__(self,other):
+        return self.contains(other) and other.contains(self)
