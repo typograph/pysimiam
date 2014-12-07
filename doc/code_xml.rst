@@ -15,9 +15,9 @@ The actual format of the file is defined by the supervisor's
 (key, value) tuples is interpreted as follows:
 
 - Every key in the list is converted either to an XML tag, if the value
-    for this key is also a list, or to a tag attribute, if the value
-    is a number or a string. The contents of the tags are populated recursively,
-    the values of attributes are taken directly from the list.
+  for this key is also a list, or to a tag attribute, if the value
+  is a number or a string. The contents of the tags are populated recursively,
+  the values of attributes are taken directly from the list.
 - The key itself is either a string or a tuple.
     - If it is a tuple, then the first element is the name of the XML tag
       (or attribute) and the second element is ignored. If this key translates
@@ -31,12 +31,5 @@ The actual format of the file is defined by the supervisor's
 Readers and writers
 -------------------
 
-.. automodule:: core.xmlreader
+.. automodule:: core.worldparser
     :members:
-
-.. automodule:: core.xmlwriter
-    :members:
-
-.. automodule:: core.xmlobject
-    :members:
-

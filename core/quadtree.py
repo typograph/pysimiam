@@ -19,7 +19,7 @@ class QuadTree(object):
  
         @param items:
             A sequence of items to store in the quad-tree.
-            Note that these items must be of SimObject.
+            Note that these items must be SimObjects.
             
         @param depth:
             The maximum recursion depth.

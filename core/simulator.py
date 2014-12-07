@@ -177,19 +177,19 @@ class Simulator(threading.Thread):
                     raise
                     #raise Exception('[Simulator.construct_world] Unknown robot type!')
             elif thing.type == 'obstacle':
-                if thing.polygon.color is None:
-                    thing.polygon.color = 0xFF0000
+                if thing.color is None:
+                    thing.color = 0xFF0000
                 self.__obstacles.append(
-                    simobject.Polygon(thing.polygon.pose,
-                                      thing.polygon.points,
-                                      thing.polygon.color))
+                    simobject.Polygon(thing.pose,
+                                      thing.points,
+                                      thing.color))
             elif thing.type == 'marker':
-                if thing.polygon.color is None:
-                    thing.polygon.color = 0x00FF00
+                if thing.color is None:
+                    thing.color = 0x00FF00
                 self.__background.append(
-                    simobject.Polygon(thing.polygon.pose,
-                                      thing.polygon.points,
-                                      thing.polygon.color))
+                    simobject.Polygon(thing.pose,
+                                      thing.points,
+                                      thing.color))
             else:
                 raise Exception('[Simulator.construct_world] Unknown object: '
                                 + str(thing.type))

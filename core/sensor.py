@@ -42,9 +42,7 @@ class MountedSensor(SimObject, Sensor):
         return SimObject.get_pose(self)
        
     def get_pose(self):
-        x, y, t = SimObject.get_pose(self)
-        rx, ry, rt = self.__frame.get_pose()
-        return Pose(rx+x*cos(rt)-y*sin(rt),ry+x*sin(rt)+y*cos(rt),t+rt)
+        return SimObject.get_pose(self) >> self.__frame.get_pose()
     
 class ProximitySensor(MountedSensor):
     """Create a proximity sensor mounted on robot at *pose*. The geometry

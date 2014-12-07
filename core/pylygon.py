@@ -21,7 +21,6 @@ except Exception:
   xrange = range
 
 from numpy import array, cos, dot, fabs, lexsort, pi, sin, sqrt, vstack
-##from pygame import Rect
 
 ##from convexhull import convexhull
 # convex hull related functions 
