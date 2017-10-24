@@ -19,6 +19,6 @@ Subclassing Renderer
 
 API
 ---
-.. autoclass:: renderer.Renderer
+.. autoclass:: core.renderer.Renderer
     :noindex:
     :members:

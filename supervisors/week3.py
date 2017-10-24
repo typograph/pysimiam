@@ -6,11 +6,13 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisors.quickbot import QuickBotSupervisor
-from simobject import Path
-from supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
-from pose import Pose
+
+from core.simobject import Path
+from core.supervisor import Supervisor
+from core.pose import Pose
+
+from supervisors.quickbot import QuickBotSupervisor
 
 class QBGTGSupervisor(QuickBotSupervisor):
     """QBGTG supervisor uses one go-to-goal controller to make the robot reach the goal."""

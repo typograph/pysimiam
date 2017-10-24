@@ -6,9 +6,10 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.week3 import GoToGoal
 import math
 import numpy
+
+from controllers.week3 import GoToGoal
 
 class GoToGoalX(GoToGoal):
     """Go-to-goal steers the robot to a predefined position in the world."""

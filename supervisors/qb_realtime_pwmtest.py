@@ -6,10 +6,10 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from supervisor import Supervisor
-from helpers import Struct
-from pose import Pose
-from ui import uiInt
+from core.supervisor import Supervisor
+from core.helpers import Struct
+from core.pose import Pose
+from core.ui import uiInt
 
 class PWMTest(Supervisor):
     """The PWMTest is here to test your robot's PWM values."""

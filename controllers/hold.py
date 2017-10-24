@@ -6,7 +6,7 @@
 # This class was implemented as a weekly programming excercise
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controller import Controller
+from core.controller import Controller
 import math
 import numpy
 

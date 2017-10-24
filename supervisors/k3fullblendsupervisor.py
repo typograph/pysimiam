@@ -1,5 +1,5 @@
-from supervisors.khepera3 import K3Supervisor
 from math import sqrt, sin, cos, pi, atan2
+from supervisors.khepera3 import K3Supervisor
 
 class K3BlendingSupervisor(K3Supervisor):
     """K3Blending supervisor creates two controllers: gotogoal and avoidobstacles

@@ -1,7 +1,7 @@
 Simulator
 ====================================
 
-.. automodule:: simulator
+.. automodule:: core.simulator
     :members:
 
 Helper structures
@@ -28,30 +28,30 @@ The file `mymodule.py` is expected to reside in the appropriate folder:
 `./robots/` for robots, `./controllers/` for controllers and `./supervisors/`
 for supervisors.    
     
-.. autofunction:: helpers.load_by_name
+.. autofunction:: core.helpers.load_by_name
 
-.. autofunction:: helpers.unload_user_modules
+.. autofunction:: core.helpers.unload_user_modules
 
 Structures
 ^^^^^^^^^^
 
-.. autoclass:: helpers.Struct
+.. autoclass:: core.helpers.Struct
     :members:
 
 Collision detection
 ------------------------
 
-.. automodule:: pylygon
+.. automodule:: core.pylygon
     :members:
 .. autoclass:: Polygon
     :members:
 
-.. automodule:: rect
+.. automodule:: core.rect
     :members:
 .. autoclass:: Rect
     :members:
 
-.. automodule:: quadtree
+.. automodule:: core.quadtree
     :members:
 .. autoclass:: QuadTree
     :members:

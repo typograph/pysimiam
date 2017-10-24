@@ -1,6 +1,7 @@
-from controller import Controller
 import math
 import numpy
+
+from core.controller import Controller
 
 class Template(Controller):
     """Template controller with required functions"""

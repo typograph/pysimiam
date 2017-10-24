@@ -7,12 +7,14 @@
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
 import numpy as np
-from pose import Pose
-from sensor import ProximitySensor
-from robot import RealBot
 from math import ceil, exp, sin, cos, tan, pi
-from helpers import Struct
-from simobject import Cloud
+
+from core.pose import Pose
+from core.sensor import ProximitySensor
+from core.robot import RealBot
+from core.helpers import Struct
+from core.simobject import Cloud
+
 from .qb_realtime_comm import qb_comm, socket
 
 def sign(x):

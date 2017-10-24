@@ -7,9 +7,9 @@
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
 from supervisors.quickbot import QuickBotSupervisor
-from supervisor import Supervisor
+from core.supervisor import Supervisor
 from math import sqrt, sin, cos, atan2
-from ui import uiFloat
+from core.ui import uiFloat
 import numpy
 
 class QBFullSupervisor(QuickBotSupervisor):

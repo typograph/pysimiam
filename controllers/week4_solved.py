@@ -6,10 +6,12 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.week4 import AvoidObstacles as AvoidObstaclesStub
 import math
 import numpy
-from pose import Pose
+
+from core.pose import Pose
+
+from controllers.week4 import AvoidObstacles as AvoidObstaclesStub
 
 class AvoidObstacles(AvoidObstaclesStub):
     """Avoid obstacles is an example controller that checks the sensors

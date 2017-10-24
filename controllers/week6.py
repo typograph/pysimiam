@@ -6,9 +6,10 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.pid_controller import PIDController
 import math
 import numpy
+
+from controllers.pid_controller import PIDController
 
 class FollowWall(PIDController):
     """Follow walls is a controller that keeps a certain distance

@@ -22,6 +22,6 @@ be necessary to reset the accumulated error, for example, as in a PID controller
 API
 ---
 
-.. automodule:: controller
+.. automodule:: core.controller
     :noindex:
     :members:

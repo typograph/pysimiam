@@ -6,10 +6,12 @@
 # This class was implemented for the weekly programming excercises
 # of the 'Control of Mobile Robots' course by Magnus Egerstedt.
 #
-from controllers.week6 import FollowWall as FollowWallStub
 import math
 import numpy
-from pose import Pose
+
+from core.pose import Pose
+
+from controllers.week6 import FollowWall as FollowWallStub
 
 class FollowWall(FollowWallStub):
     """Follow walls is a controller that keeps a certain distance

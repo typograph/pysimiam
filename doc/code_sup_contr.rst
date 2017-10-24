@@ -4,11 +4,11 @@ Supervisor/Controller system
 Supervisor
 -----------------------------
 
-.. automodule:: supervisor
+.. automodule:: core.supervisor
     :members:
 
 Controller
 -----------------------------
 
-.. automodule:: controller
+.. automodule:: core.controller
     :members:

@@ -4,12 +4,12 @@ SimObject
 Pose
 ------------------------------
 
-.. automodule:: pose
+.. automodule:: core.pose
     :members:
 
 SimObject and simple shapes
 -------------------------------
 
-.. automodule:: simobject
+.. automodule:: core.simobject
     :member-order: bysource
     :members:
